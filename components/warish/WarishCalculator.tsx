@@ -101,8 +101,19 @@ function Counter(props: {
   );
 }
 
-export function WarishCalculator({ deceased }: { deceased: DeceasedOwner[] }) {
-  const [form, setForm] = useState<FormState>(EMPTY);
+export function WarishCalculator({
+  deceased,
+  initialOwnerId,
+}: {
+  deceased: DeceasedOwner[];
+  /** Opened from a land report (/warish?owner=…): start with that deceased owner's land. */
+  initialOwnerId?: number;
+}) {
+  const [form, setForm] = useState<FormState>(() =>
+    initialOwnerId && deceased.some((d) => d.owner_id === initialOwnerId)
+      ? { ...EMPTY, deceasedId: initialOwnerId }
+      : EMPTY,
+  );
   const [names, setNames] = useState<Record<string, string>>({});
   const [result, setResult] = useState<WarishLandResult | null>(null);
   const [error, setError] = useState<string | null>(null);

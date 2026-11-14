@@ -184,6 +184,45 @@ export function ReportView({ report }: { report: JomiReport }) {
         </p>
       </section>
 
+      {/* Next steps: the same dag carried into the other tools. */}
+      <nav
+        aria-label="এরপর কী করবেন"
+        className="rounded-xl border border-line bg-card p-3"
+        data-testid="next-steps"
+      >
+        <p className="text-sm font-semibold">এরপর কী করবেন</p>
+        <div className="mt-2 flex flex-wrap gap-2 text-sm">
+          {report.map_area_dec != null ? (
+            <Link
+              href={`/map?mouza=${dag.mouza_en.toLowerCase()}&dag=${dag.dag_no}`}
+              className="inline-flex min-h-11 items-center rounded-lg border border-brand px-3 text-brand"
+            >
+              ম্যাপে দেখুন
+            </Link>
+          ) : null}
+          {report.holders.some((h) => h.is_deceased) ? (
+            <Link
+              href={`/warish?owner=${report.holders.find((h) => h.is_deceased)!.owner_id}`}
+              className="inline-flex min-h-11 items-center rounded-lg border border-brand px-3 text-brand"
+            >
+              ওয়ারিশ হিসাব
+            </Link>
+          ) : null}
+          <Link
+            href={`/chat?q=${encodeURIComponent(`${dag.mouza_bn} মৌজার ${bn(dag.dag_no)} নম্বর দাগ নিয়ে জানতে চাই: `)}`}
+            className="inline-flex min-h-11 items-center rounded-lg border border-brand px-3 text-brand"
+          >
+            সাথীকে জিজ্ঞাসা করুন
+          </Link>
+          <Link
+            href="/deed"
+            className="inline-flex min-h-11 items-center rounded-lg border border-line px-3"
+          >
+            দলিল যাচাই
+          </Link>
+        </div>
+      </nav>
+
       <p className="rounded-xl bg-brand-soft p-3 text-sm">
         {report.disclaimer_bn}
         <span lang="en" className="mt-1 block text-ink-soft">

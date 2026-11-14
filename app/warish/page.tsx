@@ -8,7 +8,7 @@ import { listDeceasedWithLand } from "@/lib/engines/warish-land";
 
 export const metadata: Metadata = { title: "ওয়ারিশ হিসাব" };
 
-export default function WarishPage() {
+export default function WarishPage(props: PageProps<"/warish">) {
   return (
     <>
       <PageHeader
@@ -18,7 +18,7 @@ export default function WarishPage() {
       />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <Suspense fallback={<p className="text-ink-soft">লোড হচ্ছে… Loading…</p>}>
-          <Calculator />
+          <Calculator searchParams={props.searchParams} />
         </Suspense>
       </main>
       <SiteFooter />
@@ -26,7 +26,13 @@ export default function WarishPage() {
   );
 }
 
-async function Calculator() {
+async function Calculator({ searchParams }: Pick<PageProps<"/warish">, "searchParams">) {
   await connection(); // always read the current records
-  return <WarishCalculator deceased={await listDeceasedWithLand()} />;
+  const owner = Number((await searchParams).owner);
+  return (
+    <WarishCalculator
+      deceased={await listDeceasedWithLand()}
+      initialOwnerId={Number.isInteger(owner) && owner > 0 ? owner : undefined}
+    />
+  );
 }

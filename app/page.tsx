@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 
-// Home: one question, five ways in. Bangla first, English second.
+// Home: one question, every way in. Bangla first, English second.
+// "Ask Sathi" comes first: one conversation can do everything below.
 const journeys = [
+  {
+    href: "/chat",
+    bn: "সাথী এআই-কে জিজ্ঞাসা করুন",
+    en: "Ask Sathi AI",
+    hint: "বাংলায় লিখুন বা কথা বলুন — যাচাই, দলিল, মাপ, আইন সব এক জায়গায়",
+  },
   {
     href: "/check",
     bn: "জমি যাচাই",
@@ -10,10 +17,16 @@ const journeys = [
     hint: "দাগ নম্বর দিয়ে লাল / হলুদ / সবুজ রিপোর্ট",
   },
   {
-    href: "/chat",
-    bn: "সাথী এআই-কে জিজ্ঞাসা করুন",
-    en: "Ask Sathi AI",
-    hint: "বাংলায় প্রশ্ন করুন বা কথা বলুন, আইনের সূত্রসহ উত্তর",
+    href: "/deed",
+    bn: "দলিল পড়ুন",
+    en: "Read a deed",
+    hint: "দলিলের ছবি দিন — সহজ বাংলায় ব্যাখ্যা ও রেকর্ডের সাথে মিলিয়ে দেখা",
+  },
+  {
+    href: "/map",
+    bn: "মৌজা ম্যাপে মাপ",
+    en: "Measure on the mouza map",
+    hint: "দাগের আয়তন শতক, কাঠা ও বিঘায়",
   },
   {
     href: "/warish",
@@ -22,10 +35,16 @@ const journeys = [
     hint: "ফারায়েজ অনুযায়ী প্রতিটি দাগে প্রত্যেকের অংশ",
   },
   {
-    href: "/map",
-    bn: "মৌজা ম্যাপে মাপ",
-    en: "Measure on the mouza map",
-    hint: "দাগের আয়তন শতক, কাঠা ও বিঘায়",
+    href: "/units",
+    bn: "জমির একক রূপান্তর",
+    en: "Land unit converter",
+    hint: "কানি, গন্ডা, বিঘা, কাঠা → শতক ও একর",
+  },
+  {
+    href: "/fees",
+    bn: "সরকারি ফি ও সময়",
+    en: "Official fees and times",
+    hint: "নামজারি ১,১৭০ টাকা — দালাল ছাড়াই জানুন",
   },
   {
     href: "/registry",

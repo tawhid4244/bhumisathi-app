@@ -70,6 +70,18 @@ function respond(req: ChatRequest): { content: Block[]; stop_reason: string } {
       stop_reason: "tool_use",
     };
   }
+  const deed = results.get("deed_read");
+  if (deed && !deed.error) {
+    const d = deed.data as {
+      verdict: string;
+      summary_bn: string;
+      findings: { severity: string; bn: string }[];
+    };
+    const label = d.verdict === "red" ? "লাল" : d.verdict === "amber" ? "হলুদ" : "সবুজ";
+    const top = d.findings.filter((f) => f.severity !== "info").map((f) => `- ${f.bn}`);
+    const lines = [d.summary_bn, `রেকর্ডের সাথে মিলিয়ে ফলাফল: ${label}।`, ...top];
+    return { content: [text(lines.join("\n"))], stop_reason: "end_turn" };
+  }
   const measured = results.get("map_area");
   if (measured && !measured.error) {
     const a = measured.data as {
@@ -139,6 +151,11 @@ function respond(req: ChatRequest): { content: Block[]; stop_reason: string } {
   }
 
   // --- a new question ---
+  // A deed photo attached in the chat: "(upload_id: …)".
+  const upload = /upload_id:\s*([a-f0-9]{24})/.exec(q);
+  if (upload) {
+    return { content: [call("deed_read", { upload_id: upload[1] })], stop_reason: "tool_use" };
+  }
   const dag = firstNumber(q);
   if (/বায়না|baina/i.test(q) && dag) {
     // Demo phrase: "রহিমের ১৪৫ নম্বর দাগে সালমার নামে ১০ শতক বায়না"

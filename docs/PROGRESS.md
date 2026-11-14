@@ -8,7 +8,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
-| 3 | 11–15 | in progress (tasks 11–14 done) |
+| 3 | 11–15 | done (2026-11-15) |
 | 4 | 16–20 | not started |
 
 ## Golden scenarios
@@ -18,6 +18,27 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 12:30 — Session 3 summary (tasks 11–15 done)
+- Done: warish calculator (G2), deed reader (G3), mouza map + measure-your-own-map, unit converter
+  with regional kani sizes, fee guide, and everything connected.
+- Task 15: home page "আপনি কী করতে চান?" with all 8 services (Sathi first). Cross-links carrying the
+  dag: /check "এরপর কী করবেন" → ম্যাপে দেখুন (/map?mouza=…&dag=… opens that dag), ওয়ারিশ হিসাব
+  (shown when the recorded owner has died; /warish?owner=… preselects the land), সাথীকে জিজ্ঞাসা
+  (/chat?q=… pre-fills, not sent), দলিল যাচাই. Chat 📎 attaches a deed photo (private upload; the model
+  gets "(upload_id: …)", the bubble shows "📎 দলিলের ছবি"); prompt tells Sathi to call deed_read.
+  PII: digit runs inside ids/codes are no longer masked; all title spellings of a person (মোঃ / মো: /
+  মো. / মোহাম্মদ / Md) share one placeholder — fixes "মো: মোঃ রহিম উদ্দিন" seen in the real run.
+- Tests: `npm run seed` OK; `npm run check` green (185); `npm run e2e` green (112, phone + desktop),
+  incl. journey.spec (one /chat conversation: G1 red → 📎 deed G3 amber "আমিন" → map ≈20.04 dec;
+  check → map / warish / chat links); integration test of the same one-conversation flow with real
+  tools. Build green. REAL Gemini: the same 3-turn conversation works (find_dag → jomi_check,
+  deed_read, map_area).
+- Golden scenarios: G1 ✅ G2 ✅ G3 ✅ G4 ✅ G5 ✅ G6 ✅ G8 ✅ (typed + map on real Gemini; voice via fake
+  speech engine; manual mic test pending). G7 (BhumiSeal) is task 17.
+- Known issues: free-tier Gemini quota (~20 requests/model/day); mentor review of law summaries,
+  Q&A and unverified fees; write tools / AI routes / demo reset are open until task 16.
+- Next step: Session 4, task 16 (login with roles, row-level security, private storage, rate limits).
 
 ### 2026-11-15 11:00 — Session 3, task 14 (unit converter + fee guide)
 - Research: kani is NOT a fixed size — Banglapedia (Agrometrology) gives 1 kani = 120 decimal with a

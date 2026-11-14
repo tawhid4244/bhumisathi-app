@@ -2,10 +2,13 @@ import { expect, test } from "@playwright/test";
 
 // Smoke test for task 1: the Bangla home page loads and every journey link opens its page.
 const pages = [
-  { name: "জমি যাচাই", path: "/check" },
   { name: "সাথী এআই-কে জিজ্ঞাসা করুন", path: "/chat" },
-  { name: "ওয়ারিশ হিসাব", path: "/warish" },
+  { name: "জমি যাচাই", path: "/check" },
+  { name: "দলিল পড়ুন", path: "/deed" },
   { name: "মৌজা ম্যাপে মাপ", path: "/map" },
+  { name: "ওয়ারিশ হিসাব", path: "/warish" },
+  { name: "জমির একক রূপান্তর", path: "/units" },
+  { name: "সরকারি ফি ও সময়", path: "/fees" },
   { name: "সাব-রেজিস্ট্রি ডেমো", path: "/registry" },
 ];
 

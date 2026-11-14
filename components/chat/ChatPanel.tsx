@@ -45,11 +45,11 @@ const noSubscribe = () => () => {};
 let seq = 0;
 const newId = () => `t${Date.now().toString(36)}${seq++}`;
 
-export function ChatPanel() {
+export function ChatPanel({ initialInput = "" }: { initialInput?: string }) {
   const [lang, setLang] = useState<Lang>("bn");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [history, setHistory] = useState<AgentMessage[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialInput);
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
   const [heard, setHeard] = useState<{ text: string; question: string } | null>(null);
@@ -131,16 +131,34 @@ export function ChatPanel() {
     }
   }
 
-  function ask(text: string, voice = false) {
+  /** @param display what the bubble shows, if different from what is sent (e.g. an attachment). */
+  function ask(text: string, voice = false, display?: string) {
     const q = text.trim();
     if (!q || busy) return;
     setInput("");
     setHeard(null);
     setTurns((all) => [
       ...all,
-      { id: newId(), role: "user", text: q, badges: [], sources: [], pending: null },
+      { id: newId(), role: "user", text: display ?? q, badges: [], sources: [], pending: null },
     ]);
     void run({ message: q }, voice);
+  }
+
+  // ---------- deed photo attached in the chat ----------
+  async function attachDeed(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || busy) return;
+    const body = new FormData();
+    body.append("file", file);
+    const res = await fetch("/api/deed/upload", { method: "POST", body });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.upload_id) {
+      setVoiceNote(json?.error?.bn ?? t.error);
+      return;
+    }
+    // The model gets the private upload id; the citizen sees a short note.
+    ask(`${t.deedMessage} (upload_id: ${json.upload_id})`, false, `📎 ${t.deedAttached}`);
   }
 
   // ---------- voice ----------
@@ -445,6 +463,21 @@ export function ChatPanel() {
             disabled={busy || waitingForAnswer || Boolean(heard)}
             className="min-h-11 flex-1 resize-none rounded-lg border border-line bg-white px-3 py-2 text-base"
           />
+          <label
+            className={`flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border border-line bg-white text-lg ${busy || waitingForAnswer ? "pointer-events-none opacity-60" : ""}`}
+            title={t.attach}
+          >
+            <span aria-hidden="true">📎</span>
+            <span className="sr-only">{t.attach}</span>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={attachDeed}
+              className="sr-only"
+              disabled={busy || waitingForAnswer}
+              data-testid="chat-attach"
+            />
+          </label>
           {micSupported ? (
             <button
               type="button"

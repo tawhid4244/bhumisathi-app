@@ -19,9 +19,9 @@ const PII = new RegExp(
     String.raw`(?<synNid>SYN-\d{4}-\d{4})`,
     String.raw`(?<synPhone>\+880-SYN-\d{4})`,
     // Bangladeshi mobile: 01[3-9] + 8 digits, optional +88 / 88 and separators.
-    String.raw`(?<phone>(?<![0-9০-৯+])(?:\+?(?:88|৮৮)[-\s]?)?[0০][1১][3-9৩-৯]${D}{2}[-\s]?${D}{3}[-\s]?${D}{3}(?![0-9০-৯]))`,
+    String.raw`(?<phone>(?<![0-9০-৯+A-Za-z])(?:\+?(?:88|৮৮)[-\s]?)?[0০][1১][3-9৩-৯]${D}{2}[-\s]?${D}{3}[-\s]?${D}{3}(?![0-9০-৯A-Za-z]))`,
     // NID: 10, 13 or 17 digits (old, new, smart card).
-    String.raw`(?<nid>(?<![0-9০-৯])(?:${D}{17}|${D}{13}|${D}{10})(?![0-9০-৯]))`,
+    String.raw`(?<nid>(?<![0-9০-৯A-Za-z])(?:${D}{17}|${D}{13}|${D}{10})(?![0-9০-৯A-Za-z]))`,
   ].join("|"),
   "gu",
 );
@@ -102,6 +102,21 @@ export function maskDeep<T>(value: T, m: Masker, fn: "mask" | "unmask" = "mask")
 
 // ---------- names from the records ----------
 
+/** Title spellings people (and OCR) use for the same "মোঃ". */
+const BN_TITLES = ["মোঃ", "মো:", "মো.", "মোহাম্মদ", "মুহাম্মদ"];
+
+/**
+ * Every spelling of one person, main spelling first: "মোঃ রহিম উদ্দিন", "মো: রহিম উদ্দিন",
+ * "রহিম উদ্দিন", "Md. Rahim Uddin", "Rahim Uddin" … so all of them share one placeholder and
+ * nothing is left half-masked (e.g. "মো: [ব্যক্তি-১]").
+ */
+export function nameGroup(nameBn: string, nameEn: string): string[] {
+  const shortBn = nameBn.replace(/^(মোঃ|মো:|মো\.|মোহাম্মদ|মুহাম্মদ|হাজী)\s+/, "");
+  const shortEn = nameEn.replace(/^(Md\.?|Mohammad|Haji)\s+/i, "");
+  const titled = shortBn !== nameBn ? BN_TITLES.map((t) => `${t} ${shortBn}`) : [];
+  return [nameBn, ...titled, shortBn, nameEn, `Md ${shortEn}`, shortEn];
+}
+
 let namesCache: { at: number; names: string[][] } | undefined;
 
 /** Owner names (Bangla + English) from the database, cached for 5 minutes. Empty if no DB. */
@@ -113,12 +128,7 @@ export async function knownNames(): Promise<string[][]> {
       select name_bn, name_en, kind from owners where kind = 'person'`;
     // One group per person: full and short forms people type ("রহিম উদ্দিন" for
     // "মোঃ রহিম উদ্দিন"), Bangla and English. All map to the same placeholder.
-    const names = rows.map((r) => [
-      r.name_bn,
-      r.name_bn.replace(/^(মোঃ|মোহাম্মদ|হাজী)\s+/, ""),
-      r.name_en,
-      r.name_en.replace(/^(Md\.|Haji)\s+/, ""),
-    ]);
+    const names = rows.map((r) => nameGroup(r.name_bn, r.name_en));
     namesCache = { at: Date.now(), names };
     return names;
   } catch {

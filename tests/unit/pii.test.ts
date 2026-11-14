@@ -52,3 +52,15 @@ describe("PII masker", () => {
     expect(maskDeep(block, m)).toEqual({ ...block, input: { note: "[NID-১]" } });
   });
 });
+
+describe("name groups from the records", () => {
+  it("every title spelling maps to the same placeholder and unmasks cleanly (real-run bug)", async () => {
+    const { nameGroup } = await import("@/lib/ai/pii");
+    const m = createMasker([nameGroup("মোঃ রহিম উদ্দিন", "Md. Rahim Uddin")]);
+    const masked = m.mask(
+      "দলিলে লেখা: মো: রহিম উদ্দিন; খতিয়ানে মোঃ রহিম উদ্দিন; ইংরেজিতে Md Rahim Uddin",
+    );
+    expect(masked).toBe("দলিলে লেখা: [ব্যক্তি-১]; খতিয়ানে [ব্যক্তি-১]; ইংরেজিতে [ব্যক্তি-১]");
+    expect(m.unmask("[ব্যক্তি-১] বিক্রেতা")).toBe("মোঃ রহিম উদ্দিন বিক্রেতা");
+  });
+});

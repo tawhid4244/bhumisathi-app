@@ -8,10 +8,17 @@ import { bn } from "@/lib/engines/rules";
 // Interactive mouza map: tap a dag (or type its number) to see its area from the map, compared
 // with the khatian. The numbers come from the map_area tool, the same one Sathi AI uses.
 
-export function MouzaMap({ map }: { map: MouzaMapData }) {
-  const [selected, setSelected] = useState<number | null>(null);
+export function MouzaMap({
+  map,
+  initial,
+}: {
+  map: MouzaMapData;
+  /** Opened with ?dag=…: that dag is selected and measured on the server. */
+  initial?: MapAreaResult | null;
+}) {
+  const [selected, setSelected] = useState<number | null>(initial?.dag_no ?? null);
   const [typed, setTyped] = useState("");
-  const [info, setInfo] = useState<MapAreaResult | null>(null);
+  const [info, setInfo] = useState<MapAreaResult | null>(initial ?? null);
   const [error, setError] = useState<string | null>(null);
 
   // Fit the drawing: view box around all dags with a margin.

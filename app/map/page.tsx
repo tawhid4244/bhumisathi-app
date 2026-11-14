@@ -6,11 +6,11 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { MapTabs } from "@/components/map/MapTabs";
 import { MouzaMap } from "@/components/map/MouzaMap";
 import { UploadMeasure } from "@/components/map/UploadMeasure";
-import { loadMouzaMap } from "@/lib/engines/map";
+import { loadMouzaMap, mapArea, type MapAreaResult } from "@/lib/engines/map";
 
 export const metadata: Metadata = { title: "মৌজা ম্যাপে মাপ" };
 
-export default function MapPage() {
+export default function MapPage(props: PageProps<"/map">) {
   return (
     <>
       <PageHeader
@@ -20,7 +20,7 @@ export default function MapPage() {
       />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <Suspense fallback={<p className="text-ink-soft">লোড হচ্ছে… Loading…</p>}>
-          <Content />
+          <Content searchParams={props.searchParams} />
         </Suspense>
       </main>
       <SiteFooter />
@@ -28,8 +28,14 @@ export default function MapPage() {
   );
 }
 
-async function Content() {
+async function Content({ searchParams }: Pick<PageProps<"/map">, "searchParams">) {
   await connection();
   const map = await loadMouzaMap("Nayapara");
-  return <MapTabs mouzaMap={<MouzaMap map={map} />} upload={<UploadMeasure />} />;
+  // Opened from a report or chat with ?dag=145: show that dag straight away.
+  const dag = Number((await searchParams).dag);
+  let initial: MapAreaResult | null = null;
+  if (Number.isInteger(dag) && map.dags.some((d) => d.dag_no === dag)) {
+    initial = await mapArea(map.mouza_en, dag);
+  }
+  return <MapTabs mouzaMap={<MouzaMap map={map} initial={initial} />} upload={<UploadMeasure />} />;
 }
