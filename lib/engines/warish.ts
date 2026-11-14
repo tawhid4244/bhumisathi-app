@@ -1,0 +1,303 @@
+import { Fraction, frac } from "./fraction";
+
+// Warish (inheritance) shares under Hanafi Muslim law as applied in Bangladesh, with
+// Muslim Family Laws Ordinance 1961 s.4 (children of a son or daughter who died before the
+// deceased take that child's share). Exact fractions only. This is a calculation aid: a court,
+// a warish certificate and a registered bontonnama make a partition binding.
+//
+// Supported heirs: husband, up to four wives, father, mother, sons, daughters, predeceased sons
+// and daughters (through their living children), full brothers and full sisters. Anything else
+// (grandparents, half-siblings, uncles…) is reported as "not supported" instead of guessing.
+
+export interface PredeceasedChild {
+  sons: number;
+  daughters: number;
+}
+
+export interface Family {
+  husband?: boolean;
+  wives?: number;
+  father?: boolean;
+  mother?: boolean;
+  sons?: number;
+  daughters?: number;
+  predeceasedSons?: PredeceasedChild[];
+  predeceasedDaughters?: PredeceasedChild[];
+  fullBrothers?: number;
+  fullSisters?: number;
+}
+
+export type Relation =
+  | "husband"
+  | "wife"
+  | "father"
+  | "mother"
+  | "son"
+  | "daughter"
+  | "grandson"
+  | "granddaughter"
+  | "brother"
+  | "sister";
+
+export interface HeirShare {
+  key: string; // stable id, e.g. "son-1", "pson-1-daughter-2"
+  relation: Relation;
+  label_bn: string;
+  label_en: string;
+  share: Fraction;
+  /** Why this heir gets this share, in plain Bangla. */
+  basis_bn: string;
+}
+
+export interface WarishResult {
+  shares: HeirShare[];
+  flags: { awl: boolean; radd: boolean; umariyyatayn: boolean; mflo: boolean; spouseRadd: boolean };
+  steps_bn: string[];
+}
+
+export class WarishInputError extends Error {}
+
+const BN = "০১২৩৪৫৬৭৮৯";
+export const bnNum = (s: string | number) => String(s).replace(/\d/g, (d) => BN[Number(d)]!);
+const bnFrac = (f: Fraction) => bnNum(f.toString());
+
+function validate(f: Family) {
+  const counts: [string, number | undefined, number][] = [
+    ["wives", f.wives, 4],
+    ["sons", f.sons, 30],
+    ["daughters", f.daughters, 30],
+    ["fullBrothers", f.fullBrothers, 30],
+    ["fullSisters", f.fullSisters, 30],
+  ];
+  for (const [name, v, max] of counts) {
+    if (v !== undefined && (!Number.isInteger(v) || v < 0 || v > max)) {
+      throw new WarishInputError(`${name} must be a whole number from 0 to ${max}`);
+    }
+  }
+  if (f.husband && (f.wives ?? 0) > 0) {
+    throw new WarishInputError("A deceased person cannot leave both a husband and a wife");
+  }
+}
+
+/** Equal split of a group share among n people. */
+const each = (share: Fraction, n: number) => share.div(frac(n));
+
+/** Male:female 2:1 split of a share among m males and f females → [per male, per female]. */
+function twoToOne(share: Fraction, m: number, f: number): [Fraction, Fraction] {
+  const units = frac(2 * m + f);
+  return [share.mul(frac(2)).div(units), share.div(units)];
+}
+
+export function computeWarish(input: Family): WarishResult {
+  validate(input);
+  const f: Required<Family> = {
+    husband: false,
+    wives: 0,
+    father: false,
+    mother: false,
+    sons: 0,
+    daughters: 0,
+    predeceasedSons: [],
+    predeceasedDaughters: [],
+    fullBrothers: 0,
+    fullSisters: 0,
+    ...input,
+  };
+  // MFLO s.4: a predeceased child counts as alive IF they left living children.
+  const pSons = f.predeceasedSons.filter((c) => c.sons + c.daughters > 0);
+  const pDaughters = f.predeceasedDaughters.filter((c) => c.sons + c.daughters > 0);
+  const sonSlots = f.sons + pSons.length;
+  const daughterSlots = f.daughters + pDaughters.length;
+  const hasChild = sonSlots + daughterSlots > 0;
+  const hasSon = sonSlots > 0;
+  const siblings = f.fullBrothers + f.fullSisters;
+  // Full siblings are excluded by a son (or a predeceased son's line) and by the father.
+  const siblingsInherit = !hasSon && !f.father && siblings > 0;
+  const steps: string[] = [];
+
+  // ---- 1. Fixed shares (fard) ----
+  type Group = "spouse" | "father" | "mother" | "daughters" | "sisters";
+  const fard = new Map<Group, Fraction>();
+  let spouseShare = Fraction.ZERO;
+  if (f.husband) {
+    spouseShare = hasChild ? frac(1, 4) : frac(1, 2);
+    steps.push(`স্বামী: সন্তান ${hasChild ? "থাকায়" : "না থাকায়"} ${bnFrac(spouseShare)}।`);
+  } else if (f.wives > 0) {
+    spouseShare = hasChild ? frac(1, 8) : frac(1, 4);
+    steps.push(`স্ত্রী: সন্তান ${hasChild ? "থাকায়" : "না থাকায়"} ${bnFrac(spouseShare)}${f.wives > 1 ? `, ${bnNum(f.wives)} জন স্ত্রী সমান ভাগে` : ""}।`); // prettier-ignore
+  }
+  if (!spouseShare.isZero()) fard.set("spouse", spouseShare);
+
+  // Umariyyatayn: spouse + father + mother only (no children, fewer than 2 siblings):
+  // the mother gets 1/3 of what is left after the spouse, not 1/3 of the whole.
+  const umariyyatayn = f.mother && f.father && !spouseShare.isZero() && !hasChild && siblings < 2;
+  if (f.mother) {
+    let m: Fraction;
+    if (hasChild || siblings >= 2) {
+      m = frac(1, 6);
+      steps.push(`মা: ${hasChild ? "সন্তান" : "দুই বা ততোধিক ভাইবোন"} থাকায় ১/৬।`);
+    } else if (umariyyatayn) {
+      m = Fraction.ONE.sub(spouseShare).mul(frac(1, 3));
+      steps.push(`মা: স্বামী/স্ত্রী ও বাবা আছেন (উমারিয়্যাতাইন) — বাকি অংশের ১/৩ = ${bnFrac(m)}।`);
+    } else {
+      m = frac(1, 3);
+      steps.push("মা: সন্তান বা দুই ভাইবোন না থাকায় ১/৩।");
+    }
+    fard.set("mother", m);
+  }
+  if (f.father && hasChild) {
+    fard.set("father", frac(1, 6));
+    steps.push(
+      hasSon ? "বাবা: ছেলে থাকায় ১/৬।" : "বাবা: শুধু মেয়ে থাকায় ১/৬, এবং বাকি অংশ (যদি থাকে)।",
+    );
+  }
+  if (!hasSon && daughterSlots > 0) {
+    const d = daughterSlots === 1 ? frac(1, 2) : frac(2, 3);
+    fard.set("daughters", d);
+    steps.push(`মেয়ে: ছেলে না থাকায় ${daughterSlots === 1 ? "একজন মেয়ে ১/২" : `${bnNum(daughterSlots)} জন মেয়ে মিলে ২/৩`}।`); // prettier-ignore
+  }
+  const sistersFard = siblingsInherit && f.fullBrothers === 0 && daughterSlots === 0 && f.fullSisters > 0; // prettier-ignore
+  if (sistersFard) {
+    fard.set("sisters", f.fullSisters === 1 ? frac(1, 2) : frac(2, 3));
+    steps.push(
+      `বোন: ${f.fullSisters === 1 ? "একজন বোন ১/২" : `${bnNum(f.fullSisters)} জন বোন মিলে ২/৩`}।`,
+    );
+  }
+
+  // ---- 2. Residuary ('asaba): who takes what is left, in order of priority ----
+  type Residuary = "children" | "father" | "siblings" | "sistersWithDaughters" | null;
+  let residuary: Residuary = null;
+  if (hasSon) residuary = "children";
+  else if (f.father) residuary = "father";
+  else if (siblingsInherit && f.fullBrothers > 0) residuary = "siblings";
+  else if (siblingsInherit && daughterSlots > 0 && f.fullSisters > 0)
+    residuary = "sistersWithDaughters";
+
+  // ---- 3. 'Awl (shares exceed the estate) or radd (surplus and no residuary) ----
+  const fardTotal = Fraction.sum([...fard.values()]);
+  if (fard.size === 0 && !residuary) throw new WarishInputError("No heirs given");
+  let awl = false;
+  let radd = false;
+  let spouseRadd = false;
+  let residue = Fraction.ONE.sub(fardTotal);
+  const final = new Map<Group, Fraction>(fard);
+
+  if (fardTotal.cmp(Fraction.ONE) > 0) {
+    awl = true;
+    for (const [g, s] of fard) final.set(g, s.div(fardTotal));
+    steps.push(`'আউল: নির্ধারিত অংশের যোগফল ${bnFrac(fardTotal)}, যা ১-এর বেশি — সবার অংশ একই হারে কমানো হয়েছে।`); // prettier-ignore
+    residue = Fraction.ZERO;
+  } else if (!residue.isZero() && !residuary) {
+    radd = true;
+    // Radd: the surplus goes back to the blood heirs with fixed shares, not to the spouse.
+    const blood = [...fard.entries()].filter(([g]) => g !== "spouse");
+    if (blood.length > 0) {
+      const bloodTotal = Fraction.sum(blood.map(([, s]) => s));
+      for (const [g, s] of blood) final.set(g, s.add(residue.mul(s).div(bloodTotal)));
+      steps.push(`রদ্দ: অবশিষ্ট ${bnFrac(residue)} অংশ স্বামী/স্ত্রী ছাড়া অন্য অংশীদারদের মধ্যে তাদের অংশের অনুপাতে ফেরত।`); // prettier-ignore
+    } else {
+      // Only a spouse: the remainder returns to the spouse (no other heir to take it).
+      spouseRadd = true;
+      final.set("spouse", Fraction.ONE);
+      steps.push("অন্য কোনো ওয়ারিশ না থাকায় অবশিষ্ট অংশও স্বামী/স্ত্রী পান।");
+    }
+    residue = Fraction.ZERO;
+  }
+
+  // ---- 4. Individual shares ----
+  const shares: HeirShare[] = [];
+  const push = (
+    key: string,
+    relation: Relation,
+    bn: string,
+    en: string,
+    share: Fraction,
+    basis: string,
+  ) => {
+    if (!share.isZero())
+      shares.push({ key, relation, label_bn: bn, label_en: en, share, basis_bn: basis });
+  };
+  const n = (i: number, total: number) => (total > 1 ? ` ${bnNum(i + 1)}` : "");
+  /** "son" when there is one, "son-1", "son-2" … when there are several. */
+  const k = (base: string, i: number, total: number) => (total > 1 ? `${base}-${i + 1}` : base);
+  const ne = (i: number, total: number) => (total > 1 ? ` ${i + 1}` : "");
+
+  if (f.husband)
+    push("husband", "husband", "স্বামী", "Husband", final.get("spouse")!, "নির্ধারিত অংশ (ফারায়েজ)");
+  for (let i = 0; i < f.wives; i++) {
+    push(k("wife", i, f.wives), "wife", `স্ত্রী${n(i, f.wives)}`, `Wife${ne(i, f.wives)}`, each(final.get("spouse")!, f.wives), "নির্ধারিত অংশ, স্ত্রীরা সমান ভাগে"); // prettier-ignore
+  }
+  if (f.mother) push("mother", "mother", "মা", "Mother", final.get("mother")!, "নির্ধারিত অংশ");
+  if (f.father) {
+    const fixed = final.get("father") ?? Fraction.ZERO;
+    const rest = residuary === "father" ? residue : Fraction.ZERO;
+    push("father", "father", "বাবা", "Father", fixed.add(rest), rest.isZero() ? "নির্ধারিত অংশ" : fixed.isZero() ? "অবশিষ্টাংশভোগী ('আসাবা)" : "নির্ধারিত অংশ + অবশিষ্টাংশ"); // prettier-ignore
+  }
+
+  // Children: by slot. A predeceased child's slot passes to their own children (MFLO s.4).
+  let perSon = Fraction.ZERO;
+  let perDaughter = Fraction.ZERO;
+  if (residuary === "children") {
+    [perSon, perDaughter] = twoToOne(residue, sonSlots, daughterSlots);
+    steps.push(`ছেলে-মেয়ে: অবশিষ্ট ${bnFrac(residue)} অংশ ছেলে ২ : মেয়ে ১ অনুপাতে।`);
+  } else if (daughterSlots > 0) {
+    perDaughter = each(final.get("daughters")!, daughterSlots);
+  }
+  for (let i = 0; i < f.sons; i++) {
+    push(
+      k("son", i, f.sons),
+      "son",
+      `ছেলে${n(i, f.sons)}`,
+      `Son${ne(i, f.sons)}`,
+      perSon,
+      "অবশিষ্টাংশ, মেয়ের দ্বিগুণ",
+    );
+  }
+  for (let i = 0; i < f.daughters; i++) {
+    push(k("daughter", i, f.daughters), "daughter", `মেয়ে${n(i, f.daughters)}`, `Daughter${ne(i, f.daughters)}`, perDaughter, hasSon ? "অবশিষ্টাংশ, ছেলের অর্ধেক" : "নির্ধারিত অংশ"); // prettier-ignore
+  }
+  const mflo = pSons.length + pDaughters.length > 0;
+  const lines: [PredeceasedChild[], Fraction, string, string, string][] = [
+    [pSons, perSon, "pson", "মৃত ছেলে", "Predeceased son"],
+    [pDaughters, perDaughter, "pdaughter", "মৃত মেয়ে", "Predeceased daughter"],
+  ];
+  for (const [list, slotShare, key, bnName, enName] of lines) {
+    list.forEach((c, i) => {
+      const [g, gd] = twoToOne(slotShare, c.sons, c.daughters);
+      const who = `${bnName}${n(i, list.length)}-এর`;
+      const whoEn = `${enName}${ne(i, list.length)}'s`;
+      for (let j = 0; j < c.sons; j++) push(k(`${key}-${i + 1}-son`, j, c.sons), "grandson", `${who} ছেলে${n(j, c.sons)}`, `${whoEn} son${ne(j, c.sons)}`, g, "মুসলিম পারিবারিক আইন অধ্যাদেশ ১৯৬১, ধারা ৪"); // prettier-ignore
+      for (let j = 0; j < c.daughters; j++) push(k(`${key}-${i + 1}-daughter`, j, c.daughters), "granddaughter", `${who} মেয়ে${n(j, c.daughters)}`, `${whoEn} daughter${ne(j, c.daughters)}`, gd, "মুসলিম পারিবারিক আইন অধ্যাদেশ ১৯৬১, ধারা ৪"); // prettier-ignore
+    });
+  }
+  if (mflo) steps.push("মৃত ছেলে/মেয়ের অংশ তাঁদের জীবিত সন্তানরা (২ : ১) পান — মুসলিম পারিবারিক আইন অধ্যাদেশ ১৯৬১, ধারা ৪।"); // prettier-ignore
+
+  // Siblings.
+  if (residuary === "siblings") {
+    const [b, s] = twoToOne(residue, f.fullBrothers, f.fullSisters);
+    for (let i = 0; i < f.fullBrothers; i++) push(k("brother", i, f.fullBrothers), "brother", `ভাই${n(i, f.fullBrothers)}`, `Brother${ne(i, f.fullBrothers)}`, b, "অবশিষ্টাংশ"); // prettier-ignore
+    for (let i = 0; i < f.fullSisters; i++) push(k("sister", i, f.fullSisters), "sister", `বোন${n(i, f.fullSisters)}`, `Sister${ne(i, f.fullSisters)}`, s, "অবশিষ্টাংশ, ভাইয়ের অর্ধেক"); // prettier-ignore
+    steps.push(`ভাইবোন: অবশিষ্ট ${bnFrac(residue)} অংশ ভাই ২ : বোন ১ অনুপাতে।`);
+  } else if (residuary === "sistersWithDaughters") {
+    for (let i = 0; i < f.fullSisters; i++) push(k("sister", i, f.fullSisters), "sister", `বোন${n(i, f.fullSisters)}`, `Sister${ne(i, f.fullSisters)}`, each(residue, f.fullSisters), "মেয়ের সঙ্গে অবশিষ্টাংশ"); // prettier-ignore
+    steps.push(`বোন: মেয়ে থাকায় অবশিষ্ট ${bnFrac(residue)} অংশ পান।`);
+  } else if (sistersFard) {
+    for (let i = 0; i < f.fullSisters; i++) push(k("sister", i, f.fullSisters), "sister", `বোন${n(i, f.fullSisters)}`, `Sister${ne(i, f.fullSisters)}`, each(final.get("sisters")!, f.fullSisters), "নির্ধারিত অংশ"); // prettier-ignore
+  }
+  if (siblings > 0 && !siblingsInherit) {
+    steps.push(`ভাইবোন: ${hasSon ? "ছেলে" : "বাবা"} থাকায় তাঁরা অংশ পান না।`);
+  }
+
+  // Safety net: the shares must add up to exactly the whole estate.
+  const total = Fraction.sum(shares.map((s) => s.share));
+  if (total.cmp(Fraction.ONE) !== 0) {
+    throw new Error(`Internal error: shares add up to ${total.toString()}, not 1`);
+  }
+  return { shares, flags: { awl, radd, umariyyatayn, mflo, spouseRadd }, steps_bn: steps };
+}
+
+/** An heir's decimals in one dag = deceased's recorded share × heir's fraction (4 decimal places). */
+export function decimalsOf(share: Fraction, holdingDec: number): number {
+  const exact = share.mul(new Fraction(Math.round(holdingDec * 10000), 10000));
+  return Math.round(exact.toNumber() * 10000) / 10000;
+}

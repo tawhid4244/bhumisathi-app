@@ -8,7 +8,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
-| 3 | 11–15 | not started |
+| 3 | 11–15 | in progress (task 11 engine done; UI pending) |
 | 4 | 16–20 | not started |
 
 ## Golden scenarios
@@ -18,6 +18,20 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | – | partial (check only) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 07:00 — Session 3, task 11 (part 1: warish engine) — STOPPED at usage limit
+- Done: `lib/engines/fraction.ts` (exact BigInt fractions); `lib/engines/warish.ts` (Hanafi faraid:
+  spouse, father, mother, sons, daughters, full siblings; residuary order; 'awl; radd (never to the
+  spouse while blood heirs exist); umariyyatayn; MFLO 1961 s.4 for predeceased sons/daughters' children,
+  2:1 per stirpes; Bangla step-by-step explanation; `decimalsOf` per dag; shares must sum to exactly 1).
+- Tests: 24 warish unit tests (G2: 12.5/35/35/17.5% → dag 210: 7.5/21/21/10.5, dag 211: 5/14/14/7;
+  'awl 3/27,4/27,4/27,16/27; radd 1/4,3/4; MFLO s.4; umariyyatayn; siblings; >800 families sum to 1).
+  npm run check green.
+- NOT done yet (next session): `warish_compute` tool (per-dag decimals from the deceased's BS
+  holdings), `/warish` page (family form, Abdul Karim preset, fraction/percent/decimals per dag, mock
+  OTP consent per heir, bontonnama → mutation checklist citing SAT s.143B, Registration s.17, s.143),
+  e2e for G2.
+- Next step: finish task 11 (tool + page + e2e), then tasks 12–15.
 
 ### 2026-11-15 06:30 — Session 2 summary (tasks 6–10 done)
 - Done: Sathi AI agent (Gemini by default, Claude adapter kept; mock model for tests), cited legal
