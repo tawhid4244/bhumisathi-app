@@ -41,10 +41,20 @@ export type AgentEvent =
   | { type: "tool"; call: ToolCallRecord }
   | { type: "pending"; action: PendingAction };
 
+export interface SourceRef {
+  law_id: string;
+  law_bn: string;
+  section: string;
+  title_bn: string;
+  source: string;
+}
+
 export interface AgentResult {
   messages: AgentMessage[];
   reply: string;
   toolCalls: ToolCallRecord[];
+  /** Law sections returned by law_search in this turn: shown under the answer. */
+  sources: SourceRef[];
   pending: PendingAction | null;
   stopReason: string;
 }
@@ -82,6 +92,20 @@ export async function describeAction(
     input.days != null ? `${bn(String(input.days))} দিন` : "",
   ].filter(Boolean);
   return `${ACTION_BN[name] ?? name}: ${parts.join(", ")}। ঠিক আছে?`;
+}
+
+/** Unique law sections returned by successful law_search calls. */
+export function sourcesOf(calls: ToolCallRecord[]): SourceRef[] {
+  const seen = new Map<string, SourceRef>();
+  for (const c of calls) {
+    if (c.name !== "law_search" || !c.ok || !Array.isArray(c.output)) continue;
+    for (const h of c.output as SourceRef[]) {
+      if (!seen.has(h.law_id)) {
+        seen.set(h.law_id, { law_id: h.law_id, law_bn: h.law_bn, section: h.section, title_bn: h.title_bn, source: h.source }); // prettier-ignore
+      }
+    }
+  }
+  return [...seen.values()];
 }
 
 function textOf(content: Anthropic.Beta.BetaContentBlock[]): string {
@@ -180,7 +204,14 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
     messages.push({ role: "assistant", content: res.content });
 
     if (res.stop_reason === "refusal") {
-      return { messages, reply: REFUSAL_REPLY, toolCalls, pending: null, stopReason: "refusal" };
+      return {
+        messages,
+        reply: REFUSAL_REPLY,
+        toolCalls,
+        sources: [],
+        pending: null,
+        stopReason: "refusal",
+      };
     }
     if (res.stop_reason === "pause_turn") continue;
 
@@ -191,6 +222,7 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
         messages,
         reply: textOf(res.content),
         toolCalls,
+        sources: sourcesOf(toolCalls),
         pending: null,
         stopReason: res.stop_reason ?? "end_turn",
       };
@@ -212,6 +244,7 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
         messages,
         reply: textOf(res.content),
         toolCalls,
+        sources: sourcesOf(toolCalls),
         pending: action,
         stopReason: "awaiting_confirmation",
       };
@@ -230,6 +263,7 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
     messages,
     reply: TOO_MANY_STEPS_REPLY,
     toolCalls,
+    sources: sourcesOf(toolCalls),
     pending: null,
     stopReason: "max_steps",
   };

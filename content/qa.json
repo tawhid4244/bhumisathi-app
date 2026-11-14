@@ -1,0 +1,308 @@
+{
+  "note": "Draft Q&A written from content/laws (synthetic prototype). Every answer must be checked by the faculty mentor / DIU Law Department before the final round.",
+  "items": [
+    {
+      "id": "qa-001",
+      "question_bn": "নামজারি করতে কত টাকা লাগে?",
+      "question_en": "How much does mutation cost?",
+      "answer_bn": "সরকারি ফি মোট ১,১৭০ টাকা: কোর্ট ফি ২০, নোটিশ ফি ৫০, রেকর্ড সংশোধন ১,০০০ এবং খতিয়ান কপি ১০০ টাকা।",
+      "law_ids": [
+        "mutation-fee"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-002",
+      "question_bn": "নামজারির টাকা কীভাবে দিতে হয়?",
+      "question_en": "How is the mutation fee paid?",
+      "answer_bn": "আবেদনের সময় অনলাইনে ৭০ টাকা, অনুমোদনের পর বাকি ১,১০০ টাকা অনলাইনে (ডিসিআর) দিতে হয়।",
+      "law_ids": [
+        "mutation-fee"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-003",
+      "question_bn": "নামজারি কী এবং কেন দরকার?",
+      "question_en": "What is mutation and why is it needed?",
+      "answer_bn": "জমি কেনা বা উত্তরাধিকারে মালিক বদলালে খতিয়ানে নাম বদল করাই নামজারি; না করলে খতিয়ানে পুরনো মালিকের নাম থাকে।",
+      "law_ids": [
+        "sat-1950-s143"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-004",
+      "question_bn": "দলিল রেজিস্ট্রি হলেই কি খতিয়ানে আমার নাম উঠবে?",
+      "question_en": "Does registering the deed update the khatian?",
+      "answer_bn": "না, আলাদাভাবে নামজারির আবেদন করতে হয়।",
+      "law_ids": [
+        "sat-1950-s143"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-005",
+      "question_bn": "নামজারির জন্য কী কী কাগজ লাগে?",
+      "question_en": "What documents are needed for mutation?",
+      "answer_bn": "সাধারণত ছবি ও এনআইডি, দলিলের কপি, সর্বশেষ খতিয়ান, হালনাগাদ দাখিলা; উত্তরাধিকারে ওয়ারিশ সনদ ও বণ্টননামা। স্থানীয় এসি ল্যান্ড অফিসে মিলিয়ে নিন।",
+      "law_ids": [
+        "mutation-fee"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-006",
+      "question_bn": "খতিয়ান কি মালিকানার প্রমাণ?",
+      "question_en": "Is a khatian proof of ownership?",
+      "answer_bn": "খতিয়ান বা নামজারি রেকর্ড মাত্র, মালিকানার চূড়ান্ত প্রমাণ নয়।",
+      "law_ids": [
+        "sat-1950-s143"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-007",
+      "question_bn": "বাবা মারা গেছেন, জমি ভাগ করে খতিয়ান কীভাবে আলাদা করব?",
+      "question_en": "Father died; how do we split the land and the khatian?",
+      "answer_bn": "ওয়ারিশরা আপসে ভাগ করে বণ্টননামা সই ও রেজিস্ট্রি করবেন; সেটি দেখিয়ে খতিয়ান সংশোধন হবে।",
+      "law_ids": [
+        "sat-1950-s143b",
+        "registration-1908-s17"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-008",
+      "question_bn": "বণ্টননামা কি রেজিস্ট্রি করতে হয়?",
+      "question_en": "Must a partition deed be registered?",
+      "answer_bn": "হ্যাঁ, ওয়ারিশদের বণ্টননামা রেজিস্ট্রি করা বাধ্যতামূলক।",
+      "law_ids": [
+        "sat-1950-s143b",
+        "registration-1908-s17"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-009",
+      "question_bn": "দাদার আগে বাবা মারা গেলে আমরা কি দাদার সম্পত্তি পাব?",
+      "question_en": "If my father died before my grandfather, do we inherit?",
+      "answer_bn": "হ্যাঁ, বাবা বেঁচে থাকলে যে অংশ পেতেন তা তাঁর জীবিত সন্তানরা একসাথে পাবে।",
+      "law_ids": [
+        "mflo-1961-s4"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-010",
+      "question_bn": "এতিম নাতি-নাতনির কি অংশ আছে?",
+      "question_en": "Do orphaned grandchildren get a share?",
+      "answer_bn": "হ্যাঁ, মৃত ছেলে বা মেয়ের সন্তানরা তাদের বাবা বা মায়ের প্রাপ্য অংশ পায়।",
+      "law_ids": [
+        "mflo-1961-s4"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-011",
+      "question_bn": "বায়নানামা কি রেজিস্ট্রি করতে হয়?",
+      "question_en": "Must a baina be registered?",
+      "answer_bn": "হ্যাঁ, বায়নানামা লিখিত, উভয় পক্ষের সম্পাদিত ও রেজিস্ট্রিকৃত হতে হবে।",
+      "law_ids": [
+        "registration-1908-s17a"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-012",
+      "question_bn": "বায়না রেজিস্ট্রির সময়সীমা কত দিন?",
+      "question_en": "What is the deadline to register a baina?",
+      "answer_bn": "সম্পাদনের ৬০ দিনের মধ্যে (১ জানুয়ারি ২০২৬ থেকে; আগে ছিল ৩০ দিন)।",
+      "law_ids": [
+        "registration-1908-s17a"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-013",
+      "question_bn": "স্ট্যাম্পে নগদ বায়না দিলে কি নিরাপদ?",
+      "question_en": "Is an unregistered cash baina on stamp paper safe?",
+      "answer_bn": "রেজিস্ট্রি না হলে সুরক্ষা দুর্বল; আইনে বায়নানামা রেজিস্ট্রি বাধ্যতামূলক।",
+      "law_ids": [
+        "registration-1908-s17a"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-014",
+      "question_bn": "কোন কোন দলিল রেজিস্ট্রি বাধ্যতামূলক?",
+      "question_en": "Which documents must be registered?",
+      "answer_bn": "জমির দান, হেবা, বিক্রয়সহ অধিকার হস্তান্তরের দলিল, বন্ধক, এক বছরের বেশি লিজ ও বণ্টননামা।",
+      "law_ids": [
+        "registration-1908-s17"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-015",
+      "question_bn": "হেবা দলিল কি রেজিস্ট্রি করতে হয়?",
+      "question_en": "Must a heba be registered?",
+      "answer_bn": "হ্যাঁ, হেবার ঘোষণা রেজিস্ট্রি বাধ্যতামূলক।",
+      "law_ids": [
+        "registration-1908-s17"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-016",
+      "question_bn": "মামলা চলছে এমন জমি কি কেনা যায়?",
+      "question_en": "Can I buy land that is under a court case?",
+      "answer_bn": "মামলার পক্ষ আদালতের অনুমতি ছাড়া এমনভাবে হস্তান্তর করতে পারেন না যাতে অন্য পক্ষের অধিকার ক্ষতিগ্রস্ত হয়; কিনলে মামলার ফল মানতে হতে পারে।",
+      "law_ids": [
+        "tpa-1882-s52"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-017",
+      "question_bn": "মামলা কবে থেকে চলমান ধরা হয়?",
+      "question_en": "When is a suit treated as pending?",
+      "answer_bn": "আরজি দাখিলের দিন থেকে চূড়ান্ত ডিক্রি পুরোপুরি কার্যকর হওয়া পর্যন্ত।",
+      "law_ids": [
+        "tpa-1882-s52"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-018",
+      "question_bn": "একই জমি দুইজনের কাছে বিক্রি করলে কী শাস্তি?",
+      "question_en": "What is the punishment for selling the same land twice?",
+      "answer_bn": "নিজের অংশের বেশি বা অন্যের জমি হস্তান্তর ভূমি প্রতারণা; সর্বোচ্চ ৭ বছর কারাদণ্ড ও অর্থদণ্ড।",
+      "law_ids": [
+        "lcpra-2023-s4"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-019",
+      "question_bn": "নিজের অংশের বেশি জমি বিক্রি করা কি অপরাধ?",
+      "question_en": "Is selling more than one's share a crime?",
+      "answer_bn": "হ্যাঁ, এটি ভূমি প্রতারণার অপরাধ (সর্বোচ্চ ৭ বছর ও অর্থদণ্ড)।",
+      "law_ids": [
+        "lcpra-2023-s4"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-020",
+      "question_bn": "তথ্য গোপন করে জমি বিক্রি করলে কী হবে?",
+      "question_en": "What if someone sells land hiding facts?",
+      "answer_bn": "তথ্য গোপন করে হস্তান্তর ভূমি প্রতারণার অপরাধ।",
+      "law_ids": [
+        "lcpra-2023-s4"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-021",
+      "question_bn": "কেউ জোর করে আমার জমি দখল করেছে, কী করব?",
+      "question_en": "Someone grabbed my land; what can I do?",
+      "answer_bn": "এলাকার এক্সিকিউটিভ ম্যাজিস্ট্রেটের কাছে দখল পুনরুদ্ধারের আবেদন করা যায়; ৩ মাসের মধ্যে নিষ্পত্তির কথা।",
+      "law_ids": [
+        "lcpra-2023-s7-8"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-022",
+      "question_bn": "খতিয়ানে নাম না থাকলে কি জমি দখলে রাখা যায়?",
+      "question_en": "Can someone hold land without being on the khatian?",
+      "answer_bn": "সর্বশেষ খতিয়ানের মালিক বা তাঁর কাছ থেকে বৈধভাবে অধিকার পাওয়া ব্যক্তি ছাড়া দখল রাখা অপরাধ (সর্বোচ্চ ২ বছর)।",
+      "law_ids": [
+        "lcpra-2023-s7-8"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-023",
+      "question_bn": "আদালতের আদেশ ছাড়া কি উচ্ছেদ করা যায়?",
+      "question_en": "Can I be evicted without a court order?",
+      "answer_bn": "না, আইনানুগ দখলদারকে আদেশ ছাড়া উচ্ছেদ করা যায় না।",
+      "law_ids": [
+        "lcpra-2023-s7-8"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-024",
+      "question_bn": "সরকার কি জমির সব তথ্য এক জায়গায় রাখবে?",
+      "question_en": "Will the government keep land data in one place?",
+      "answer_bn": "হ্যাঁ, আইনে মামলা, বন্ধক, সরকারি জমি ও হস্তান্তরের তথ্য নিয়ে সমন্বিত ডাটাবেজ তৈরির বিধান আছে।",
+      "law_ids": [
+        "lcpra-2023-s23"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-025",
+      "question_bn": "ভূমি সেবা নিয়ে অভিযোগ কোথায় করব?",
+      "question_en": "Where do I complain about land services?",
+      "answer_bn": "ভূমি মন্ত্রণালয়ের কল সেন্টার ১৬১২২-এ ফোন করুন।",
+      "law_ids": [
+        "helpline-16122"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-026",
+      "question_bn": "নামজারিতে বেশি টাকা চাইলে কী করব?",
+      "question_en": "What if an office asks for more money for mutation?",
+      "answer_bn": "সরকারি ফি ১,১৭০ টাকা; এর বেশি দাবি করলে ১৬১২২-এ জানান।",
+      "law_ids": [
+        "mutation-fee",
+        "helpline-16122"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-027",
+      "question_bn": "বন্ধক দলিল কি রেজিস্ট্রি করতে হয়?",
+      "question_en": "Must a mortgage deed be registered?",
+      "answer_bn": "হ্যাঁ, সম্পত্তি হস্তান্তর আইনের ধারা ৫৯ অনুযায়ী বন্ধকের দলিল রেজিস্ট্রি বাধ্যতামূলক।",
+      "law_ids": [
+        "registration-1908-s17"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-028",
+      "question_bn": "নদীভাঙনে জমি গেলে খতিয়ানে কী হয়?",
+      "question_en": "What happens to the khatian if land is lost to river erosion?",
+      "answer_bn": "নদীভাঙনসহ নানা কারণে খাজনা কমানোর পরিবর্তনও খতিয়ানে তোলা হয়।",
+      "law_ids": [
+        "sat-1950-s143"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-029",
+      "question_bn": "জাল দলিল তৈরি করলে কী শাস্তি?",
+      "question_en": "What is the punishment for forging a land deed?",
+      "answer_bn": "ভূমি অপরাধ আইনে দলিল জালিয়াতি আলাদা অপরাধ (ধারা ৫); প্রতারণার মতো কঠোর শাস্তির বিধান আছে, বিস্তারিত মূল আইনে দেখুন।",
+      "law_ids": [
+        "lcpra-2023-s4"
+      ],
+      "reviewed_by_mentor": false
+    },
+    {
+      "id": "qa-030",
+      "question_bn": "আইনি পরামর্শ কোথায় পাব?",
+      "question_en": "Where can I get legal advice?",
+      "answer_bn": "ব্যক্তিগত আইনি পরামর্শের জন্য আইনজীবী বা জেলা লিগ্যাল এইড অফিস; সেবার তথ্যের জন্য ১৬১২২।",
+      "law_ids": [
+        "helpline-16122"
+      ],
+      "reviewed_by_mentor": false
+    }
+  ]
+}

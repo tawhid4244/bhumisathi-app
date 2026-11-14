@@ -7,7 +7,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | Session | Tasks | State |
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
-| 2 | 6–10 | in progress (task 6 done and verified on real Gemini) |
+| 2 | 6–10 | in progress (tasks 6–7 done, verified on real Gemini) |
 | 3 | 11–15 | not started |
 | 4 | 16–20 | not started |
 
@@ -15,9 +15,41 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | G8 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| pass | – | partial (check only) | pass | pass | – | – | pass (typed, real Gemini; voice in task 9) |
+| pass | – | partial (check only) | pass | pass | pass (real Gemini) | – | pass (typed, real Gemini; voice in task 9) |
 
 ## Entries
+
+### 2026-11-15 02:30 — Session 2, task 7 (legal knowledge with sources, RAG)
+- Research: official texts read on bdlaws.minlaw.gov.bd with the built-in browser (the automated
+  fetcher is blocked for .gov.bd): SAT Act 1950 s.143 and s.143B; MFLO 1961 s.4; Registration Act
+  1908 s.17 and s.17A (**baina must be registered within 60 days since 1 Jan 2026; was 30**, Registration
+  (Amendment) Act 2026, Act 14 of 2026); TPA 1882 s.52; Land Crime Prevention and Remedy Act 2023
+  (Act 36) s.4 (land fraud incl. transferring more than one's own land, up to 7 years), s.7–8
+  (possession; Executive Magistrate, 3 months), s.23 (integrated database). Mutation fee Tk 1,170
+  = 20 + 50 + 1,000 + 100 is consistent across BSS and union portals found by search, but the portal
+  pages have moved (404), so the file says "confirm at AC Land office". The 28-day mutation limit
+  could NOT be confirmed officially, so it is not in the library.
+- Done: `content/laws/*.md` (11 files, own-words Bangla + English summaries, front matter with
+  section, official source URL, how it was verified, keywords, related sections);
+  `content/qa.json` (30 draft Q&A linked to law ids, `reviewed_by_mentor: false`).
+  `lib/ai/laws.ts` (loads + validates library, chunks), `lib/ai/embeddings.ts` (Gemini
+  `gemini-embedding-2`, 768-d; each text sent as its own Content), migration 0003 `law_embeddings`
+  (real[] cache with content hash), `scripts/embed.ts` (`npm run embed`, only changed texts),
+  `lib/ai/rag.ts` (hybrid: Bangla-ending-tolerant keyword score + cosine; MIN_SCORE 0.3 → empty =
+  no source; related sections added), tool `law_search`, `AgentResult.sources`, prompt rules
+  (answer only from law_search, end with "সূত্র: …", say "confirm locally" when the source says so,
+  refusal phrase + 16122/lawyer otherwise, strategy questions go to a lawyer).
+  next.config ships content/laws with the API routes.
+- Tests: npm run check green (101): library integrity, keyword search (G6 → mutation-fee first +
+  SAT s.143 via related; endings; other topics; unrelated questions → []), semantic lift and
+  fallback with a fake embedder, G6 agent tests (cited answer with sources; no-source refusal).
+  REAL: `npm run embed` → 41 chunks embedded, re-run 0 (cache works). `npm run ai:g6` → PASS both:
+  Tk 1,170 breakdown + documents + "সূত্র: … ধারা ১৪৩"; litigation-strategy question declined →
+  lawyer + 16122.
+- Decisions: embeddings in real[] instead of pgvector (local server has no pgvector; 41 chunks).
+  Law files are summaries in our own words, not copies of the statute text.
+- Known issues: Q&A and summaries need faculty-mentor review before the final round.
+- Next step: task 8 (/chat page).
 
 ### 2026-11-15 01:20 — Session 2, task 6c (real Gemini run)
 - Done: user saved a Gemini key with `npm.cmd run set-key` (PowerShell blocks `npm.ps1`; `npm.cmd`

@@ -6,6 +6,7 @@ import {
   registerSaleTool,
 } from "./ledger-tools";
 import { jomiCheckTool } from "./check-tools";
+import { lawSearchTool } from "./law-tools";
 import type { ToolDefinition } from "./types";
 
 // The single list of everything BhumiSathi can do.
@@ -21,6 +22,7 @@ export const tools: ToolDefinition[] = [
   registerSaleTool,
   registerLienTool,
   jomiCheckTool,
+  lawSearchTool,
 ] as ToolDefinition[];
 
 export function getTool(name: string): ToolDefinition | undefined {
