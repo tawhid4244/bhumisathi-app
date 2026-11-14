@@ -12,6 +12,8 @@ export interface ToolDefinition<I extends z.ZodType = z.ZodType, O extends z.Zod
   name: string;
   kind: ToolKind;
   description: { bn: string; en: string };
+  /** Output contains outside document text (retrieved or uploaded): wrapped as data for the model. */
+  untrusted?: boolean;
   input: I;
   output: O;
   handler: (input: z.infer<I>) => Promise<z.infer<O>>;

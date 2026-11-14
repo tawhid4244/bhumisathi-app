@@ -1,6 +1,7 @@
 import { runAgent } from "@/lib/ai/agent";
 import { finalPayload, parseAgentRequest, toBadge } from "@/lib/ai/agent-request";
 import { describeWithNames } from "@/lib/ai/describe";
+import { knownNames } from "@/lib/ai/pii";
 import { AiNotConfiguredError, getProvider } from "@/lib/ai/provider";
 
 // POST /api/agent/stream → one agent turn as a stream of JSON lines (NDJSON):
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
           resolvePending: parsed.body.confirm,
           replyLanguage: parsed.body.lang,
           describe: describeWithNames,
+          knownNames: await knownNames(),
           onEvent: (e) => {
             if (e.type === "text") send({ type: "text", delta: e.delta });
             else if (e.type === "tool") send({ type: "tool", badge: toBadge(e.call) });

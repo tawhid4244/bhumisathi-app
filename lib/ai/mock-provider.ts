@@ -1,4 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
+import { unwrapDocument } from "./documents";
 import { bn } from "../engines/rules";
 import { westernDigits } from "../engines/ledger";
 import type { AgentMessage, AgentResponse, ChatRequest, ModelProvider } from "./provider";
@@ -36,7 +37,7 @@ function lastResults(messages: AgentMessage[]): Map<string, { data: unknown; err
   }
   for (const b of last.content) {
     if (b.type !== "tool_result") continue;
-    const raw = typeof b.content === "string" ? b.content : "";
+    const raw = unwrapDocument(typeof b.content === "string" ? b.content : "");
     let data: unknown = raw;
     try {
       data = JSON.parse(raw);

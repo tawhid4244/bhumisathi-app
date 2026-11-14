@@ -3,6 +3,8 @@ import { ZodError } from "zod";
 import { bn } from "../engines/rules";
 import { runTool, tools as defaultRegistry } from "../tools/registry";
 import type { ToolDefinition } from "../tools/types";
+import { wrapDocument } from "./documents";
+import { createMasker, maskDeep } from "./pii";
 import { REFUSAL_REPLY, SATHI_SYSTEM_PROMPT, TOO_MANY_STEPS_REPLY } from "./prompts";
 import type { AgentMessage, ModelProvider } from "./provider";
 import { toAgentTools } from "./tools";
@@ -67,6 +69,11 @@ export interface RunAgentOptions {
   maxSteps?: number;
   /** The citizen's answer to a pending write action from the previous turn. */
   resolvePending?: { tool_use_id: string; approved: boolean };
+  /**
+   * Names to hide from the model (owners in the records). NIDs and phone numbers are always
+   * hidden. The model sees placeholders like [ব্যক্তি-১]; the citizen sees the real values.
+   */
+  knownNames?: (string | string[])[];
   /** Language chosen in the app; English adds one line to the system prompt. */
   replyLanguage?: "bn" | "en";
   /** Builds the read-back text for a write action (owner names etc.). */
@@ -128,7 +135,13 @@ async function execute(
     const output = await runTool(use.name, use.input, registry);
     return {
       record: { id: use.id, name: use.name, kind, input: use.input, ok: true, output },
-      result: { type: "tool_result", tool_use_id: use.id, content: JSON.stringify(output) },
+      result: {
+        type: "tool_result",
+        tool_use_id: use.id,
+        content: def?.untrusted
+          ? wrapDocument(JSON.stringify(output), use.name)
+          : JSON.stringify(output),
+      },
     };
   } catch (err) {
     const message =
@@ -205,9 +218,14 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
 The person chose English in the app: reply in English.`
       : SATHI_SYSTEM_PROMPT;
   for (let step = 0; step < maxSteps; step++) {
-    const res = await opts.provider.send({ system, tools, messages }, (delta) =>
-      emit({ type: "text", delta }),
+    // Privacy: the model only ever receives a masked COPY of the conversation.
+    const masker = createMasker(opts.knownNames ?? []);
+    const masked = maskDeep(messages, masker);
+    const raw = await opts.provider.send({ system, tools, messages: masked }, (delta) =>
+      emit({ type: "text", delta: masker.unmask(delta) }),
     );
+    // Put real values back into the answer (and any tool input) before anything else sees it.
+    const res = { ...raw, content: maskDeep(raw.content, masker, "unmask") };
     messages.push({ role: "assistant", content: res.content });
 
     if (res.stop_reason === "refusal") {

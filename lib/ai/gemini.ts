@@ -156,7 +156,7 @@ export function fromGeminiResponse(res: GenerateContentResponse, model: string):
 export const DEFAULT_GEMINI_FALLBACKS = ["gemini-3.8-flash", "gemini-3.1-flash-lite"];
 
 /** Longest we wait for one request before moving on to the next model. */
-export const GEMINI_TIMEOUT_MS = 30_000;
+export const GEMINI_TIMEOUT_MS = 45_000;
 
 /** "Busy, try again" errors: worth a retry. Anything else (bad key, bad request) is not. */
 function statusOf(err: unknown): number | undefined {

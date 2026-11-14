@@ -96,7 +96,9 @@ test("microphone blocked → a clear message, typing still works", async ({ page
   await fakeVoice(page, null, "not-allowed");
   await page.goto("/chat");
   await page.getByRole("button", { name: "কথা বলুন" }).click();
-  await expect(page.getByText("মাইক্রোফোন চালু করতে ব্রাউজারে অনুমতি দিন", { exact: false })).toBeVisible();
+  await expect(
+    page.getByText("মাইক্রোফোন চালু করতে ব্রাউজারে অনুমতি দিন", { exact: false }),
+  ).toBeVisible();
   await page.getByRole("textbox").fill("১৪৫ নম্বর দাগের জমি কেনা নিরাপদ কিনা দেখাও");
   await page.keyboard.press("Enter");
   await expect(page.locator('[data-role="assistant"]').last()).toContainText("সবুজ");

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { findDag, getLedgerStatus, registerEvent } from "../engines/ledger";
+import { findDag, findPerson, getLedgerStatus, registerEvent } from "../engines/ledger";
 import { defineTool } from "./types";
 
 // Ledger tools: ledger_status (read) and register_baina / register_sale / register_lien (write).
@@ -184,4 +184,20 @@ export const findDagTool = defineTool({
     z.object({ mouza_bn: z.string(), mouza_en: z.string(), jl_no: z.number(), dag_no: z.number() }),
   ),
   handler: async ({ dag_no }) => findDag(dag_no),
+});
+
+export const findPersonTool = defineTool({
+  name: "find_person",
+  kind: "read",
+  description: {
+    bn: "নাম দিয়ে ব্যক্তি বা ব্যাংকের আইডি খুঁজে দেয় (বিক্রি, বায়না বা বন্ধক নিবন্ধনের জন্য ক্রেতা বা ব্যাংকের আইডি লাগে)।",
+    en: "Finds a person's or bank's owner id by name (needed for the buyer or bank when recording a sale, baina or mortgage).",
+  },
+  input: z.object({
+    name: z.string().trim().min(2).max(80).describe("Name as the citizen said it"),
+  }),
+  output: z.array(
+    z.object({ owner_id: z.number(), name_bn: z.string(), name_en: z.string(), kind: z.string() }),
+  ),
+  handler: async ({ name }) => findPerson(name),
 });

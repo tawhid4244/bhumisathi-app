@@ -1,6 +1,7 @@
 import { runAgent } from "@/lib/ai/agent";
 import { finalPayload, parseAgentRequest } from "@/lib/ai/agent-request";
 import { describeWithNames } from "@/lib/ai/describe";
+import { knownNames } from "@/lib/ai/pii";
 import { AiNotConfiguredError, getProvider } from "@/lib/ai/provider";
 
 // POST /api/agent → one turn of the Sathi agent, as a single JSON response.
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
       resolvePending: parsed.body.confirm,
       replyLanguage: parsed.body.lang,
       describe: describeWithNames,
+      knownNames: await knownNames(),
     });
     return Response.json(finalPayload(result));
   } catch (err) {

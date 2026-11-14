@@ -194,3 +194,26 @@ export async function ownerNames(ids: number[]): Promise<Map<number, string>> {
     select id, name_bn from owners where id = any(${ids}::int[])`;
   return new Map(rows.map((r) => [r.id, r.name_bn]));
 }
+
+export interface PersonMatch {
+  owner_id: number;
+  name_bn: string;
+  name_en: string;
+  kind: string;
+}
+
+/** Find people or banks by name (Bangla or English, full or part), to get their owner id. */
+export async function findPerson(name: string): Promise<PersonMatch[]> {
+  const sql = getSql();
+  const q = name.trim();
+  if (q.length < 2) return [];
+  return sql<PersonMatch[]>`
+    select id as owner_id, name_bn, name_en, kind from owners
+    where kind in ('person', 'bank') and not is_deceased
+      and (name_bn = ${q} or lower(name_en) = lower(${q})
+           or name_bn like ${"%" + q + "%"} or lower(name_en) like lower(${"%" + q + "%"})
+           -- The query may be the name plus a Bangla ending: "জামাল মিয়ার", "সালমাকে".
+           or ${q} like name_bn || '%' or lower(${q}) like lower(name_en) || '%')
+    order by (name_bn = ${q} or lower(name_en) = lower(${q})) desc, id
+    limit 5`;
+}

@@ -1,4 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
+import { unwrapDocument } from "@/lib/ai/documents";
 import type { AgentResponse, ChatRequest, ModelProvider } from "@/lib/ai/provider";
 
 // A scripted stand-in for the model: each step looks at the request and returns blocks.
@@ -21,7 +22,7 @@ export function lastToolResults(
     .filter((b) => b.type === "tool_result")
     .map((b) => {
       const r = b as Anthropic.Beta.BetaToolResultBlockParam;
-      const raw = typeof r.content === "string" ? r.content : "";
+      const raw = unwrapDocument(typeof r.content === "string" ? r.content : "");
       let data: unknown = raw;
       try {
         data = JSON.parse(raw);

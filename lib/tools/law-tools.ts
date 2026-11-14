@@ -20,6 +20,7 @@ export const lawHitSchema = z.object({
 export const lawSearchTool = defineTool({
   name: "law_search",
   kind: "read",
+  untrusted: true, // retrieved documents → shown to the model as data only
   description: {
     bn: "ভূমি আইন ও সরকারি সেবা-তথ্য (নামজারি ফি, বায়না, ওয়ারিশ, মামলা, দখল ইত্যাদি) থেকে প্রাসঙ্গিক ধারা খুঁজে দেয়, সূত্রসহ। ফল খালি হলে কোনো সূত্র নেই।",
     en: "Searches the cited land-law library (mutation fees, baina, inheritance, court cases, possession, ...) and returns matching sections with their source. An empty result means there is no source.",

@@ -7,7 +7,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | Session | Tasks | State |
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
-| 2 | 6–10 | in progress (tasks 6–9 done, verified on real Gemini) |
+| 2 | 6–10 | done (2026-11-15), verified on real Gemini |
 | 3 | 11–15 | not started |
 | 4 | 16–20 | not started |
 
@@ -15,9 +15,47 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | G8 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| pass | – | partial (check only) | pass | pass | pass (real Gemini) | – | pass (typed real Gemini; voice e2e with fake speech engine; manual mic test pending) |
+| pass | – | partial (check only) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 06:30 — Session 2 summary (tasks 6–10 done)
+- Done: Sathi AI agent (Gemini by default, Claude adapter kept; mock model for tests), cited legal
+  answers from 11 hand-checked law sections (RAG with Gemini embeddings), /chat with streaming,
+  badges, sources and a Yes/No card before any write, Bangla voice with number read-back, privacy
+  mask, document-as-data guard, and a 20-question evaluation.
+- Tests: `npm run seed` OK; `npm run check` green (120); `npm run e2e` green (62, phone + desktop).
+- AI evaluation (real gemini-3.5-flash, docs/AI_EVAL.md): correct tool 95%, verdict = /check 83%
+  (the only miss was a Google 504 timeout; passed on retry), citation with the right law 100%,
+  refusals 100%, write held for confirmation 100%, false "not sure" 0%.
+- Golden scenarios: G1 PASS, G4 PASS, G5 PASS, G6 PASS (real Gemini), G8 PASS (typed on real Gemini;
+  voice via fake speech engine; real microphone = manual, docs/VOICE_TESTING.md). G3 partial (deed
+  reader in task 12). G2 (warish) and G7 (BhumiSeal) not built yet.
+- Decisions this session: Gemini API (user's budget choice) with model discovery and fallbacks;
+  manual agent loop so writes wait for the citizen; law files are own-words summaries with official
+  sources; personal data masked before every model call.
+- Known issues: free-tier Gemini is sometimes slow or times out (fallback chain helps; retry the
+  question); Q&A and law summaries need mentor review; write tools and AI routes are open until
+  task 16 (roles + rate limits); Gemini text is not token-streamed.
+- Next step: Session 3, task 11 (warish / inheritance calculator).
+
+### 2026-11-15 06:20 — Session 2, task 10 (guardrails + AI evaluation)
+- Done: `lib/ai/pii.ts`: one-pass masking of NIDs (SYN- and 10/13/17-digit, Bangla or English
+  digits), BD mobile numbers (01[3-9]…, +88, separators, +880-SYN-), and owner names from the records,
+  with ALL spellings of a person (full, short "রহিম উদ্দিন", English) sharing one placeholder
+  [ব্যক্তি-১]; reversible `unmask`; signatures and ids never touched. The agent sends only a masked
+  copy to the model and unmasks the answer and tool inputs. `lib/ai/documents.ts`: `wrapDocument`
+  (labelled data-only block, fake closing tags neutralised); tools marked `untrusted` (law_search now,
+  deed_read in task 12) are wrapped. New tool `find_person` (buyer/bank id by name; tolerates Bangla
+  endings). Prompt: "law_search first" for every legal topic; how to get ids for writes;
+  placeholders explained. Gemini timeout 45 s. `content/eval-questions.json` (20 held-out) +
+  `scripts/eval-ai.ts` (`npm run eval:ai`, `npm run eval:ai -- E15` for one question).
+- Tests: 120 green: PII unit tests (formats, no false hits on dag/area/year/money, one placeholder per
+  person, unmask), agent test proving no NID/phone/name reaches the model and the citizen sees real
+  names, document wrapper tests, a model "fooled" by an injected document still cannot write (sale
+  held as pending), find_person.
+- Eval history: run 1 found 4 real bugs (two placeholders for one person; no buyer lookup; heba answered
+  from memory; grader missed polite refusals) → fixed → final run above.
 
 ### 2026-11-15 04:10 — Session 2, task 9 (voice)
 - Done: `lib/voice.ts` (extractNumbers for Bangla/English digits; `readBackQuestion` →

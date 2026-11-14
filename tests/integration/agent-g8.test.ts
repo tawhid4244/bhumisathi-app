@@ -89,3 +89,14 @@ describe("the agent can only write after the citizen says yes", () => {
     expect((await getLedgerStatus("Nayapara", 145)).active_bainas[0]!.id).toBe("B-0021");
   });
 });
+
+describe("find_person", () => {
+  it("finds a buyer by name even with a Bangla ending, and by English name", async () => {
+    const { findPerson } = await import("@/lib/engines/ledger");
+    expect((await findPerson("জামাল মিয়ার"))[0]).toMatchObject({ owner_id: OWNER.JAMAL });
+    expect((await findPerson("সালমা আক্তারকে"))[0]).toMatchObject({ owner_id: OWNER.SALMA });
+    expect((await findPerson("Jamal Mia"))[0]).toMatchObject({ owner_id: OWNER.JAMAL });
+    expect((await findPerson("ডেমো ব্যাংক"))[0]).toMatchObject({ owner_id: OWNER.DEMO_BANK });
+    expect(await findPerson("আব্দুল করিম")).toEqual([]); // deceased: cannot be a party
+  });
+});
