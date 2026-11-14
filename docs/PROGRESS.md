@@ -19,6 +19,20 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 ## Entries
 
+### 2026-11-15 00:30 — Session 2, task 6b (Gemini provider + safe key setup)
+- Done: user chose the Gemini API (free tier, one key for chat, vision and embeddings).
+  `lib/ai/gemini.ts`: Gemini adapter behind the same `ModelProvider` interface (translates the
+  agent's messages to Gemini contents and back; keeps Gemini thought signatures in `_gemini_sig`;
+  safety blocks → refusal). `AI_PROVIDER=gemini|anthropic` selects the adapter; default Gemini model
+  `gemini-flash-latest` (override with `AI_CHAT_MODEL`). `npm run set-key`: asks for provider and key
+  in the user's own terminal, never echoes input, writes only those two lines of `.env.local`
+  (`lib/env-file.ts`).
+- Tests: npm run check green (84): Gemini translation both ways, signatures, refusal mapping,
+  function declarations for every tool, env-file upsert (in place, duplicates, CRLF). set-key
+  dry-run in a scratch folder with a fake key: saved correctly, key never printed.
+- Known issues: still no real-model run (no key saved yet).
+- Next step: user runs `npm run set-key`, then `npm run ai:spike` and `npm run ai:g8`.
+
 ### 2026-11-14 23:50 — Session 2, task 6 (AI agent with tool calling)
 - Done: Provider: Claude API (user's choice), model `claude-opus-5-5` by default (`AI_CHAT_MODEL`),
   adaptive thinking, effort `medium` (`AI_EFFORT`), cached system prompt, streaming, server-side

@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { DEFAULT_GEMINI_MODEL, GeminiProvider } from "./gemini";
 
 // One adapter between BhumiSathi and the AI model. Model name and key come only from the
 // environment (.env.local / Vercel). Tests swap in a scripted provider with the same interface.
@@ -21,7 +22,9 @@ export interface ModelProvider {
 
 export class AiNotConfiguredError extends Error {
   constructor() {
-    super("AI is not configured: set AI_PROVIDER=anthropic and AI_API_KEY in .env.local.");
+    super(
+      "AI is not configured: set AI_PROVIDER (gemini or anthropic) and AI_API_KEY in .env.local (npm run set-key).",
+    );
     this.name = "AiNotConfiguredError";
   }
 }
@@ -62,13 +65,28 @@ class AnthropicProvider implements ModelProvider {
 
 let cached: ModelProvider | undefined;
 
-/** The configured provider. Throws AiNotConfiguredError when no key is set. */
+/**
+ * The configured provider, chosen by AI_PROVIDER:
+ *   gemini    → Google Gemini (default model gemini-flash-latest)
+ *   anthropic → Claude (default model claude-opus-5-5)
+ * Throws AiNotConfiguredError when the provider or key is missing.
+ */
 export function getProvider(): ModelProvider {
   if (cached) return cached;
-  const provider = (process.env.AI_PROVIDER || "anthropic").toLowerCase();
-  const key = process.env.AI_API_KEY || process.env.ANTHROPIC_API_KEY;
-  if (provider !== "anthropic" || !key) throw new AiNotConfiguredError();
-  const effort = (process.env.AI_EFFORT as Effort) || "medium";
-  cached = new AnthropicProvider(key, process.env.AI_CHAT_MODEL || DEFAULT_CHAT_MODEL, effort);
-  return cached;
+  const provider = (process.env.AI_PROVIDER || "").trim().toLowerCase();
+  const model = process.env.AI_CHAT_MODEL?.trim();
+  if (provider === "gemini") {
+    const key = process.env.AI_API_KEY || process.env.GEMINI_API_KEY;
+    if (!key) throw new AiNotConfiguredError();
+    cached = new GeminiProvider(key, model || DEFAULT_GEMINI_MODEL);
+    return cached;
+  }
+  if (provider === "anthropic") {
+    const key = process.env.AI_API_KEY || process.env.ANTHROPIC_API_KEY;
+    if (!key) throw new AiNotConfiguredError();
+    const effort = (process.env.AI_EFFORT as Effort) || "medium";
+    cached = new AnthropicProvider(key, model || DEFAULT_CHAT_MODEL, effort);
+    return cached;
+  }
+  throw new AiNotConfiguredError();
 }
