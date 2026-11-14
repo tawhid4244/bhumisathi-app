@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { defineTool, runTool, type ToolDefinition } from "@/lib/tools/registry";
+import {
+  defineTool,
+  runTool,
+  SYSTEM,
+  tools,
+  toolsFor,
+  type ToolDefinition,
+} from "@/lib/tools/registry";
 
 const echo = defineTool({
   name: "echo_dag",
@@ -25,19 +32,51 @@ const registry = [echo, liar] as ToolDefinition[];
 
 describe("tool registry", () => {
   it("runs a tool with valid input", async () => {
-    await expect(runTool("echo_dag", { dag: 145 }, registry)).resolves.toEqual({ dag: 145 });
+    await expect(runTool("echo_dag", { dag: 145 }, SYSTEM, registry)).resolves.toEqual({
+      dag: 145,
+    });
   });
 
   it("rejects invalid input before the handler runs (e.g. bad input from the AI)", async () => {
-    await expect(runTool("echo_dag", { dag: "145; drop table" }, registry)).rejects.toThrow();
-    await expect(runTool("echo_dag", { dag: -1 }, registry)).rejects.toThrow();
+    await expect(
+      runTool("echo_dag", { dag: "145; drop table" }, SYSTEM, registry),
+    ).rejects.toThrow();
+    await expect(runTool("echo_dag", { dag: -1 }, SYSTEM, registry)).rejects.toThrow();
   });
 
   it("rejects output that breaks the tool's schema", async () => {
-    await expect(runTool("bad_output", {}, registry)).rejects.toThrow();
+    await expect(runTool("bad_output", {}, SYSTEM, registry)).rejects.toThrow();
   });
 
   it("refuses unknown tools", async () => {
-    await expect(runTool("delete_everything", {}, registry)).rejects.toThrow(/Unknown tool/);
+    await expect(runTool("delete_everything", {}, SYSTEM, registry)).rejects.toThrow(
+      /Unknown tool/,
+    );
+  });
+});
+
+describe("role-based access (Task 16)", () => {
+  const citizen = { id: "c1", email: "c@x.test", name_bn: "ক", role: "citizen" as const };
+  const officer = { id: "o1", email: "o@x.test", name_bn: "খ", role: "officer" as const };
+  const guarded = defineTool({ ...echo, name: "officer_only", access: "officer" });
+  const reg = [echo, guarded] as ToolDefinition[];
+
+  it("refuses an officer-only tool to a visitor (401) and a citizen (403), allows an officer", async () => {
+    await expect(runTool("officer_only", { dag: 1 }, { user: null }, reg)).rejects.toMatchObject({ name: "AccessDeniedError", signedIn: false }); // prettier-ignore
+    await expect(runTool("officer_only", { dag: 1 }, { user: citizen }, reg)).rejects.toMatchObject({ name: "AccessDeniedError", signedIn: true }); // prettier-ignore
+    await expect(runTool("officer_only", { dag: 1 }, { user: officer }, reg)).resolves.toEqual({ dag: 1 }); // prettier-ignore
+    await expect(runTool("echo_dag", { dag: 1 }, { user: null }, reg)).resolves.toEqual({ dag: 1 });
+  });
+
+  it("only officers and admins may write to the ledger; citizens keep checks and answers", () => {
+    const names = (u: typeof citizen | typeof officer | null) => toolsFor(u).map((t) => t.name);
+    for (const t of tools.filter((t) => t.kind === "write")) expect(t.access).toBe("officer");
+    expect(names(null)).not.toContain("deed_read");
+    expect(names(null)).toContain("jomi_check");
+    expect(names(citizen)).toEqual(
+      expect.arrayContaining(["jomi_check", "law_search", "deed_read"]),
+    );
+    expect(names(citizen).some((n) => n.startsWith("register_"))).toBe(false);
+    expect(names(officer)).toEqual(expect.arrayContaining(["register_sale", "register_baina", "register_lien"])); // prettier-ignore
   });
 });

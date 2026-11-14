@@ -3,8 +3,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 // Private storage for uploaded deed images. Files live in .uploads/ (git-ignored, never under
-// public/), named by an unguessable random id. Task 16 swaps this for a private Supabase bucket
-// with short-lived signed URLs; callers only use saveUpload / readUpload.
+// public/), named by an unguessable random id. Who owns each file is in the `uploads` table and
+// is checked through RLS (lib/adapters/uploads.ts); routes never call readUpload without that check.
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 

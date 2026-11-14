@@ -9,7 +9,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
 | 3 | 11–15 | done (2026-11-15) |
-| 4 | 16–20 | not started |
+| 4 | 16–20 | in progress: task 16 done |
 
 ## Golden scenarios
 
@@ -18,6 +18,49 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 14:00 — Session 4, task 16 (identity, roles, RLS, rate limits)
+- Done:
+  - **Accounts and sessions on Postgres** (Supabase keys are still empty, so no Supabase Auth yet):
+    migration `0004_auth_rls.sql` adds `users`, `sessions`, `uploads`, `rate_limits`.
+    Passwords: scrypt N=2^17, r=8, p=1 (OWASP), min 12 chars, constant-time compare, same timing
+    for unknown emails. Sessions: random 256-bit token in an httpOnly, SameSite=Lax cookie
+    (`__Host-bs_session`, Secure, in production); only its SHA-256 is stored; 8 h expiry; logout
+    deletes the row. Lockout: 5 wrong passwords → 15 min. One error message for wrong email or password.
+  - **Roles, least privilege:** public (land check, laws, warish, map, units, fees) < citizen
+    (Sathi AI, deed reader, ledger status, find person) < officer (register sale/baina/mortgage,
+    /registry, demo activity) < admin (demo reset). Each tool has `access`; `runTool` now REQUIRES
+    a caller context and refuses with 401/403. The agent only shows the model the tools the user's
+    role allows, so a forged "pending sale" in a citizen's chat history is refused too.
+  - **Row Level Security on every table** (deny by default). Requests that touch user data run as
+    the restricted role `app_user` with the user id set per transaction (`lib/auth/db.ts`).
+    `app_user` can read land records but never NID/phone columns, accounts or sessions;
+    ledger events, SMS and mutation cases are officer-only.
+  - **Private uploads:** each deed upload is owned by the uploader (RLS insert/select policies).
+    `deed_read` checks ownership through RLS before any model sees the image; another citizen gets
+    "not found". Upload responses include a 5-minute HMAC-signed link bound to the file AND the user
+    (`/api/uploads/{id}`).
+  - **Rate limits** (Postgres, fixed window, works across instances): Sathi AI 15/min and 300/day
+    per user; uploads 10/min per user; login 10/min per IP.
+  - **CSRF:** `proxy.ts` refuses state-changing `/api` requests marked cross-site (Origin /
+    Sec-Fetch-Site), on top of SameSite cookies. Login `next=` only allows our own paths.
+  - UI: `/login` (Bangla first), user bar with name + role + logout on every page; /chat and /deed
+    ask visitors to sign in; /registry is officers only; the Reset button is admin only.
+  - Demo accounts (synthetic, `.test` emails): one citizen, a second citizen, officer, admin.
+    `npm run users` generates `AUTH_SECRET` and `DEMO_USER_PASSWORD` into .env.local (never printed)
+    and creates the accounts. Demo reset never touches accounts.
+- Tests: unit `auth.test.ts` (scrypt, roles, safe redirect, signed links), registry and agent role
+  tests; integration `auth-rls.test.ts` (citizen cannot read another citizen's upload; officer can;
+  raw RLS queries; NID/phone/users/sessions denied; RLS on 100% of tables; login, logout, lockout;
+  rate limit) and ledger API 401/403. e2e: a `setup` project logs in once per role; new
+  `auth.spec.ts`; the rest run as officer, demo reset as admin.
+  Results: npm run check green (208 unit + integration), build green, e2e 132/132 (mobile + desktop).
+- Decisions: own sessions instead of Supabase Auth until Supabase is linked (same RLS model works
+  there: `app_user_id()` can read `auth.uid()` later). Officer-only writes also from chat: a citizen's
+  Sathi can check and explain but not record. The e2e test server allows 60 logins/min per IP.
+- Known issues: strict nonce CSP still deferred; signed links are not yet shown in the UI (previews
+  are made in the browser from the chosen file).
+- Next step: task 17 (hash-chained audit log, BhumiSeal-lite, /verify, G7).
 
 ### 2026-11-15 12:30 — Session 3 summary (tasks 11–15 done)
 - Done: warish calculator (G2), deed reader (G3), mouza map + measure-your-own-map, unit converter

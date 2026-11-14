@@ -1,9 +1,12 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { saveUpload } from "@/lib/adapters/storage";
+import { signedUploadUrl, storeUpload } from "@/lib/adapters/uploads";
+import { rateLimit, requireRole } from "@/lib/auth/guard";
+import { LIMITS } from "@/lib/security/rate-limit";
 
 // The synthetic sample deed (content/deeds/deed-4512.png) for the demo:
-// GET → the image (for the preview); POST → store a copy as an upload and return its id.
+// GET → the image (public: it is synthetic and watermarked);
+// POST → store a copy as THIS user's upload and return its id (signed-in citizens only).
 const SAMPLE = () => readFile(path.join(process.cwd(), "content/deeds/deed-4512.png"));
 
 export async function GET() {
@@ -13,6 +16,10 @@ export async function GET() {
 }
 
 export async function POST() {
-  const { id } = await saveUpload(await SAMPLE());
-  return Response.json({ upload_id: id });
+  const { user, deny } = await requireRole("citizen");
+  if (deny) return deny;
+  const limited = await rateLimit(`upload:${user.id}`, LIMITS.upload.perMinute, 60);
+  if (limited) return limited;
+  const { id } = await storeUpload(user, await SAMPLE());
+  return Response.json({ upload_id: id, url: signedUploadUrl(user, id) });
 }

@@ -1,8 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { runTool } from "@/lib/tools/registry";
+import { runTool as runToolAs, SYSTEM } from "@/lib/tools/registry";
 import { closeSql, getSql } from "@/lib/sql";
 import { seed } from "@/scripts/seed";
 import { OWNER } from "@/scripts/seed-data";
+
+// Trusted test caller (no HTTP request, no role check).
+const runTool = (name: string, input: unknown) => runToolAs(name, input, SYSTEM);
 
 const sql = getSql();
 beforeAll(() => seed(sql));

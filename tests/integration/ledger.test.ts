@@ -1,13 +1,21 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/tools/[name]/route";
+import type { SessionUser } from "@/lib/auth/roles";
 import { computeSellable, getLedgerStatus, registerEvent } from "@/lib/engines/ledger";
 import { closeSql, getSql } from "@/lib/sql";
 import { seed } from "@/scripts/seed";
 import { OWNER } from "@/scripts/seed-data";
 
+// The route reads the signed-in user from the session cookie. Here we set it directly:
+// these tests act as a sub-registry officer unless a test says otherwise.
+const OFFICER: SessionUser = { id: "00000000-0000-0000-0000-00000000000f", email: "officer@t.test", name_bn: "কর্মকর্তা", role: "officer" }; // prettier-ignore
+let caller: SessionUser | null = OFFICER;
+vi.mock("@/lib/auth/current", () => ({ currentUser: async () => caller }));
+
 const sql = getSql();
 afterAll(() => closeSql());
 beforeEach(async () => {
+  caller = OFFICER;
   await seed(sql);
 });
 
@@ -202,5 +210,26 @@ describe("API input safety", () => {
     ).toBe(400);
     expect((await api("drop_everything", {})).status).toBe(404);
     expect((await api("ledger_status", { mouza: "Nowhere", dag_no: 1 })).status).toBe(404);
+  });
+});
+
+describe("API access by role (Task 16)", () => {
+  const sale = { ...dag145, seller_id: OWNER.RAHIM, buyer_id: OWNER.SALMA, area_dec: 1 };
+
+  it("a visitor gets 401 and a citizen 403 for a sale; the ledger does not change", async () => {
+    caller = null;
+    expect((await api("register_sale", sale)).status).toBe(401);
+    caller = { ...OFFICER, role: "citizen" };
+    expect((await api("register_sale", sale)).status).toBe(403);
+    expect((await api("register_baina", { ...sale, days: 30 })).status).toBe(403);
+    const events = await sql`select count(*)::int as n from ledger_events`;
+    expect(events[0]!.n).toBe(0);
+  });
+
+  it("public checks still work without signing in", async () => {
+    caller = null;
+    const r = await api("jomi_check", dag145);
+    expect(r.status).toBe(200);
+    expect(r.body.verdict).toBeDefined();
   });
 });

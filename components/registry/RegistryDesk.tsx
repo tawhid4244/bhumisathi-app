@@ -44,10 +44,13 @@ export function RegistryDesk({
   mouzas,
   people,
   initialActivity,
+  canReset = false,
 }: {
   mouzas: MouzaOption[];
   people: Person[];
   initialActivity: Activity;
+  /** Only admins may reset the demo world (the API checks this too). */
+  canReset?: boolean;
 }) {
   const [mouza, setMouza] = useState(mouzas[0]?.code.toLowerCase() ?? "nay");
   const [dagNo, setDagNo] = useState("145");
@@ -404,14 +407,16 @@ export function RegistryDesk({
       <aside className="space-y-4">
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-semibold">সরাসরি কার্যক্রম</h2>
-          <button
-            type="button"
-            onClick={resetDemo}
-            disabled={busy}
-            className="min-h-11 rounded-lg border border-line bg-card px-3 text-sm"
-          >
-            ডেমো রিসেট
-          </button>
+          {canReset ? (
+            <button
+              type="button"
+              onClick={resetDemo}
+              disabled={busy}
+              className="min-h-11 rounded-lg border border-line bg-card px-3 text-sm"
+            >
+              ডেমো রিসেট
+            </button>
+          ) : null}
         </div>
 
         <section aria-labelledby="sms-title" className="rounded-xl border border-line bg-card p-3">

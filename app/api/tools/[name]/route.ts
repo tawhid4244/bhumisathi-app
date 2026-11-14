@@ -6,10 +6,13 @@ import { UploadError } from "@/lib/adapters/storage";
 import { VisionNotConfiguredError } from "@/lib/ai/vision";
 import { DeceasedNotFoundError } from "@/lib/engines/warish-land";
 import { NoMapError } from "@/lib/engines/map";
-import { runTool, UnknownToolError } from "@/lib/tools/registry";
+import { currentUser } from "@/lib/auth/current";
+import { FORBIDDEN, UNAUTHORIZED } from "@/lib/auth/guard";
+import { AccessDeniedError, runTool, UnknownToolError } from "@/lib/tools/registry";
 
 // POST /api/tools/{name} with a JSON body → runs that tool from the registry.
 // Pages and the AI agent use the same tools, so there is one code path for every feature.
+// The caller's role is checked by runTool (e.g. only officers may register a sale).
 // Errors never leak stack traces or SQL; they return a short Bangla + English message.
 
 export async function POST(request: Request, ctx: RouteContext<"/api/tools/[name]">) {
@@ -24,7 +27,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/tools/[name
     );
   }
   try {
-    const result = await runTool(name, body);
+    const result = await runTool(name, body, { user: await currentUser() });
     return Response.json(result);
   } catch (err) {
     if (err instanceof UnknownToolError) {
@@ -33,6 +36,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/tools/[name
         { status: 404 },
       );
     }
+    if (err instanceof AccessDeniedError) return err.signedIn ? FORBIDDEN() : UNAUTHORIZED();
     if (err instanceof ZodError) {
       return Response.json(
         {

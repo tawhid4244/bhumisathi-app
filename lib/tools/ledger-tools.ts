@@ -91,6 +91,7 @@ export const registerOutput = z.object({
 export const ledgerStatusTool = defineTool({
   name: "ledger_status",
   kind: "read",
+  access: "citizen",
   description: {
     bn: "একটি দাগের প্রত্যেক মালিকের রেকর্ডীয় অংশ, বিক্রি, বায়না, বন্ধক ও বিক্রয়যোগ্য পরিমাণ দেখায়।",
     en: "Shows each holder's recorded share, sales, active bainas, mortgages and sellable balance for a dag.",
@@ -103,6 +104,7 @@ export const ledgerStatusTool = defineTool({
 export const registerBainaTool = defineTool({
   name: "register_baina",
   kind: "write",
+  access: "officer", // only a sub-registry officer records sales, bainas and mortgages
   description: {
     bn: "নিবন্ধিত বায়না রেকর্ড করে; মেয়াদ পর্যন্ত ওই অংশ অন্য কারো কাছে বিক্রি করা যায় না।",
     en: "Records a registered baina (sale agreement); that portion is reserved until it expires.",
@@ -129,6 +131,7 @@ export const registerBainaTool = defineTool({
 export const registerSaleTool = defineTool({
   name: "register_sale",
   kind: "write",
+  access: "officer", // only a sub-registry officer records sales, bainas and mortgages
   description: {
     bn: "বিক্রয় দলিল নিবন্ধন করে, যদি বিক্রেতার বিক্রয়যোগ্য অংশ যথেষ্ট থাকে; নামজারি মামলা খোলে।",
     en: "Registers a sale deed if the seller's sellable balance allows it, and opens a mutation case.",
@@ -149,6 +152,7 @@ export const registerSaleTool = defineTool({
 export const registerLienTool = defineTool({
   name: "register_lien",
   kind: "write",
+  access: "officer", // only a sub-registry officer records sales, bainas and mortgages
   description: {
     bn: "ব্যাংকের বন্ধক (দায়) রেকর্ড করে; ছাড়পত্র না দেওয়া পর্যন্ত ওই অংশ বিক্রি করা যায় না।",
     en: "Records a bank mortgage (lien); that portion cannot be sold until the bank releases it.",
@@ -189,6 +193,7 @@ export const findDagTool = defineTool({
 export const findPersonTool = defineTool({
   name: "find_person",
   kind: "read",
+  access: "citizen",
   description: {
     bn: "নাম দিয়ে ব্যক্তি বা ব্যাংকের আইডি খুঁজে দেয় (বিক্রি, বায়না বা বন্ধক নিবন্ধনের জন্য ক্রেতা বা ব্যাংকের আইডি লাগে)।",
     en: "Finds a person's or bank's owner id by name (needed for the buyer or bank when recording a sale, baina or mortgage).",

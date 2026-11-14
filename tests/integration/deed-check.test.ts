@@ -3,9 +3,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { saveUpload, UploadError } from "@/lib/adapters/storage";
 import { MOCK_DEED_4512, type DeedExtract } from "@/lib/ai/vision";
 import { checkDeed } from "@/lib/engines/deed-check";
-import { runTool } from "@/lib/tools/registry";
+import { runTool as runToolAs, SYSTEM } from "@/lib/tools/registry";
 import { closeSql, getSql } from "@/lib/sql";
 import { seed } from "@/scripts/seed";
+
+// Trusted test caller (no HTTP request, no role check).
+const runTool = (name: string, input: unknown) => runToolAs(name, input, SYSTEM);
 
 const sql = getSql();
 beforeAll(() => seed(sql));

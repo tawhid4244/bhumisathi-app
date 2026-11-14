@@ -2,6 +2,7 @@
 import { closeSql, getSql } from "../../lib/sql";
 import { ensureLocalDb } from "../../scripts/local-db";
 import { migrate } from "../../scripts/migrate";
+import { ensureDemoUsers } from "../../scripts/demo-users";
 import { seed } from "../../scripts/seed";
 
 export default async function globalSetup() {
@@ -10,5 +11,6 @@ export default async function globalSetup() {
   const sql = getSql();
   await migrate(sql);
   await seed(sql);
+  await ensureDemoUsers(sql); // the accounts the e2e setup project logs in with
   await closeSql();
 }

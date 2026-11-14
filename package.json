@@ -22,6 +22,7 @@
     "ai:spike": "tsx --env-file-if-exists=.env.local scripts/ai-spike.ts",
     "ai:g8": "tsx --env-file-if-exists=.env.local scripts/ai-g8.ts",
     "set-key": "tsx scripts/set-key.ts",
+    "users": "tsx --env-file-if-exists=.env.local scripts/demo-users.ts",
     "ai:models": "tsx --env-file-if-exists=.env.local scripts/ai-models.ts",
     "embed": "tsx --env-file-if-exists=.env.local scripts/embed.ts",
     "ai:g6": "tsx --env-file-if-exists=.env.local scripts/ai-g6.ts",

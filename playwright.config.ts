@@ -1,4 +1,16 @@
 import { defineConfig, devices } from "@playwright/test";
+import { AUTH } from "./tests/e2e/auth-files";
+import { ensureAuthSecrets } from "./scripts/demo-users";
+
+// Demo-account password and AUTH_SECRET come from .env.local (generated on first run, never printed).
+if (!process.env.E2E_BASE_URL) {
+  try {
+    process.loadEnvFile(".env.local");
+  } catch {
+    /* no .env.local yet */
+  }
+  ensureAuthSecrets();
+}
 
 // One e2e file per golden scenario lives in tests/e2e (gN-*.spec.ts).
 // Set E2E_BASE_URL to run the same tests against a deployed URL (task 19).
@@ -20,9 +32,20 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
+    // Logs in once per role and saves the session cookies (tests/e2e/.auth, git-ignored).
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
     // Mobile-first: the main project runs at phone width (375 px).
-    { name: "mobile", use: { ...devices["Pixel 5"], viewport: { width: 375, height: 812 } } },
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
+    // Tests act as a sub-registry officer unless a file chooses another role (test.use).
+    {
+      name: "mobile",
+      dependencies: ["setup"],
+      use: { ...devices["Pixel 5"], viewport: { width: 375, height: 812 }, storageState: AUTH.officer }, // prettier-ignore
+    },
+    {
+      name: "desktop",
+      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"], storageState: AUTH.officer },
+    },
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
@@ -32,6 +55,6 @@ export default defineConfig({
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
         // Browser tests use the scripted mock model: no API key, no cost, same answers every run.
-        env: { AI_PROVIDER: "mock", EMBEDDING_PROVIDER: "none" },
+        env: { AI_PROVIDER: "mock", EMBEDDING_PROVIDER: "none", LOGIN_RATE_PER_MINUTE: "60" },
       },
 });

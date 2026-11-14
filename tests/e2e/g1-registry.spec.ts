@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { AUTH } from "./auth-files";
 import { resetDemo } from "./helpers";
 import { openDag, transact } from "./registry";
 
@@ -43,11 +44,15 @@ test("G1 /registry: double sale of dag 145 is blocked, SMS and mutation case app
   await expect(page.getByTestId("desk-sellable-1")).toHaveText("০ শতক");
 });
 
-test("Reset demo puts dag 145 back to 20 sellable", async ({ page }) => {
-  await openDag(page, "nay", 145);
-  await transact(page, { action: "বায়না", counterparty: "সালমা আক্তার", area: "10" });
-  await page.getByRole("button", { name: "ডেমো রিসেট" }).click();
-  await expect(page.getByTestId("sms-log")).toContainText("এখনও কোনো বার্তা নেই");
-  await openDag(page, "nay", 145);
-  await expect(page.getByTestId("desk-sellable-1")).toHaveText("২০ শতক");
+test.describe("as the demo admin", () => {
+  test.use({ storageState: AUTH.admin }); // only admins see the Reset button
+
+  test("Reset demo puts dag 145 back to 20 sellable", async ({ page }) => {
+    await openDag(page, "nay", 145);
+    await transact(page, { action: "বায়না", counterparty: "সালমা আক্তার", area: "10" });
+    await page.getByRole("button", { name: "ডেমো রিসেট" }).click();
+    await expect(page.getByTestId("sms-log")).toContainText("এখনও কোনো বার্তা নেই");
+    await openDag(page, "nay", 145);
+    await expect(page.getByTestId("desk-sellable-1")).toHaveText("২০ শতক");
+  });
 });

@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
+import { UserBar } from "@/components/auth/UserBar";
 
 // Home: one question, every way in. Bangla first, English second.
 // "Ask Sathi" comes first: one conversation can do everything below.
@@ -57,8 +59,13 @@ const journeys = [
 export default function Home() {
   return (
     <>
-      <header className="bg-ink px-4 pb-8 pt-10 text-white">
+      <header className="bg-ink px-4 pb-8 pt-3 text-white">
         <div className="mx-auto max-w-3xl">
+          <div className="flex min-h-11 justify-end">
+            <Suspense fallback={null}>
+              <UserBar />
+            </Suspense>
+          </div>
           <h1 className="text-3xl font-bold leading-tight sm:text-4xl">ভূমিসাথী — এক জমি, এক সত্য</h1>
           <p lang="en" className="mt-1 text-white/80">
             BhumiSathi — one plot, one truth

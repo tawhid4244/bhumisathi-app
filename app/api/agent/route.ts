@@ -1,4 +1,5 @@
 import { runAgent } from "@/lib/ai/agent";
+import { agentGate } from "@/lib/ai/agent-gate";
 import { finalPayload, parseAgentRequest } from "@/lib/ai/agent-request";
 import { describeWithNames } from "@/lib/ai/describe";
 import { knownNames } from "@/lib/ai/pii";
@@ -6,9 +7,11 @@ import { AiNotConfiguredError, getProvider } from "@/lib/ai/provider";
 
 // POST /api/agent → one turn of the Sathi agent, as a single JSON response.
 // The chat page uses /api/agent/stream (same request, streamed events).
-// Task 16 adds rate limiting; task 10 adds PII masking.
+// Signed-in users only, rate limited per user (lib/ai/agent-gate.ts).
 
 export async function POST(request: Request) {
+  const gate = await agentGate();
+  if (gate.deny) return gate.deny;
   const parsed = parseAgentRequest(await request.text());
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: parsed.status });
 
@@ -30,6 +33,7 @@ export async function POST(request: Request) {
       replyLanguage: parsed.body.lang,
       describe: describeWithNames,
       knownNames: await knownNames(),
+      context: { user: gate.user },
     });
     return Response.json(finalPayload(result));
   } catch (err) {

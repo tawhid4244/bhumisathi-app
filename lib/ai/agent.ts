@@ -1,8 +1,8 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { ZodError } from "zod";
 import { bn } from "../engines/rules";
-import { runTool, tools as defaultRegistry } from "../tools/registry";
-import type { ToolDefinition } from "../tools/types";
+import { runTool, toolsFor, tools as defaultRegistry } from "../tools/registry";
+import { SYSTEM, type ToolContext, type ToolDefinition } from "../tools/types";
 import { wrapDocument } from "./documents";
 import { createMasker, maskDeep } from "./pii";
 import { REFUSAL_REPLY, SATHI_SYSTEM_PROMPT, TOO_MANY_STEPS_REPLY } from "./prompts";
@@ -65,6 +65,12 @@ export interface RunAgentOptions {
   messages: AgentMessage[];
   provider: ModelProvider;
   registry?: ToolDefinition[];
+  /**
+   * Who is chatting. The model is shown ONLY the tools this user's role allows, and every call
+   * is checked again by runTool. API routes always pass the signed-in user; the default (SYSTEM)
+   * is for tests and scripts.
+   */
+  context?: ToolContext;
   onEvent?: (e: AgentEvent) => void;
   maxSteps?: number;
   /** The citizen's answer to a pending write action from the previous turn. */
@@ -128,11 +134,12 @@ function textOf(content: Anthropic.Beta.BetaContentBlock[]): string {
 async function execute(
   use: ToolUse,
   registry: ToolDefinition[],
+  ctx: ToolContext,
 ): Promise<{ record: ToolCallRecord; result: ToolResult }> {
   const def = registry.find((t) => t.name === use.name);
   const kind = def?.kind ?? "read";
   try {
-    const output = await runTool(use.name, use.input, registry);
+    const output = await runTool(use.name, use.input, ctx, registry);
     return {
       record: { id: use.id, name: use.name, kind, input: use.input, ok: true, output },
       result: {
@@ -158,7 +165,12 @@ async function execute(
 }
 
 export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
-  const registry = opts.registry ?? defaultRegistry;
+  const ctx = opts.context ?? SYSTEM;
+  // A citizen's model never even sees officer-only tools (register_*), so it cannot ask for them;
+  // a forged "pending" write in the history is also refused, because it is not in this registry.
+  const registry = ctx.system
+    ? (opts.registry ?? defaultRegistry)
+    : toolsFor(ctx.user, opts.registry ?? defaultRegistry);
   const describe = opts.describe ?? describeAction;
   const tools = toAgentTools(registry);
   const messages = [...opts.messages];
@@ -201,7 +213,7 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
         });
         continue;
       }
-      const { record, result } = await execute(use, registry);
+      const { record, result } = await execute(use, registry, ctx);
       toolCalls.push(record);
       emit({ type: "tool", call: record });
       results.push(result);
@@ -276,7 +288,7 @@ The person chose English in the app: reply in English.`
     }
 
     // Read tools run in parallel; all results go back in ONE user message.
-    const done = await Promise.all(uses.map((u) => execute(u, registry)));
+    const done = await Promise.all(uses.map((u) => execute(u, registry, ctx)));
     for (const d of done) {
       toolCalls.push(d.record);
       emit({ type: "tool", call: d.record });

@@ -1,4 +1,5 @@
 import { runAgent } from "@/lib/ai/agent";
+import { agentGate } from "@/lib/ai/agent-gate";
 import { finalPayload, parseAgentRequest, toBadge } from "@/lib/ai/agent-request";
 import { describeWithNames } from "@/lib/ai/describe";
 import { knownNames } from "@/lib/ai/pii";
@@ -12,6 +13,8 @@ import { AiNotConfiguredError, getProvider } from "@/lib/ai/provider";
 //   {"type":"error","error":{bn,en}}   something went wrong
 
 export async function POST(request: Request) {
+  const gate = await agentGate();
+  if (gate.deny) return gate.deny;
   const parsed = parseAgentRequest(await request.text());
   if (!parsed.ok) return Response.json({ error: parsed.error }, { status: parsed.status });
 
@@ -37,6 +40,7 @@ export async function POST(request: Request) {
           replyLanguage: parsed.body.lang,
           describe: describeWithNames,
           knownNames: await knownNames(),
+          context: { user: gate.user },
           onEvent: (e) => {
             if (e.type === "text") send({ type: "text", delta: e.delta });
             else if (e.type === "tool") send({ type: "tool", badge: toBadge(e.call) });

@@ -3,7 +3,9 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { NotAllowed } from "@/components/auth/NotAllowed";
 import { RegistryDesk } from "@/components/registry/RegistryDesk";
+import { requirePageRole } from "@/lib/auth/guard";
 import { listPeople, recentActivity } from "@/lib/engines/demo";
 import { listMouzas } from "@/lib/engines/mouzas";
 
@@ -29,10 +31,20 @@ export default function RegistryPage() {
 
 async function Desk() {
   await connection(); // always read fresh data, never a build-time snapshot
+  // Sub-registry officers only: they record sales, bainas and mortgages.
+  const { user, ok } = await requirePageRole("officer", "/registry");
+  if (!ok) return <NotAllowed need="officer" />;
   const [mouzas, people, activity] = await Promise.all([
     listMouzas(),
     listPeople(),
     recentActivity(),
   ]);
-  return <RegistryDesk mouzas={mouzas} people={people} initialActivity={activity} />;
+  return (
+    <RegistryDesk
+      mouzas={mouzas}
+      people={people}
+      initialActivity={activity}
+      canReset={user.role === "admin"}
+    />
+  );
 }
