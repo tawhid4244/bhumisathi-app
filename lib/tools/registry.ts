@@ -9,6 +9,7 @@ import {
 import { jomiCheckTool } from "./check-tools";
 import { deedReadTool } from "./deed-tools";
 import { lawSearchTool } from "./law-tools";
+import { mapAreaTool } from "./map-tools";
 import { warishComputeTool } from "./warish-tools";
 import type { ToolDefinition } from "./types";
 
@@ -29,6 +30,7 @@ export const tools: ToolDefinition[] = [
   lawSearchTool,
   warishComputeTool,
   deedReadTool,
+  mapAreaTool,
 ] as ToolDefinition[];
 
 export function getTool(name: string): ToolDefinition | undefined {

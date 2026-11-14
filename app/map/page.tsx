@@ -1,8 +1,35 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/ComingSoon";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { PageHeader } from "@/components/PageHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { MapTabs } from "@/components/map/MapTabs";
+import { MouzaMap } from "@/components/map/MouzaMap";
+import { UploadMeasure } from "@/components/map/UploadMeasure";
+import { loadMouzaMap } from "@/lib/engines/map";
 
 export const metadata: Metadata = { title: "মৌজা ম্যাপে মাপ" };
 
-export default function Page() {
-  return <ComingSoon titleBn="মৌজা ম্যাপে মাপ" titleEn="Mouza map area" task={13} />;
+export default function MapPage() {
+  return (
+    <>
+      <PageHeader
+        titleBn="মৌজা ম্যাপে মাপ"
+        titleEn="Mouza map area: tap a dag, or measure on your own map photo"
+        subtitleBn="দাগের মাপ শতক, কাঠা, বিঘা ও একরে — খতিয়ানের সাথে মিলিয়ে।"
+      />
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
+        <Suspense fallback={<p className="text-ink-soft">লোড হচ্ছে… Loading…</p>}>
+          <Content />
+        </Suspense>
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
+
+async function Content() {
+  await connection();
+  const map = await loadMouzaMap("Nayapara");
+  return <MapTabs mouzaMap={<MouzaMap map={map} />} upload={<UploadMeasure />} />;
 }

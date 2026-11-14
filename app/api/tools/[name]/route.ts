@@ -5,6 +5,7 @@ import { WarishInputError } from "@/lib/engines/warish";
 import { UploadError } from "@/lib/adapters/storage";
 import { VisionNotConfiguredError } from "@/lib/ai/vision";
 import { DeceasedNotFoundError } from "@/lib/engines/warish-land";
+import { NoMapError } from "@/lib/engines/map";
 import { runTool, UnknownToolError } from "@/lib/tools/registry";
 
 // POST /api/tools/{name} with a JSON body → runs that tool from the registry.
@@ -59,7 +60,8 @@ export async function POST(request: Request, ctx: RouteContext<"/api/tools/[name
     if (
       err instanceof DagNotFoundError ||
       err instanceof KhatianNotFoundError ||
-      err instanceof DeceasedNotFoundError
+      err instanceof DeceasedNotFoundError ||
+      err instanceof NoMapError
     ) {
       return Response.json(
         { error: { bn: "এই মৌজায় দাগ বা খতিয়ানটি পাওয়া যায়নি।", en: err.message } },

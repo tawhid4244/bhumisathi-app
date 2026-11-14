@@ -47,3 +47,28 @@ export function round(value: number, places: number): number {
   const f = 10 ** places;
   return Math.round((value + Number.EPSILON) * f) / f;
 }
+
+/**
+ * Area from an uploaded map image: the citizen clicks two points a known ground distance apart
+ * (the scale bar, or a road of known length), then the plot's corners. Pixels → feet → decimals.
+ * An estimate from a picture, never a survey.
+ */
+export function calibratedAreaDecimals(
+  polygonPx: readonly Point[],
+  calibA: Point,
+  calibB: Point,
+  knownFeet: number,
+): number {
+  const px = Math.hypot(calibB[0] - calibA[0], calibB[1] - calibA[1]);
+  if (px <= 0 || !(knownFeet > 0))
+    throw new Error("Calibration needs two different points and a distance.");
+  const feetPerPx = knownFeet / px;
+  const sqft = shoelaceArea(polygonPx) * feetPerPx * feetPerPx;
+  return sqft / SQFT_PER_DECIMAL;
+}
+
+/** Centre of a polygon (average of its corners), for placing a dag label. */
+export function centroid(points: readonly Point[]): Point {
+  const n = points.length;
+  return [points.reduce((s, p) => s + p[0], 0) / n, points.reduce((s, p) => s + p[1], 0) / n];
+}

@@ -8,7 +8,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
-| 3 | 11–15 | in progress (tasks 11–12 done) |
+| 3 | 11–15 | in progress (tasks 11–13 done) |
 | 4 | 16–20 | not started |
 
 ## Golden scenarios
@@ -18,6 +18,23 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 10:10 — Session 3, task 13 (mouza map + map_area)
+- Done: `lib/engines/units.ts` (decimal base; sq ft, m², acre, katha 720 sq ft, standard bigha 33.06 dec
+  with the size shown; district tables come in task 14), `calibratedAreaDecimals` + `centroid` in
+  area.ts, `lib/engines/map.ts` (map from DB polygons; mismatch uses the same thresholds as Jomi Check),
+  tool `map_area` (map vs khatian, khas flag, all units, "estimate, not a survey" note). `/map`:
+  tabs "মৌজা ম্যাপ" (SVG map, tap or type a dag, keyboard accessible, khas hatched, mismatch dashed,
+  unit panel, link to /check) and "নিজের ম্যাপে মাপুন" (image stays on the phone; two clicks + known
+  distance in ft/m/chain/link; click corners; undo/restart; area in all units + survey disclaimer).
+  Mock model answers "দাগের মাপ কত?" via map_area; chat badges for map_area, warish_compute,
+  deed_read, find_person.
+- Tests: npm run check green (172: units, calibration, map_area 145≈20.04 match / 143 −3.04 mismatch /
+  149 khas / no map for Charpara). npm run e2e green (incl. map.spec: type 145 → ২০.০৪ + units; tap
+  149 khas; 143 mismatch; keyboard; upload → calibrate 200 ft → square ≈91.8 dec; chat "মাপ কত?";
+  375 px).
+- Golden scenarios: G8 map part PASS (≈20.0 dec, matches khatian).
+- Next step: task 14 (unit converter with district bigha/kani table + fee and time guide).
 
 ### 2026-11-15 09:20 — Session 3, task 12 (deed reader)
 - Done: `content/deeds/deed-4512.png` (synthetic sale deed rendered from HTML, watermark

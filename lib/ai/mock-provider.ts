@@ -63,9 +63,29 @@ function respond(req: ChatRequest): { content: Block[]; stop_reason: string } {
   const found = results.get("find_dag");
   if (found && Array.isArray(found.data) && found.data.length === 1) {
     const m = found.data[0] as { mouza_en: string; dag_no: number };
+    // "মাপ কত?" → measure on the map; otherwise check the land.
+    const tool = /মাপ|আয়তন|area|size|measure/i.test(q) ? "map_area" : "jomi_check";
     return {
-      content: [call("jomi_check", { mouza: m.mouza_en, dag_no: m.dag_no })],
+      content: [call(tool, { mouza: m.mouza_en, dag_no: m.dag_no })],
       stop_reason: "tool_use",
+    };
+  }
+  const measured = results.get("map_area");
+  if (measured && !measured.error) {
+    const a = measured.data as {
+      dag_no: number;
+      map_area_dec: number;
+      recorded_area_dec: number;
+      matches_khatian: boolean;
+    };
+    const verdict = a.matches_khatian ? "মিলেছে" : "অমিল, আমিন দিয়ে যাচাই করুন";
+    return {
+      content: [
+        text(
+          `দাগ ${bn(a.dag_no)}-এর মাপ মৌজা ম্যাপ অনুযায়ী প্রায় ${bn(a.map_area_dec)} শতক; খতিয়ানে ${bn(a.recorded_area_dec)} শতক — ${verdict}। এটি আনুমানিক মাপ, জরিপ নয়।`,
+        ),
+      ],
+      stop_reason: "end_turn",
     };
   }
   const check = results.get("jomi_check");
