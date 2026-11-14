@@ -1,6 +1,8 @@
 import {
+  ApiError,
   FinishReason,
   GoogleGenAI,
+  ThinkingLevel,
   type Content,
   type FunctionDeclaration,
   type GenerateContentResponse,
@@ -25,7 +27,7 @@ import type {
 type Block = Anthropic.Beta.BetaContentBlock;
 type BlockWithSig = Block & { _gemini_sig?: string };
 
-export const DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
+export const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash";
 
 const REFUSAL_REASONS = new Set<string>([
   FinishReason.SAFETY,
@@ -150,29 +152,83 @@ export function fromGeminiResponse(res: GenerateContentResponse, model: string):
   } as unknown as AgentResponse;
 }
 
+/** Backup models tried in order when the main one is busy (503) or rate-limited (429). */
+export const DEFAULT_GEMINI_FALLBACKS = ["gemini-3.8-flash", "gemini-3.1-flash-lite"];
+
+/** Longest we wait for one request before moving on to the next model. */
+export const GEMINI_TIMEOUT_MS = 30_000;
+
+/** "Busy, try again" errors: worth a retry. Anything else (bad key, bad request) is not. */
+function statusOf(err: unknown): number | undefined {
+  return err instanceof ApiError ? err.status : (err as { status?: number })?.status;
+}
+
+export function isRetryable(err: unknown): boolean {
+  const status = statusOf(err);
+  return status === 429 || status === 500 || status === 503 || status === 504;
+}
+
+type Generate = (args: {
+  model: string;
+  contents: Content[];
+  config: Record<string, unknown>;
+}) => Promise<GenerateContentResponse>;
+
+export interface GeminiOptions {
+  fallbacks?: string[];
+  retriesPerModel?: number;
+  /** Injected in tests so they do not call Google or wait. */
+  generate?: Generate;
+  sleep?: (ms: number) => Promise<void>;
+}
+
 export class GeminiProvider implements ModelProvider {
   readonly model: string;
-  private ai: GoogleGenAI;
+  private generate: Generate;
+  private chain: string[];
+  private retries: number;
+  private sleep: (ms: number) => Promise<void>;
 
-  constructor(apiKey: string, model: string) {
-    this.ai = new GoogleGenAI({ apiKey });
+  constructor(apiKey: string, model: string, opts: GeminiOptions = {}) {
+    const ai = opts.generate ? null : new GoogleGenAI({ apiKey });
+    this.generate = opts.generate ?? ((args) => ai!.models.generateContent(args));
     this.model = model;
+    this.chain = [model, ...(opts.fallbacks ?? DEFAULT_GEMINI_FALLBACKS)].filter(
+      (m, i, all) => m && all.indexOf(m) === i,
+    );
+    this.retries = opts.retriesPerModel ?? 1;
+    this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
   }
 
   async send(req: ChatRequest, onText?: (delta: string) => void): Promise<AgentResponse> {
-    const res = await this.ai.models.generateContent({
-      model: this.model,
-      contents: toGeminiContents(req.messages),
-      config: {
-        systemInstruction: req.system,
-        tools: req.tools.length ? [{ functionDeclarations: toGeminiTools(req.tools) }] : undefined,
-        maxOutputTokens: 8192,
-      },
-    });
-    const out = fromGeminiResponse(res, this.model);
-    if (onText) {
-      for (const b of out.content) if (b.type === "text") onText(b.text);
+    const contents = toGeminiContents(req.messages);
+    const config = {
+      systemInstruction: req.system,
+      tools: req.tools.length ? [{ functionDeclarations: toGeminiTools(req.tools) }] : undefined,
+      maxOutputTokens: 8192,
+      // Low thinking keeps chat replies quick; the engines do the hard work, not the model.
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      httpOptions: { timeout: GEMINI_TIMEOUT_MS },
+    };
+    let lastError: unknown;
+    // Try the main model, then each backup; retry each once after a short wait.
+    for (const model of this.chain) {
+      for (let attempt = 0; attempt <= this.retries; attempt++) {
+        try {
+          const res = await this.generate({ model, contents, config });
+          const out = fromGeminiResponse(res, model);
+          if (onText) {
+            for (const b of out.content) if (b.type === "text") onText(b.text);
+          }
+          return out;
+        } catch (err) {
+          lastError = err;
+          if (!isRetryable(err)) throw err;
+          if (statusOf(err) === 504) break; // timed out: waiting again would only add delay
+          if (attempt < this.retries) await this.sleep(1500 * (attempt + 1));
+        }
+      }
     }
-    return out;
+    throw lastError;
   }
 }

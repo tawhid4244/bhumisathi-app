@@ -7,7 +7,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | Session | Tasks | State |
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
-| 2 | 6–10 | in progress (task 6 done, real-model run pending a key) |
+| 2 | 6–10 | in progress (task 6 done and verified on real Gemini) |
 | 3 | 11–15 | not started |
 | 4 | 16–20 | not started |
 
@@ -15,9 +15,25 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | G8 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| pass | – | partial (check only) | pass | pass | – | – | – |
+| pass | – | partial (check only) | pass | pass | – | – | pass (typed, real Gemini; voice in task 9) |
 
 ## Entries
+
+### 2026-11-15 01:20 — Session 2, task 6c (real Gemini run)
+- Done: user saved a Gemini key with `npm.cmd run set-key` (PowerShell blocks `npm.ps1`; `npm.cmd`
+  works without changing the execution policy). `npm run ai:models` lists the models a key can use.
+  Findings on 2026-11-15: `gemini-flash-latest` does not exist; `gemini-2.5-flash` is closed to new
+  users; `gemini-3.8-flash` was overloaded (504 after 44 s); `gemini-3.5-flash` answered. Default is now
+  `gemini-3.5-flash`, backups `gemini-3.8-flash`, `gemini-3.1-flash-lite` (`AI_FALLBACK_MODELS`);
+  30 s timeout per request; 429/503 retried once after a short wait, a 504 moves straight to the next
+  model; Gemini thinking level LOW for quick replies.
+- Tests: npm run check green (88, incl. retry/fallback/timeout tests with an injected fake client).
+  REAL: `npm run ai:spike` → Gemini called `jomi_check({mouza:"নয়াপাড়া", dag_no:145})`.
+  `npm run ai:g8` → find_dag(145) → jomi_check(নয়াপাড়া, 145) → Bangla answer "সবুজ" with the
+  "risk check, not a legal ruling" note and a next step; agent verdict = /check verdict → G8 PASS.
+- Known issues: free-tier Gemini can be slow or busy at peak times; the fallback chain covers it.
+  Thought signatures from one model are passed to a backup model unchanged (not yet seen to fail).
+- Next step: task 7 (RAG over law texts with Gemini embeddings; hand-copied, cited law sections).
 
 ### 2026-11-15 00:30 — Session 2, task 6b (Gemini provider + safe key setup)
 - Done: user chose the Gemini API (free tier, one key for chat, vision and embeddings).

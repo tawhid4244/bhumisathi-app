@@ -78,7 +78,8 @@ export function getProvider(): ModelProvider {
   if (provider === "gemini") {
     const key = process.env.AI_API_KEY || process.env.GEMINI_API_KEY;
     if (!key) throw new AiNotConfiguredError();
-    cached = new GeminiProvider(key, model || DEFAULT_GEMINI_MODEL);
+    const fallbacks = process.env.AI_FALLBACK_MODELS?.split(",").map((m) => m.trim()).filter(Boolean); // prettier-ignore
+    cached = new GeminiProvider(key, model || DEFAULT_GEMINI_MODEL, { fallbacks });
     return cached;
   }
   if (provider === "anthropic") {

@@ -1,6 +1,11 @@
 import { FinishReason, type GenerateContentResponse } from "@google/genai";
 import { describe, expect, it } from "vitest";
-import { fromGeminiResponse, toGeminiContents, toGeminiTools } from "@/lib/ai/gemini";
+import {
+  fromGeminiResponse,
+  GeminiProvider,
+  toGeminiContents,
+  toGeminiTools,
+} from "@/lib/ai/gemini";
 import type { AgentMessage } from "@/lib/ai/provider";
 import { toAgentTools } from "@/lib/ai/tools";
 import { upsertEnv } from "@/lib/env-file";
@@ -105,5 +110,74 @@ describe("upsertEnv (used by npm run set-key)", () => {
   it("appends missing keys, removes duplicates, keeps Windows line endings", () => {
     const out = upsertEnv("A=1\r\nAI_API_KEY=old\r\nAI_API_KEY=older\r\n", { AI_API_KEY: "new", AI_PROVIDER: "gemini" }); // prettier-ignore
     expect(out).toBe("A=1\r\nAI_API_KEY=new\r\nAI_PROVIDER=gemini\r\n");
+  });
+});
+
+describe("Gemini busy handling", () => {
+  const ok = (model: string) =>
+    ({ candidates: [{ content: { role: "model", parts: [{ text: `from ${model}` }] }, finishReason: "STOP" }] }) as GenerateContentResponse; // prettier-ignore
+  const busy = () => Object.assign(new Error("busy"), { status: 503 });
+  const req = { system: "s", tools: [], messages: [{ role: "user" as const, content: "hi" }] };
+
+  it("retries once, then moves to the backup model", async () => {
+    const calls: string[] = [];
+    const p = new GeminiProvider("k", "main", {
+      fallbacks: ["backup"],
+      sleep: async () => {},
+      generate: async ({ model }) => {
+        calls.push(model);
+        if (model === "main") throw busy();
+        return ok(model);
+      },
+    });
+    const r = await p.send(req);
+    expect(calls).toEqual(["main", "main", "backup"]);
+    expect(r.content[0]).toMatchObject({ text: "from backup" });
+    expect(r.model).toBe("backup");
+  });
+
+  it("does not retry a bad key or bad request", async () => {
+    let n = 0;
+    const p = new GeminiProvider("k", "main", {
+      sleep: async () => {},
+      generate: async () => {
+        n++;
+        throw Object.assign(new Error("bad key"), { status: 401 });
+      },
+    });
+    await expect(p.send(req)).rejects.toThrow("bad key");
+    expect(n).toBe(1);
+  });
+
+  it("gives up with the last error when every model is busy", async () => {
+    const p = new GeminiProvider("k", "a", {
+      fallbacks: ["b"],
+      sleep: async () => {},
+      generate: async () => {
+        throw busy();
+      },
+    });
+    await expect(p.send(req)).rejects.toThrow("busy");
+  });
+});
+
+describe("Gemini timeouts", () => {
+  it("a timeout (504) moves straight to the next model without waiting", async () => {
+    const calls: string[] = [];
+    let slept = 0;
+    const p = new GeminiProvider("k", "slow", {
+      fallbacks: ["fast"],
+      sleep: async () => {
+        slept++;
+      },
+      generate: async ({ model }) => {
+        calls.push(model);
+        if (model === "slow") throw Object.assign(new Error("deadline"), { status: 504 });
+        return { candidates: [{ content: { role: "model", parts: [{ text: "ok" }] }, finishReason: "STOP" }] } as GenerateContentResponse; // prettier-ignore
+      },
+    });
+    await p.send({ system: "s", tools: [], messages: [{ role: "user", content: "hi" }] });
+    expect(calls).toEqual(["slow", "fast"]);
+    expect(slept).toBe(0);
   });
 });
