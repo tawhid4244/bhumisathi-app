@@ -2,8 +2,8 @@
 // (1/3 stays 1/3; shares always add up to exactly 1).
 
 const gcd = (a: bigint, b: bigint): bigint => {
-  a = a < 0n ? -a : a;
-  b = b < 0n ? -b : b;
+  a = a < BigInt(0) ? -a : a;
+  b = b < BigInt(0) ? -b : b;
   while (b) [a, b] = [b, a % b];
   return a;
 };
@@ -12,12 +12,12 @@ export class Fraction {
   readonly n: bigint;
   readonly d: bigint;
 
-  constructor(n: bigint | number, d: bigint | number = 1n) {
+  constructor(n: bigint | number, d: bigint | number = BigInt(1)) {
     let nn = BigInt(n);
     let dd = BigInt(d);
-    if (dd === 0n) throw new Error("Fraction with zero denominator");
-    if (dd < 0n) [nn, dd] = [-nn, -dd];
-    const g = gcd(nn, dd) || 1n;
+    if (dd === BigInt(0)) throw new Error("Fraction with zero denominator");
+    if (dd < BigInt(0)) [nn, dd] = [-nn, -dd];
+    const g = gcd(nn, dd) || BigInt(1);
     this.n = nn / g;
     this.d = dd / g;
   }
@@ -35,21 +35,21 @@ export class Fraction {
     return new Fraction(this.n * o.n, this.d * o.d);
   }
   div(o: Fraction) {
-    if (o.n === 0n) throw new Error("Division by zero");
+    if (o.n === BigInt(0)) throw new Error("Division by zero");
     return new Fraction(this.n * o.d, this.d * o.n);
   }
   cmp(o: Fraction) {
     const x = this.n * o.d - o.n * this.d;
-    return x === 0n ? 0 : x > 0n ? 1 : -1;
+    return x === BigInt(0) ? 0 : x > BigInt(0) ? 1 : -1;
   }
   isZero() {
-    return this.n === 0n;
+    return this.n === BigInt(0);
   }
   toNumber() {
     return Number(this.n) / Number(this.d);
   }
   toString() {
-    return this.d === 1n ? `${this.n}` : `${this.n}/${this.d}`;
+    return this.d === BigInt(1) ? `${this.n}` : `${this.n}/${this.d}`;
   }
   static sum(list: Fraction[]) {
     return list.reduce((a, b) => a.add(b), Fraction.ZERO);
