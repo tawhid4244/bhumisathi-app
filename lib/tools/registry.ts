@@ -1,36 +1,33 @@
-import { z } from "zod";
+import {
+  ledgerStatusTool,
+  registerBainaTool,
+  registerLienTool,
+  registerSaleTool,
+} from "./ledger-tools";
+import type { ToolDefinition } from "./types";
 
 // The single list of everything BhumiSathi can do.
 // Pages, API routes and the Sathi AI agent all call tools from here, so every feature
 // runs the same engine code whichever way the citizen comes in.
 
-export type ToolKind =
-  /** Reads data only. The agent may call it without asking. */
-  | "read"
-  /** Changes the ledger or records. The agent must read the numbers back and get a "yes" first. */
-  | "write";
+export { defineTool, type ToolDefinition, type ToolKind } from "./types";
 
-export interface ToolDefinition<I extends z.ZodType = z.ZodType, O extends z.ZodType = z.ZodType> {
-  name: string;
-  kind: ToolKind;
-  description: { bn: string; en: string };
-  input: I;
-  output: O;
-  handler: (input: z.infer<I>) => Promise<z.infer<O>>;
-}
-
-/** Helper that keeps each tool's input and output types linked to its zod schemas. */
-export function defineTool<I extends z.ZodType, O extends z.ZodType>(
-  tool: ToolDefinition<I, O>,
-): ToolDefinition<I, O> {
-  return tool;
-}
-
-// Tools are added here task by task (ledger_status in task 3, jomi_check in task 4, ...).
-export const tools: ToolDefinition[] = [];
+export const tools: ToolDefinition[] = [
+  ledgerStatusTool,
+  registerBainaTool,
+  registerSaleTool,
+  registerLienTool,
+] as ToolDefinition[];
 
 export function getTool(name: string): ToolDefinition | undefined {
   return tools.find((t) => t.name === name);
+}
+
+export class UnknownToolError extends Error {
+  constructor(name: string) {
+    super(`Unknown tool: ${name}`);
+    this.name = "UnknownToolError";
+  }
 }
 
 /**
@@ -43,7 +40,7 @@ export async function runTool(
   registry: ToolDefinition[] = tools,
 ): Promise<unknown> {
   const tool = registry.find((t) => t.name === name);
-  if (!tool) throw new Error(`Unknown tool: ${name}`);
+  if (!tool) throw new UnknownToolError(name);
   const input = tool.input.parse(rawInput);
   const output = await tool.handler(input);
   return tool.output.parse(output);

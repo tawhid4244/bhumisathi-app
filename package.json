@@ -17,7 +17,8 @@
     "eval:ai": "tsx --env-file-if-exists=.env.local scripts/eval-ai.ts",
     "db:start": "tsx scripts/local-db.ts start",
     "db:stop": "tsx scripts/local-db.ts stop",
-    "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts"
+    "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
+    "db:reset": "tsx --env-file-if-exists=.env.local scripts/reset-db.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

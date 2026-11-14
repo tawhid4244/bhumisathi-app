@@ -19,6 +19,31 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 ## Entries
 
+### 2026-11-14 22:10 — Session 1, task 3 (share ledger)
+- Done: Migration `0002_share_ledger.sql`: `ledger_events` (accepted AND rejected attempts), `sms_log`
+  (mock outbox), `mutation_cases`, `dags.ledger_version`; views `bs_holdings`, `dag_locks`,
+  `share_balances`, `share_sellable` (sellable = recorded − sales after the BS khatian − active unexpired
+  bainas − active liens; 0 for khas, pending court case, or deceased owner). SQL `register_event()` locks
+  the dag row and its share rows with `SELECT … FOR UPDATE`, recomputes the balance after the lock, then
+  records or refuses with a Bangla + English reason that names what holds the share (baina id, lien id,
+  deed no). Accepted sale → deed + mutation case (28-day deadline) + SMS; a buyer's own baina is
+  usable by that buyer and marked completed; refused sale → SMS to baina holders. Sequences restart via
+  `after_seed()` so the demo always issues B-0021 first. `lib/engines/ledger.ts` (computeSellable,
+  resolveDag accepting Bangla/English mouza name, code or JL no, Bangla digits), tools `ledger_status`,
+  `register_baina`, `register_sale`, `register_lien` (zod in/out, bn+en descriptions) in
+  `lib/tools/ledger-tools.ts` and registered in `lib/tools/registry.ts`; `POST /api/tools/[name]`.
+  `npm run db:reset` (local only; refuses when DATABASE_URL is set).
+- Tests: npm run check green, 39 tests: balance maths; G1 steps 1–3 through the API route with the
+  exact reason "only 10 decimals sellable; 10 reserved by baina B-0021", SMS and mutation case;
+  2 parallel sales → exactly 1 succeeds; 10 parallel 3-dec sales of 20 dec → exactly 6; khas 149,
+  case 142 (TPA s.52), lien 146 (15.9 sellable), non-holder seller, deceased owner, expired baina;
+  SQL view = TS formula for every holder; API returns 400/404 on bad input.
+- Decisions: SMS log and mutation case are written inside register_event (same transaction) instead of
+  task 5, so a sale can never exist without its mutation case. A pending civil case blocks transfer
+  (lis pendens, Transfer of Property Act 1882 s.52). Write tools are open on the API until task 16 adds
+  roles (officer only).
+- Next step: task 4 (Jomi Check rules + /check page).
+
 ### 2026-11-14 22:00 — Session 1, task 2 (schema + synthetic seed)
 - Done: Migration `0001_core_schema.sql`: mouzas, dags, owners, khatians (CS/SA/RS/BS), khatian_dags,
   ownership_shares, deeds, bainas, liens, court_cases, khas_flags, land_tax, map_polygons; every table has
