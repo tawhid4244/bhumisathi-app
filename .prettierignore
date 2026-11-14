@@ -1,0 +1,12 @@
+node_modules
+.next
+coverage
+playwright-report
+test-results
+package-lock.json
+next-env.d.ts
+docs/*.md
+CLAUDE.md
+AGENTS.md
+content
+supabase/.temp
