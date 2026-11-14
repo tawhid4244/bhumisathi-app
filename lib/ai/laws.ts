@@ -29,8 +29,6 @@ export interface Chunk {
   hash: string;
 }
 
-const root = () => path.join(process.cwd(), "content");
-
 function parseFrontMatter(raw: string): { meta: Record<string, string>; body: string } {
   const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(raw);
   if (!m) throw new Error("Law file is missing its --- front matter ---");
@@ -57,12 +55,14 @@ const REQUIRED = [
   "verified",
 ];
 
-export function loadLawDocs(dir = path.join(root(), "laws")): LawDoc[] {
-  return readdirSync(dir)
+export function loadLawDocs(): LawDoc[] {
+  // Literal paths so the bundler traces only content/laws, not the whole project.
+  return readdirSync(path.join(process.cwd(), "content/laws"))
     .filter((f) => f.endsWith(".md"))
     .sort()
     .map((f) => {
-      const { meta, body } = parseFrontMatter(readFileSync(path.join(dir, f), "utf8"));
+      const raw = readFileSync(path.join(process.cwd(), "content/laws", f), "utf8");
+      const { meta, body } = parseFrontMatter(raw);
       for (const k of REQUIRED) if (!meta[k]) throw new Error(`${f}: missing "${k}"`);
       return {
         ...(meta as unknown as Omit<LawDoc, "body" | "related">),
@@ -84,8 +84,12 @@ interface QaItem {
   law_ids: string[];
 }
 
-export function loadQa(file = path.join(root(), "qa.json")): QaItem[] {
-  return (JSON.parse(readFileSync(file, "utf8")) as { items: QaItem[] }).items;
+export function loadQa(): QaItem[] {
+  return (
+    JSON.parse(readFileSync(path.join(process.cwd(), "content/qa.json"), "utf8")) as {
+      items: QaItem[];
+    }
+  ).items;
 }
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex").slice(0, 16);
