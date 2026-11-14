@@ -7,6 +7,7 @@ import {
   registerSaleTool,
 } from "./ledger-tools";
 import { jomiCheckTool } from "./check-tools";
+import { deedReadTool } from "./deed-tools";
 import { lawSearchTool } from "./law-tools";
 import { warishComputeTool } from "./warish-tools";
 import type { ToolDefinition } from "./types";
@@ -27,6 +28,7 @@ export const tools: ToolDefinition[] = [
   jomiCheckTool,
   lawSearchTool,
   warishComputeTool,
+  deedReadTool,
 ] as ToolDefinition[];
 
 export function getTool(name: string): ToolDefinition | undefined {

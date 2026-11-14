@@ -24,7 +24,8 @@
     "set-key": "tsx scripts/set-key.ts",
     "ai:models": "tsx --env-file-if-exists=.env.local scripts/ai-models.ts",
     "embed": "tsx --env-file-if-exists=.env.local scripts/embed.ts",
-    "ai:g6": "tsx --env-file-if-exists=.env.local scripts/ai-g6.ts"
+    "ai:g6": "tsx --env-file-if-exists=.env.local scripts/ai-g6.ts",
+    "ai:vision": "tsx --env-file-if-exists=.env.local scripts/vision-spike.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

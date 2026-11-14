@@ -8,16 +8,40 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
-| 3 | 11–15 | in progress (task 11 done) |
+| 3 | 11–15 | in progress (tasks 11–12 done) |
 | 4 | 16–20 | not started |
 
 ## Golden scenarios
 
 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | G8 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| pass | pass | partial (check only) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
+| pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 09:20 — Session 3, task 12 (deed reader)
+- Done: `content/deeds/deed-4512.png` (synthetic sale deed rendered from HTML, watermark
+  "নমুনা / SYNTHETIC", fiction notice). Raw vision run first (`npm run ai:vision`, gemini-3.1-flash-lite,
+  11.5 s): all fields right except the date (read ১৪ as 18) and "মো:" for "মোঃ" → design: lenient name
+  comparison + registry cross-check that flags the date. `lib/ai/vision.ts` (zod schema = JSON schema
+  sent to Gemini, prompt treats the image as data, model fallback on 429/5xx because each model has
+  its own free daily quota, mock answer for AI_PROVIDER=mock). `lib/engines/deed-check.ts`
+  (deterministic Bangla summary from the fields; checks: dag exists (JL fallback), seller on BS
+  khatian, area ≤ seller's share (LCPRA s.4), khatian number, registry record match (dag, area, date,
+  seller, buyer), plus every Jomi Check rule for the dag). `lib/adapters/storage.ts` (private
+  `.uploads/`, random 96-bit ids, type checked from bytes, 5 MB max, id format blocks path tricks).
+  Tool `deed_read` (untrusted → wrapped as data), `/api/deed/upload`, `/api/deed/sample`, `/deed` page
+  (camera/file upload, sample button, preview, verdict, summary, findings, fields read, link to /check).
+- Tests: npm run check green (159: name matching, summary, byte sniffing, path-trick ids; G3 amber with
+  MAP_MISMATCH "আমিন" + MUTATION_PENDING; misread date flagged; more-than-share red; wrong seller/
+  khatian red; unknown deed amber; non-deed red; mouza spelling → JL fallback; tool end to end).
+  npm run e2e green (76): G3 sample → amber → link to /check (amber); non-image refused; real upload.
+  REAL: deed_read with Gemini vision → AMBER, flags the misread date, unmutated deed and map mismatch.
+- Known issues: the vision model sees the image unmasked (an image cannot be text-masked) — fine for
+  synthetic deeds; production needs on-premise OCR or redaction before upload. **Free-tier Gemini
+  allows ~20 requests per model per day**; the evaluation runs used up gemini-3.5/3.6/3.8-flash for
+  today (reset after ~11 h). Before the demo, either keep a fresh day of quota or enable paid billing.
+- Next step: task 13 (/map page and map_area tool).
 
 ### 2026-11-15 08:10 — Session 3, task 11 done (warish tool + /warish page)
 - Done: `lib/engines/warish-land.ts` (deceased owners with BS holdings; per-dag decimals; total-area

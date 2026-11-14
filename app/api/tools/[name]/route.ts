@@ -2,6 +2,8 @@ import { ZodError } from "zod";
 import { KhatianNotFoundError } from "@/lib/engines/jomi-check";
 import { DagNotFoundError } from "@/lib/engines/ledger";
 import { WarishInputError } from "@/lib/engines/warish";
+import { UploadError } from "@/lib/adapters/storage";
+import { VisionNotConfiguredError } from "@/lib/ai/vision";
 import { DeceasedNotFoundError } from "@/lib/engines/warish-land";
 import { runTool, UnknownToolError } from "@/lib/tools/registry";
 
@@ -38,6 +40,15 @@ export async function POST(request: Request, ctx: RouteContext<"/api/tools/[name
         },
         { status: 400 },
       );
+    }
+    if (err instanceof UploadError) {
+      return Response.json({ error: { bn: "দলিলের ছবি পাওয়া যায়নি। আবার আপলোড করুন।", en: err.message } }, { status: 404 }); // prettier-ignore
+    }
+    if (err instanceof VisionNotConfiguredError) {
+      return Response.json({ error: { bn: "দলিল পড়ার এআই চালু করা হয়নি।", en: err.message } }, { status: 503 }); // prettier-ignore
+    }
+    if ((err as { status?: number })?.status === 429) {
+      return Response.json({ error: { bn: "আজকের বিনামূল্যের এআই সীমা শেষ। পরে আবার চেষ্টা করুন।", en: "AI quota used up for today." } }, { status: 429 }); // prettier-ignore
     }
     if (err instanceof WarishInputError) {
       return Response.json(
