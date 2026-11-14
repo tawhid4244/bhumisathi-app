@@ -1,8 +1,38 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/ComingSoon";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { PageHeader } from "@/components/PageHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { RegistryDesk } from "@/components/registry/RegistryDesk";
+import { listPeople, recentActivity } from "@/lib/engines/demo";
+import { listMouzas } from "@/lib/engines/mouzas";
 
 export const metadata: Metadata = { title: "সাব-রেজিস্ট্রি ডেমো" };
 
-export default function Page() {
-  return <ComingSoon titleBn="সাব-রেজিস্ট্রি ডেমো" titleEn="Sub-registry demo" task={5} />;
+export default function RegistryPage() {
+  return (
+    <>
+      <PageHeader
+        titleBn="সাব-রেজিস্ট্রি ডেমো"
+        titleEn="Sub-registry demo: the check runs before the deed is registered"
+        subtitleBn="দলিল নিবন্ধনের আগে সিস্টেম জমি যাচাই ও শেয়ার লেজার দেখে; বিক্রয়যোগ্য না হলে দলিল আটকে দেয়।"
+      />
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+        <Suspense fallback={<p className="text-ink-soft">লোড হচ্ছে… Loading…</p>}>
+          <Desk />
+        </Suspense>
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
+
+async function Desk() {
+  await connection(); // always read fresh data, never a build-time snapshot
+  const [mouzas, people, activity] = await Promise.all([
+    listMouzas(),
+    listPeople(),
+    recentActivity(),
+  ]);
+  return <RegistryDesk mouzas={mouzas} people={people} initialActivity={activity} />;
 }

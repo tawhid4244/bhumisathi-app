@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { openCheck, resetDemo, tool } from "./helpers";
+import { openDag, transact } from "./registry";
 
 // G4: dag 149 is a khas waterbody. Jomi Check → RED; any sale → BLOCKED.
 test.beforeEach(async ({ request }) => {
@@ -22,4 +23,11 @@ test("G4 API: a sale of khas land is blocked", async ({ request }) => {
   });
   expect(r.body.ok).toBe(false);
   expect(r.body.reason_bn).toContain("খাস জমি");
+});
+
+test("G4 /registry: selling khas dag 149 is blocked at the desk", async ({ page }) => {
+  await openDag(page, "nay", 149);
+  await transact(page, { action: "বিক্রয় দলিল", counterparty: "জামাল মিয়া", area: "1" });
+  await expect(page.locator("[data-result]")).toHaveAttribute("data-result", "blocked");
+  await expect(page.locator("[data-result]")).toContainText("খাস জমি");
 });

@@ -6,7 +6,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 | Session | Tasks | State |
 | --- | --- | --- |
-| 1 | 1–5 | in progress (task 1 done) |
+| 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | not started |
 | 3 | 11–15 | not started |
 | 4 | 16–20 | not started |
@@ -15,9 +15,39 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | G8 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| – | – | – | – | – | – | – | – |
+| pass | – | partial (check only) | pass | pass | – | – | – |
 
 ## Entries
+
+### 2026-11-14 23:10 — Session 1 summary (tasks 1–5 done)
+- Done: scaffold; schema + deterministic seed; share ledger with row-locked `register_event`;
+  Jomi Check rules + `/check`; `/registry` sub-registry demo. Local PostgreSQL 17 without Docker.
+- Tests: `npm run seed` OK; `npm run check` green (63 unit + integration); `npm run e2e` green
+  (38 = 19 × mobile 375 px + desktop); `npm run build` green.
+- Golden scenarios: G1 PASS (API, /check and /registry, incl. parallel double-sale test);
+  G4 PASS; G5 PASS. G3 PARTIAL: /check already flags the dag 143 map mismatch and unmutated deed
+  4512/2024; the deed reader is task 12. G2, G6, G7, G8 not built yet (sessions 2–4).
+- Decisions this session: local embedded Postgres + DATABASE_URL (no Docker on this laptop); map
+  scaled ×1.1 so dag 145 = 20 dec fits G1; SMS + mutation case written inside register_event; pending
+  civil case blocks transfer (TPA 1882 s.52); refused oversell attempts make Jomi Check RED for 90 days.
+- Known issues: write tools, /api/demo/reset and /api/demo/activity are open to anyone until task 16
+  adds roles; strict nonce CSP waits for task 16; pgvector missing locally (task 7 needs a fallback);
+  .env.local values are all empty (Supabase cloud + AI keys needed before task 6 real calls and task 19).
+- Next step: Session 2, task 6 (AI agent). Needs an AI API key in .env.local for the real-model spike;
+  the agent loop and its tests can be built with a mocked model first.
+
+### 2026-11-14 23:05 — Session 1, task 5 (sub-registry demo)
+- Done: `/registry` desk (client component over the registry tools): pick mouza + dag → ledger
+  summary; choose sale / baina / mortgage, seller, buyer or bank, area (+ baina days) → `jomi_check` with
+  that seller and area → verdict + read-back of every number ("ঠিক আছে?") → register through
+  `register_*`; result banner (registered with deed no + mutation case, or blocked with the Bangla
+  reason). Live panel: mock SMS log (never sent), mutation cases (28-day deadline), ledger events;
+  "ডেমো রিসেট" button. `lib/engines/demo.ts`, `GET /api/demo/activity`.
+- Tests: e2e G1 full flow on /registry (B-0021, 2 SMS, red check + blocked 15 dec with SMS to Buyer A,
+  10 dec sale with mutation case, sellable 20 → 10 → 0), reset demo, G4 khas blocked at the desk,
+  G5 146 mortgage and 142 court case blocked at the desk.
+- Decisions: the desk always lets the officer press register and lets the ledger decide, so the
+  database (not the UI) is the guard and Buyer A gets the warning SMS.
 
 ### 2026-11-14 22:40 — Session 1, task 4 (Jomi Check)
 - Done: `lib/engines/records.ts` (loads all facts for a dag: holders, CS→SA→RS→BS chain, khas, cases,

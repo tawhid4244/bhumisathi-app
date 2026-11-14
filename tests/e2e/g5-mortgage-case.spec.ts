@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { openCheck, resetDemo, tool } from "./helpers";
+import { openDag, transact } from "./registry";
 
 // G5: dag 146 mortgaged to Demo Bank (5 dec); dag 142 has pending civil suit 101/2025.
 test.beforeEach(async ({ request }) => {
@@ -30,4 +31,16 @@ test("G5 API: selling the mortgaged portion is blocked without bank release", as
   });
   expect(r.body.ok).toBe(false);
   expect(r.body.reason_en).toContain("mortgaged to Demo Bank Ltd.");
+});
+
+test("G5 /registry: 146 mortgaged portion and 142 court case are blocked", async ({ page }) => {
+  await openDag(page, "nay", 146);
+  await transact(page, { action: "বিক্রয় দলিল", counterparty: "জামাল মিয়া", area: "20" });
+  await expect(page.locator("[data-result]")).toHaveAttribute("data-result", "blocked");
+  await expect(page.locator("[data-result]")).toContainText("ডেমো ব্যাংক লিমিটেড");
+
+  await openDag(page, "nay", 142);
+  await transact(page, { action: "বিক্রয় দলিল", counterparty: "জামাল মিয়া", area: "1" });
+  await expect(page.locator("[data-result]")).toHaveAttribute("data-result", "blocked");
+  await expect(page.locator("[data-result]")).toContainText("মামলা চলমান");
 });
