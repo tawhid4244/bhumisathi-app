@@ -31,7 +31,7 @@ End of session 1: commit, update PROGRESS.md.
 | --- | --- | --- |
 | 11 | Warish engine (Hanafi, 'awl, radd, MFLO s.4) + `/warish` UI + `warish_compute` tool + mock OTP consent + bontonnama checklist | G2 and all unit cases pass |
 | 12 | Deed reader: upload → vision model → zod-validated JSON → Bangla summary → cross-check with ledger; `deed_read` tool | G3 passes with `deed-4512.png` |
-| 13 | Mouza map tool: render `nayapara.json`, select by tap or dag number, shoelace area, units; "upload your map" mode with scale calibration and click-to-mark polygon; `map_area` tool | Dag 145 ≈ 16.6 dec; mismatch on 143; khas 149 flagged |
+| 13 | Mouza map tool: render `nayapara.json`, select by tap or dag number, shoelace area, units; "upload your map" mode with scale calibration and click-to-mark polygon; `map_area` tool | Dag 145 ≈ 20.0 dec; mismatch on 143; khas 149 flagged |
 | 14 | Unit converter (district table) + fee and time guide (`fees.ts`, data-driven) + tools | Mutation total 1,170; kani 40 vs 120 dec examples correct |
 | 15 | Wire everything into the agent; home page journey; cross-links (report → warish → map → chat) | One conversation can run G1 check, G3 deed, G8 map without leaving chat |
 

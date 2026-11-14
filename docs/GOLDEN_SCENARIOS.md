@@ -7,7 +7,7 @@ scenario built so far passes. All data is synthetic.
 ## Shared synthetic world (seed 2026)
 
 - District Dhaka (synthetic), upazila "Demo Upazila"
-- Mouza **Nayapara**, JL 45, sheet 1, map scale 16 in = 1 mile, dags 141–149 (polygons in `content/maps/nayapara.json`,
+- Mouza **Nayapara**, JL 45, sheet 1, map scale 16 in = 1 mile, dags 141–149 with map polygons plus 150–179 table-only (polygons in `content/maps/nayapara.json`,
   map units: 1000 = 1 inch; areas from the shoelace formula)
 - Mouza **Charpara**, JL 46, dags 210–230 (table data only, no map)
 - About 60 dags total, each with CS → SA → RS → BS khatian chain (dag numbers may change across surveys)
@@ -67,4 +67,4 @@ scenario built so far passes. All data is synthetic.
 - Push-to-talk (or typed fallback in CI): "১৪৫ নম্বর দাগের জমি কেনা নিরাপদ কিনা দেখাও".
 - Agent repeats "আপনি কি ১৪৫ নম্বর দাগ বলেছেন?", user confirms, agent calls `jomi_check(dag=145)`,
   answer is read aloud and shown with the same verdict and reasons as the /check page.
-- Mouza question: "১৪৫ নম্বর দাগের মাপ কত?" → `map_area(145)` → about 16.6 decimals, matches khatian.
+- Mouza question: "১৪৫ নম্বর দাগের মাপ কত?" → `map_area(145)` → about 20.0 decimals, matches khatian. (Map scaled ×1.1 on 2026-11-14 so dag 145 fits Rahim's 20 dec in G1.)

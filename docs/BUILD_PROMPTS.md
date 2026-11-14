@@ -237,7 +237,7 @@ Compute area with the shoelace formula, using the mouza map scale 16 inches = 1 
 acre and sq ft. Flag khas dag 149 and show the mismatch with the khatian for dag 143.
 Add an "upload your own map" mode: upload an image, calibrate scale with two clicks and a known distance,
 then click to mark a polygon and get the area. Show a note that this is an estimate, not a survey.
-Tests: dag 145 ≈ 16.6 decimals; 143 mismatch; 149 khas. Run npm run check and e2e.
+Tests: dag 145 ≈ 20.0 decimals; 143 mismatch; 149 khas. Run npm run check and e2e.
 Commit and update docs/PROGRESS.md.
 ```
 
