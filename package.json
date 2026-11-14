@@ -25,6 +25,7 @@
     "set-db": "tsx scripts/set-db.ts",
     "cloud:setup": "tsx --env-file-if-exists=.env.local scripts/cloud-setup.ts",
     "e2e:live": "tsx scripts/e2e-live.ts",
+    "vercel:push-env": "tsx scripts/vercel-push-env.ts",
     "vercel:env": "tsx --env-file-if-exists=.env.local scripts/vercel-env.ts",
     "users": "tsx --env-file-if-exists=.env.local scripts/demo-users.ts",
     "ai:models": "tsx --env-file-if-exists=.env.local scripts/ai-models.ts",
