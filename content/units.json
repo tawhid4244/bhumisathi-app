@@ -1,0 +1,77 @@
+{
+  "note": "Land unit sizes used by BhumiSathi. Decimal (শতক) is the base: 1 decimal = 1/100 acre = 435.6 sq ft. Regional units (kani, bigha) differ by area: the app always shows which size it used. Confirm local sizes with the AC Land office / DLRS before any transaction.",
+  "fixed": {
+    "decimal": {
+      "bn": "শতক",
+      "decimals": 1,
+      "source": "1 acre = 100 decimals; 1 decimal = 435.6 sq ft"
+    },
+    "acre": {
+      "bn": "একর",
+      "decimals": 100,
+      "source": "1 acre = 43,560 sq ft = 100 decimals"
+    },
+    "sqft": {
+      "bn": "বর্গফুট",
+      "decimals": 0.0022956841138659,
+      "source": "1 decimal = 435.6 sq ft"
+    },
+    "sqm": {
+      "bn": "বর্গমিটার",
+      "decimals": 0.024710538146717,
+      "source": "1 sq ft = 0.09290304 m²"
+    },
+    "hectare": {
+      "bn": "হেক্টর",
+      "decimals": 247.10538146717,
+      "source": "1 hectare = 10,000 m²"
+    },
+    "katha": {
+      "bn": "কাঠা",
+      "decimals": 1.6528925619835,
+      "source": "Bangladesh standard 1 katha = 720 sq ft (Banglapedia; widely used)"
+    }
+  },
+  "bigha": {
+    "standard_dec": 33.057851239669,
+    "source": "Standard 1 bigha = 20 katha = 14,400 sq ft ≈ 33.06 decimals; local bighas differ — enter your local size if it is different."
+  },
+  "kani_family": {
+    "relations": {
+      "gonda_per_kani": 20,
+      "kora_per_gonda": 4,
+      "kranti_per_kora": 3
+    },
+    "relations_source": "1 kani = 20 gonda, 1 gonda = 4 kora (Banglapedia, Agrometrology); 1 kora = 3 kranti (commonly used, confirm locally).",
+    "sizes": [
+      {
+        "kani_dec": 120,
+        "bn": "১২০ শতকের কানি",
+        "where_bn": "যেমন নোয়াখালী অঞ্চলে প্রচলিত; কুমিল্লায়ও ব্যবহৃত",
+        "source": "Banglapedia (Agrometrology): 1 kani = 120 decimal; Legalseba: Noakhali kani typically 120 decimal"
+      },
+      {
+        "kani_dec": 40,
+        "bn": "৪০ শতকের কানি",
+        "where_bn": "কিছু অঞ্চলে প্রচলিত",
+        "source": "Banglapedia lists a 40-decimal kani as a regional variant; ministry unit page gives both 40 and 120 (project research)"
+      },
+      {
+        "kani_dec": 30,
+        "bn": "৩০ শতকের কানি",
+        "where_bn": "কুমিল্লার কোনো কোনো এলাকায়",
+        "source": "Legalseba: in Comilla a kani can mean 120 or 30 decimal"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "title": "Banglapedia — Agrometrology",
+      "url": "https://en.banglapedia.org/index.php/Agrometrology"
+    },
+    {
+      "title": "Legalseba — Land Measurement Systems in Bangladesh",
+      "url": "https://legalseba.com/bd-services/land-measurement-system-in-bangladesh/"
+    }
+  ]
+}

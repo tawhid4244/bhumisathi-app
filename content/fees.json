@@ -1,0 +1,127 @@
+{
+  "note": "Official fees and service times for common land services. Each line says where it comes from and whether it was verified. Fees change; confirm at the AC Land office, the sub-registry office or land.gov.bd. Anything not listed here is NOT an official fee.",
+  "services": [
+    {
+      "id": "mutation",
+      "bn": "নামজারি (ই-মিউটেশন)",
+      "en": "Mutation (e-namjari)",
+      "items": [
+        {
+          "bn": "কোর্ট ফি",
+          "en": "Court fee",
+          "tk": 20,
+          "when_bn": "আবেদনের সময় অনলাইনে"
+        },
+        {
+          "bn": "নোটিশ জারি ফি",
+          "en": "Notice fee",
+          "tk": 50,
+          "when_bn": "আবেদনের সময় অনলাইনে"
+        },
+        {
+          "bn": "রেকর্ড সংশোধন / হালনাগাদ ফি",
+          "en": "Record correction fee",
+          "tk": 1000,
+          "when_bn": "অনুমোদনের পর অনলাইনে (ডিসিআর)"
+        },
+        {
+          "bn": "নামজারি খতিয়ানের কপি",
+          "en": "Mutation khatian copy",
+          "tk": 100,
+          "when_bn": "অনুমোদনের পর অনলাইনে (ডিসিআর)"
+        }
+      ],
+      "time_bn": "সময়সীমা নিশ্চিতভাবে যাচাই করা যায়নি; সংবাদে ২৮ দিনের লক্ষ্যের কথা আছে — এসি ল্যান্ড অফিসে জেনে নিন।",
+      "law_id": "mutation-fee",
+      "source": "BSS (bssnews.net/news/25997) and union land-office service pages on the national portal; 2026-11-15",
+      "verified": "Consistent across several sources found by search; official portal pages had moved. Confirm locally."
+    },
+    {
+      "id": "certified_khatian",
+      "bn": "খতিয়ানের সার্টিফাইড কপি",
+      "en": "Certified khatian copy",
+      "items": [
+        {
+          "bn": "সার্টিফাইড কপি",
+          "en": "Certified copy",
+          "tk": 100,
+          "when_bn": "আবেদনের সময়"
+        },
+        {
+          "bn": "ডাকযোগে পাঠানোর খরচ (ঐচ্ছিক)",
+          "en": "Postage (optional)",
+          "tk": 40,
+          "when_bn": "ডাকে নিলে"
+        }
+      ],
+      "time_bn": "অফিস ও অনলাইন সেবার অবস্থার উপর নির্ভর করে।",
+      "source": "land.gov.bd fee page as noted in the project preparation checklist (2026-10)",
+      "verified": "Team research note; not re-verified on 2026-11-15."
+    },
+    {
+      "id": "online_khatian",
+      "bn": "অনলাইন খতিয়ান কপি",
+      "en": "Online khatian copy",
+      "items": [
+        {
+          "bn": "অনলাইন কপি",
+          "en": "Online copy",
+          "tk": 100,
+          "when_bn": "আবেদনের সময় অনলাইনে"
+        }
+      ],
+      "time_bn": "সাধারণত অনলাইনে দ্রুত পাওয়া যায়।",
+      "source": "land.gov.bd fee page as noted in the project preparation checklist (2026-10)",
+      "verified": "Team research note; not re-verified on 2026-11-15."
+    },
+    {
+      "id": "mouza_map",
+      "bn": "মৌজা ম্যাপ",
+      "en": "Mouza map",
+      "items": [
+        {
+          "bn": "মৌজা ম্যাপ (প্রতি শিট)",
+          "en": "Mouza map (per sheet)",
+          "tk": 520,
+          "when_bn": "আবেদনের সময়"
+        },
+        {
+          "bn": "ডাকযোগে পাঠানোর খরচ (ঐচ্ছিক)",
+          "en": "Postage (optional)",
+          "tk": 110,
+          "when_bn": "ডাকে নিলে"
+        }
+      ],
+      "time_bn": "অফিস ও অনলাইন সেবার অবস্থার উপর নির্ভর করে।",
+      "source": "land.gov.bd fee page as noted in the project preparation checklist (2026-10)",
+      "verified": "Team research note; not re-verified on 2026-11-15."
+    },
+    {
+      "id": "registration",
+      "bn": "দলিল রেজিস্ট্রি (সাব-রেজিস্ট্রি অফিস)",
+      "en": "Deed registration (sub-registry)",
+      "items": [],
+      "components_bn": [
+        "রেজিস্ট্রেশন ফি",
+        "স্ট্যাম্প শুল্ক",
+        "স্থানীয় সরকার কর",
+        "উৎসে কর (গেইন ট্যাক্স)",
+        "অন্যান্য নির্ধারিত ফি"
+      ],
+      "time_bn": "দলিল সম্পাদনের পর নির্ধারিত সময়ের মধ্যে রেজিস্ট্রি করতে হয়; বায়নানামা রেজিস্ট্রির সময়সীমা ৬০ দিন (রেজিস্ট্রেশন আইন, ধারা ১৭ক)।",
+      "law_id": "registration-1908-s17a",
+      "source": "Registration Act 1908 (bdlaws.minlaw.gov.bd); rates are set by law and the Finance Act and vary by area and land value",
+      "verified": "Rates NOT listed here because they change yearly and by area; ask the sub-registry office for the current schedule before paying."
+    },
+    {
+      "id": "helpline",
+      "bn": "ভূমি সেবা হেল্পলাইন ১৬১২২",
+      "en": "Land helpline 16122",
+      "items": [],
+      "time_bn": "ফোনে তথ্য ও অভিযোগ।",
+      "law_id": "helpline-16122",
+      "source": "Ministry of Land (land.gov.bd)",
+      "verified": "Listed in the project research; confirm call charges with your operator."
+    }
+  ]
+}

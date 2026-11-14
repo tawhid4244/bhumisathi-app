@@ -8,7 +8,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
-| 3 | 11–15 | in progress (tasks 11–13 done) |
+| 3 | 11–15 | in progress (tasks 11–14 done) |
 | 4 | 16–20 | not started |
 
 ## Golden scenarios
@@ -18,6 +18,29 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 11:00 — Session 3, task 14 (unit converter + fee guide)
+- Research: kani is NOT a fixed size — Banglapedia (Agrometrology) gives 1 kani = 120 decimal with a
+  40-decimal variant, 1 kani = 20 gonda, 1 gonda = 4 kora; Legalseba: Noakhali kani typically 120,
+  Comilla 120 or 30. Bigha standard = 20 katha × 720 sq ft ≈ 33.06 dec. kranti = kora/3 is "common use,
+  confirm locally".
+- Done: `content/units.json` (sourced sizes + relations), `content/fees.json` (mutation 20+50+1,000+100
+  = 1,170 with source and verification note; certified khatian 100 (+40 post), online khatian 100,
+  mouza map 520 (+110 post) marked as team research not re-verified; registration lists only the cost
+  components — no invented rates; 16122). `lib/engines/units.ts` converter (several amounts, e.g.
+  "২ কানি ৫ গন্ডা"; without a local kani size every known size is shown side by side; custom kani and
+  bigha sizes; rules explained in Bangla), `lib/engines/fees.ts` (aliases: নামজারি, খারিজ, রেজিস্ট্রি…).
+  Tools `unit_convert`, `fee_guide` (prompt tells Sathi to use them and to say which kani size it used).
+  Pages `/units` (example button, kani-size choice, custom bigha, cards per size with sources) and
+  `/fees` (items, totals, time, source, verification note per service).
+- Tests: npm run check green (182: concept example 2 kani 5 gonda → 90 dec / 0.90 acre / 39,204 sq ft at
+  40 and 270 / 2.70 / 117,612 at 120; kani family ratios; bigha/acre/sq ft/hectare; custom sizes;
+  mutation 1,170; aliases; every service sourced; no registration rates invented).
+  npm run e2e green (incl. units-fees.spec on phone + desktop). Build green.
+- Known issues: certified copy / mouza map fees and the 28-day mutation target are not re-verified on an
+  official page (marked as such on screen). /units and /fees are not linked from the home page yet
+  (task 15).
+- Next step: task 15 (connect everything: home journey, cross-links, all tools in one chat).
 
 ### 2026-11-15 10:10 — Session 3, task 13 (mouza map + map_area)
 - Done: `lib/engines/units.ts` (decimal base; sq ft, m², acre, katha 720 sq ft, standard bigha 33.06 dec

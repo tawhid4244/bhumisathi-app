@@ -82,6 +82,8 @@ export const TOOL_LABEL: Record<string, Record<Lang, string>> = {
   warish_compute: { bn: "ওয়ারিশ হিসাব হয়েছে", en: "Inheritance calculated" },
   deed_read: { bn: "দলিল পড়া হয়েছে", en: "Deed read" },
   find_person: { bn: "ব্যক্তি খোঁজা হয়েছে", en: "Person found" },
+  unit_convert: { bn: "একক রূপান্তর হয়েছে", en: "Units converted" },
+  fee_guide: { bn: "সরকারি ফি দেখা হয়েছে", en: "Fees checked" },
   register_baina: { bn: "বায়না নিবন্ধন", en: "Baina registration" },
   register_sale: { bn: "বিক্রয় নিবন্ধন", en: "Sale registration" },
   register_lien: { bn: "বন্ধক নিবন্ধন", en: "Mortgage registration" },
