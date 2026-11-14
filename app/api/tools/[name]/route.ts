@@ -1,6 +1,8 @@
 import { ZodError } from "zod";
 import { KhatianNotFoundError } from "@/lib/engines/jomi-check";
 import { DagNotFoundError } from "@/lib/engines/ledger";
+import { WarishInputError } from "@/lib/engines/warish";
+import { DeceasedNotFoundError } from "@/lib/engines/warish-land";
 import { runTool, UnknownToolError } from "@/lib/tools/registry";
 
 // POST /api/tools/{name} with a JSON body → runs that tool from the registry.
@@ -37,7 +39,17 @@ export async function POST(request: Request, ctx: RouteContext<"/api/tools/[name
         { status: 400 },
       );
     }
-    if (err instanceof DagNotFoundError || err instanceof KhatianNotFoundError) {
+    if (err instanceof WarishInputError) {
+      return Response.json(
+        { error: { bn: "পরিবারের তথ্য সঠিক নয়।", en: err.message } },
+        { status: 400 },
+      );
+    }
+    if (
+      err instanceof DagNotFoundError ||
+      err instanceof KhatianNotFoundError ||
+      err instanceof DeceasedNotFoundError
+    ) {
       return Response.json(
         { error: { bn: "এই মৌজায় দাগ বা খতিয়ানটি পাওয়া যায়নি।", en: err.message } },
         { status: 404 },

@@ -8,16 +8,31 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
-| 3 | 11–15 | in progress (task 11 engine done; UI pending) |
+| 3 | 11–15 | in progress (task 11 done) |
 | 4 | 16–20 | not started |
 
 ## Golden scenarios
 
 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | G8 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| pass | – | partial (check only) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
+| pass | pass | partial (check only) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 08:10 — Session 3, task 11 done (warish tool + /warish page)
+- Done: `lib/engines/warish-land.ts` (deceased owners with BS holdings; per-dag decimals; total-area
+  mode), tool `warish_compute` (zod family schema, also available to Sathi AI), API errors for an
+  impossible family (400) or unknown deceased (404). `/warish`: deceased + land selector (or a total
+  area), "উদাহরণ: আব্দুল করিমের পরিবার" preset (G2 names), spouse/parents/children/siblings counters,
+  predeceased children with their own children (MFLO s.4), result table (name, fraction, %, decimals
+  per dag), women's-share card, step-by-step explanation, MOCK OTP consent per heir (code shown on
+  screen as a demo SMS; wrong code rejected), and after all heirs confirm the bontonnama → mutation
+  checklist (SAT s.143খ, Registration s.17, s.143, Tk 1,170). Select boxes capped to screen width.
+- Tests: npm run check green (147: +3 integration for warish_compute on the seeded world).
+  npm run e2e green (incl. new g2-warish.spec.ts on phone + desktop: G2 per-dag 7.5/21/21/10.5 and
+  5/14/14/7, fractions, names, women's card, consent → checklist, wrong OTP, MFLO on the page, 375 px).
+- Golden scenarios: G2 PASS.
+- Next step: task 12 (deed reader: vision model on content/deeds/deed-4512.png).
 
 ### 2026-11-15 07:00 — Session 3, task 11 (part 1: warish engine) — STOPPED at usage limit
 - Done: `lib/engines/fraction.ts` (exact BigInt fractions); `lib/engines/warish.ts` (Hanafi faraid:

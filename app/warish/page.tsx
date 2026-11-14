@@ -1,8 +1,32 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/ComingSoon";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { PageHeader } from "@/components/PageHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { WarishCalculator } from "@/components/warish/WarishCalculator";
+import { listDeceasedWithLand } from "@/lib/engines/warish-land";
 
 export const metadata: Metadata = { title: "ওয়ারিশ হিসাব" };
 
-export default function Page() {
-  return <ComingSoon titleBn="ওয়ারিশ হিসাব" titleEn="Inheritance (warish) calculator" task={11} />;
+export default function WarishPage() {
+  return (
+    <>
+      <PageHeader
+        titleBn="ওয়ারিশ হিসাব"
+        titleEn="Inheritance (warish) shares per dag"
+        subtitleBn="ফারায়েজ অনুযায়ী প্রত্যেক ওয়ারিশ — মেয়ে ও স্ত্রীসহ — প্রতিটি দাগে কত শতক পাবেন।"
+      />
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
+        <Suspense fallback={<p className="text-ink-soft">লোড হচ্ছে… Loading…</p>}>
+          <Calculator />
+        </Suspense>
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
+
+async function Calculator() {
+  await connection(); // always read the current records
+  return <WarishCalculator deceased={await listDeceasedWithLand()} />;
 }
