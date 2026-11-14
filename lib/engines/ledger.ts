@@ -169,3 +169,28 @@ export async function registerEvent(args: {
                           ${args.area}, ${args.days ?? 90}, ${args.ref ?? null}) as r`;
   return row!.r;
 }
+
+export interface DagMatch {
+  mouza_bn: string;
+  mouza_en: string;
+  jl_no: number;
+  dag_no: number;
+}
+
+/** Every mouza that has a dag with this number (used when someone gives only a dag number). */
+export async function findDag(dagNo: number): Promise<DagMatch[]> {
+  const sql = getSql();
+  return sql<DagMatch[]>`
+    select mz.name_bn as mouza_bn, mz.name_en as mouza_en, mz.jl_no, d.dag_no
+    from dags d join mouzas mz on mz.id = d.mouza_id
+    where d.dag_no = ${dagNo} order by mz.jl_no`;
+}
+
+/** Names of owners by id, for read-backs. */
+export async function ownerNames(ids: number[]): Promise<Map<number, string>> {
+  if (ids.length === 0) return new Map();
+  const sql = getSql();
+  const rows = await sql<{ id: number; name_bn: string }[]>`
+    select id, name_bn from owners where id = any(${ids}::int[])`;
+  return new Map(rows.map((r) => [r.id, r.name_bn]));
+}

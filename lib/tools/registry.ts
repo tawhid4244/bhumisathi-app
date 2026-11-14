@@ -1,4 +1,5 @@
 import {
+  findDagTool,
   ledgerStatusTool,
   registerBainaTool,
   registerLienTool,
@@ -14,6 +15,7 @@ import type { ToolDefinition } from "./types";
 export { defineTool, type ToolDefinition, type ToolKind } from "./types";
 
 export const tools: ToolDefinition[] = [
+  findDagTool,
   ledgerStatusTool,
   registerBainaTool,
   registerSaleTool,

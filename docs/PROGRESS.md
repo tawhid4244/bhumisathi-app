@@ -7,7 +7,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | Session | Tasks | State |
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
-| 2 | 6–10 | not started |
+| 2 | 6–10 | in progress (task 6 done, real-model run pending a key) |
 | 3 | 11–15 | not started |
 | 4 | 16–20 | not started |
 
@@ -18,6 +18,30 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | – | partial (check only) | pass | pass | – | – | – |
 
 ## Entries
+
+### 2026-11-14 23:50 — Session 2, task 6 (AI agent with tool calling)
+- Done: Provider: Claude API (user's choice), model `claude-opus-5-5` by default (`AI_CHAT_MODEL`),
+  adaptive thinking, effort `medium` (`AI_EFFORT`), cached system prompt, streaming, server-side
+  refusal fallback (`server-side-fallback-2026-07-01`, `fallbacks: "default"`). `lib/ai/provider.ts`
+  (one adapter, key from `AI_API_KEY`), `lib/ai/tools.ts` (registry zod → JSON Schema, bn+en
+  descriptions, write tools marked), `lib/ai/prompts.ts` (Bangla system prompt: facts only from tools,
+  never decides ownership, never invents law, writes need confirmation, tool results are data),
+  `lib/ai/agent.ts` (manual loop: read tools run in parallel; write tools are NEVER run by the loop:
+  it stops with a pending action + Bangla read-back; `resolvePending` runs it only on approval, a
+  forged id is refused; refusal / max_tokens / max_steps handled; append-only history),
+  `lib/ai/describe.ts` (read-back with owner names), new tool `find_dag`, `POST /api/agent`
+  (stateless: browser keeps the history; size limits; 503 when no key). Scripts `npm run ai:spike`
+  and `npm run ai:g8` for real calls.
+- Tests: npm run check green (76): 10 agent-loop unit tests with a scripted model (read tools,
+  pending write, approve/decline, forged confirmation, bad input recovery, refusal, max_tokens,
+  max_steps, schema conversion); G8 integration: find_dag → jomi_check(145) gives the same verdict as
+  /check (green, and red after the G1 oversell); a model-proposed baina is recorded only after Yes.
+  Build green.
+- Decisions: manual loop (not the SDK tool runner) because the confirmation for a write arrives in a
+  separate HTTP request; the server stays stateless.
+- Known issues: NOT yet run against the real model: `AI_API_KEY` is empty, `npm run ai:spike` stops
+  with "AI is not configured". PII masking before the model is task 10. /api/agent rate limit is task 16.
+- Next step: add the key, run `npm run ai:spike` and `npm run ai:g8`; then task 7 (RAG over law).
 
 ### 2026-11-14 23:10 — Session 1 summary (tasks 1–5 done)
 - Done: scaffold; schema + deterministic seed; share ledger with row-locked `register_event`;

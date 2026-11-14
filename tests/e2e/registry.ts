@@ -23,7 +23,9 @@ export async function transact(
   if (opts.seller) {
     await page.getByLabel(/বিক্রেতা|জমির মালিক/).selectOption({ label: opts.seller });
   }
-  await page.getByRole("combobox", { name: /^(ক্রেতা|ব্যাংক)/ }).selectOption({ label: opts.counterparty });
+  await page
+    .getByRole("combobox", { name: /^(ক্রেতা|ব্যাংক)/ })
+    .selectOption({ label: opts.counterparty });
   await page.getByLabel("জমির পরিমাণ (শতক)").fill(opts.area);
   await page.getByRole("button", { name: "জমি যাচাই করুন" }).click();
   await expect(page.getByTestId("readback")).toBeVisible();

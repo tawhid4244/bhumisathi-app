@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getLedgerStatus, registerEvent } from "../engines/ledger";
+import { findDag, getLedgerStatus, registerEvent } from "../engines/ledger";
 import { defineTool } from "./types";
 
 // Ledger tools: ledger_status (read) and register_baina / register_sale / register_lien (write).
@@ -170,4 +170,18 @@ export const registerLienTool = defineTool({
       area: i.area_dec,
       ref: i.loan_ref,
     }),
+});
+
+export const findDagTool = defineTool({
+  name: "find_dag",
+  kind: "read",
+  description: {
+    bn: "শুধু দাগ নম্বর জানা থাকলে কোন কোন মৌজায় ওই নম্বরের দাগ আছে তা খুঁজে দেয়।",
+    en: "Finds which mouzas have a dag with this number (use when the mouza was not given).",
+  },
+  input: z.object({ dag_no: dagRef.shape.dag_no }),
+  output: z.array(
+    z.object({ mouza_bn: z.string(), mouza_en: z.string(), jl_no: z.number(), dag_no: z.number() }),
+  ),
+  handler: async ({ dag_no }) => findDag(dag_no),
 });
