@@ -9,7 +9,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
 | 3 | 11–15 | done (2026-11-15) |
-| 4 | 16–20 | in progress: tasks 16–17 done |
+| 4 | 16–20 | in progress: tasks 16–18 done |
 
 ## Golden scenarios
 
@@ -18,6 +18,35 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 16:45 — Session 4, task 18 (office/admin view, judge mode, accessibility)
+- Done:
+  - **Judge mode** (`/judge`, big button on the home page, no account needed): resets the demo and
+    plays nine steps, G1 baina → G1 double sale blocked → G1 honest sale → G3 deed → G8 Sathi AI →
+    G2 warish → G7 seal (green) → G7 superseded (amber), each with a Bangla + English caption,
+    the result and a "see it yourself" link. Auto-advances every 18 s (≈3 min); pause and "পরের ধাপ".
+    Security: the browser sends only a step number; every action is fixed in `lib/demo/judge.ts`
+    (fixed dags, people, areas); writes run as a scripted demo officer and are audited; the visitor
+    never gets an officer/admin session. Rate limited per IP (60 steps, 6 resets a minute);
+    `JUDGE_MODE=off` or `DEMO_RESET_DISABLED=true` switches it off.
+  - **Office view** (`/admin`): officers see tiles (dags, registered/blocked transactions, pending
+    mutations, seals, audit entries), the audit chain status, pending mutation cases and the
+    latest audit entries (roles only). Admins also see the accounts (never password hashes) with
+    "unlock" for locked accounts (`/api/admin/unlock`, audited) and the demo reset.
+    The user bar links officers to "অফিস" and land holders to "আমার জমি".
+  - Bangla `not-found` and `error` pages (no technical details shown; digest only).
+  - Accessibility pass: `@axe-core/playwright` over 18 pages (incl. a report, a map, warish, 404)
+    at 375 px and desktop: no serious/critical WCAG 2.1 A/AA problems, no sideways scroll, keyboard
+    focus visible (3 px outline). Every existing page already passed; new pages built to the same rules.
+- Tests: integration `judge-office.test.ts` (all nine steps with the expected verdicts on the mock
+  model; scripted writes audited; chain intact; office view hides identities; no password hashes).
+  e2e `a11y.spec.ts`, `judge-admin.spec.ts`.
+  Results: npm run check green (225 unit + integration), build green, e2e 192/192 (mobile + desktop).
+- Decisions: in the tour G8 runs after G1, so Sathi correctly answers RED for dag 145 (nothing left
+  to sell); the caption says so. On a shared deployed site two judges at once share one demo world.
+- Known issues: judge mode on the real Gemini key uses two model calls (deed + chat) of the free quota
+  per run; if the quota is used up, that step shows a message and the tour continues.
+- Next step: task 19 (deploy: Vercel + Supabase/cloud Postgres; secrets in the host's store; SITE_URL).
 
 ### 2026-11-15 15:30 — Session 4, task 17 (audit log + BhumiSeal-lite, G7)
 - Done:

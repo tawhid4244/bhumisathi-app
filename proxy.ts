@@ -11,7 +11,7 @@ import { SESSION_COOKIE } from "./lib/auth/session-cookie";
 //    This is only a shortcut: the page itself still checks the session and the role.
 
 const SAFE = new Set(["GET", "HEAD", "OPTIONS"]);
-const SIGNED_IN_PAGES = ["/chat", "/deed", "/registry", "/my-land"];
+const SIGNED_IN_PAGES = ["/chat", "/deed", "/registry", "/my-land", "/admin"];
 
 export function proxy(request: NextRequest) {
   const { pathname, search, origin } = request.nextUrl;
@@ -37,4 +37,6 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/api/:path*", "/chat", "/deed", "/registry", "/my-land"] };
+export const config = {
+  matcher: ["/api/:path*", "/chat", "/deed", "/registry", "/my-land", "/admin"],
+};

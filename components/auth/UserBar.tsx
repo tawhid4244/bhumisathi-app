@@ -25,6 +25,21 @@ export async function UserBar() {
         {user.name_bn}
         <span className="ml-1 rounded bg-white/15 px-1.5 py-0.5 text-xs">{ROLE_BN[user.role]}</span>
       </span>
+      {user.role !== "citizen" ? (
+        <Link
+          href="/admin"
+          className="inline-flex min-h-11 shrink-0 items-center px-1 text-white underline-offset-4 hover:underline"
+        >
+          অফিস
+        </Link>
+      ) : user.owner_id ? (
+        <Link
+          href="/my-land"
+          className="inline-flex min-h-11 shrink-0 items-center px-1 text-white underline-offset-4 hover:underline"
+        >
+          আমার জমি
+        </Link>
+      ) : null}
       <LogoutButton />
     </div>
   );

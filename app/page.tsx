@@ -85,6 +85,15 @@ export default function Home() {
           <p className="mt-4 max-w-xl text-white/90">
             জমি কেনার আগে যাচাই, ওয়ারিশের হিসাব, মাপ ও আইনি তথ্য — এক জায়গায়, বাংলায়।
           </p>
+          <Link
+            href="/judge"
+            className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-lg bg-white px-4 font-semibold text-ink"
+          >
+            ▶ জাজ মোড — ৩ মিনিটে দেখুন
+            <span lang="en" className="text-sm font-normal text-ink-soft">
+              Judge mode
+            </span>
+          </Link>
         </div>
       </header>
 
