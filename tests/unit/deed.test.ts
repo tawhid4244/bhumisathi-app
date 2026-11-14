@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readUpload, sniffImage, UploadError } from "@/lib/adapters/storage";
+import { SYSTEM } from "@/lib/tools/types";
 import { MOCK_DEED_4512 } from "@/lib/ai/vision";
 import { deedSummary, normalizeName, sameName } from "@/lib/engines/deed-check";
 
@@ -29,7 +30,7 @@ describe("deed reader helpers", () => {
   });
 
   it("refuses upload ids that could reach other files", async () => {
-    await expect(readUpload("../.env.local")).rejects.toThrow(UploadError);
-    await expect(readUpload("ZZZZZZZZZZZZZZZZZZZZZZZZ")).rejects.toThrow(UploadError);
+    await expect(readUpload("../.env.local", SYSTEM)).rejects.toThrow(UploadError);
+    await expect(readUpload("ZZZZZZZZZZZZZZZZZZZZZZZZ", SYSTEM)).rejects.toThrow(UploadError);
   });
 });

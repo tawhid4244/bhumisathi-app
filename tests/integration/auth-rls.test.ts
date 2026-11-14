@@ -1,5 +1,3 @@
-import { rm } from "node:fs/promises";
-import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { UploadError } from "@/lib/adapters/storage";
 import { assertCanReadUpload, storeUpload } from "@/lib/adapters/uploads";
@@ -21,7 +19,6 @@ const NO_LOGIN = "scrypt$1$1$1$x$y"; // these accounts never log in
 let alice: SessionUser; // citizen
 let bob: SessionUser; // another citizen
 let officer: SessionUser;
-const made: string[] = [];
 
 async function account(email: string, role: SessionUser["role"]): Promise<SessionUser> {
   const id = await upsertUser({ email, name_bn: email, role, passwordHash: NO_LOGIN });
@@ -36,7 +33,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  for (const id of made) await rm(path.join(process.cwd(), ".uploads", id), { force: true });
   await sql`delete from users where email like '%@rls.test' or email like '%@login.test'`;
   await closeSql();
 });
@@ -45,7 +41,6 @@ describe("private uploads: a citizen cannot read another citizen's deed", () => 
   let id: string;
   beforeAll(async () => {
     id = (await storeUpload(alice, PNG)).id;
-    made.push(id);
   });
 
   it("the owner and officers can read it; another citizen and visitors cannot", async () => {
@@ -100,6 +95,19 @@ describe("the restricted database role", () => {
       (tx) => tx`select count(*)::int as n from ledger_events`,
     );
     expect(forOfficer[0]!.n).toBe(total[0]!.n);
+  });
+
+  it("cannot call the ledger-write or audit functions (only the server's own role can)", async () => {
+    await expect(withUser(officer, (tx) => tx`select register_event('sale', 1, 1, 4, 1)`)).rejects.toThrow(/permission denied/); // prettier-ignore
+    await expect(withUser(officer, (tx) => tx`select * from append_audit('{}')`)).rejects.toThrow(/permission denied/); // prettier-ignore
+  });
+
+  it("stores the image bytes in the row, behind the same RLS", async () => {
+    const id = (await storeUpload(alice, PNG)).id;
+    const own = await withUser(alice, (tx) => tx`select length(data) as n from uploads where id = ${id}`); // prettier-ignore
+    expect(Number(own[0]!.n)).toBe(PNG.length);
+    const other = await withUser(bob, (tx) => tx`select data from uploads where id = ${id}`);
+    expect(other).toHaveLength(0);
   });
 
   it("every table has Row Level Security switched on", async () => {

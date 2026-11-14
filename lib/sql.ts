@@ -22,11 +22,14 @@ const globalForSql = globalThis as unknown as { __bhumiSql?: Sql };
 export function getSql(): Sql {
   if (typeof window !== "undefined") throw new Error("getSql() is server-only.");
   if (!globalForSql.__bhumiSql) {
-    globalForSql.__bhumiSql = postgres(databaseUrl(), {
+    const url = databaseUrl();
+    const local = /@(localhost|127\.0\.0\.1)[:/]/.test(url);
+    globalForSql.__bhumiSql = postgres(url, {
       max: 10,
       // numeric columns come back as strings by default; areas are converted explicitly.
       onnotice: () => {},
       prepare: false, // required by Supabase's transaction pooler; harmless locally
+      ssl: local ? false : "require", // the cloud database is only ever reached over TLS
     });
   }
   return globalForSql.__bhumiSql;

@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { readUpload } from "../adapters/storage";
-import { assertCanReadUpload } from "../adapters/uploads";
 import { deedExtractSchema, getVisionReader } from "../ai/vision";
 import { checkDeed } from "../engines/deed-check";
 import { defineTool } from "./types";
@@ -49,9 +48,9 @@ export const deedReadTool = defineTool({
         }
       : null,
   handler: async ({ upload_id }, ctx) => {
-    // Row Level Security: a citizen may read only their own upload (officers may read any).
-    if (!ctx.system) await assertCanReadUpload(ctx.user, upload_id);
-    const { buf, mime } = await readUpload(upload_id);
+    // Read AS the caller: Row Level Security lets a citizen read only their own upload
+    // (officers may read any), before any model sees the image.
+    const { buf, mime } = await readUpload(upload_id, ctx);
     const { deed, model } = await getVisionReader().read(buf, mime);
     const check = await checkDeed(deed);
     return { model, deed, ...check };

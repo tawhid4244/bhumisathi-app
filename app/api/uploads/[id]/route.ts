@@ -1,5 +1,5 @@
 import { readUpload, UploadError } from "@/lib/adapters/storage";
-import { assertCanReadUpload, verifyUploadSignature } from "@/lib/adapters/uploads";
+import { verifyUploadSignature } from "@/lib/adapters/uploads";
 import { requireRole } from "@/lib/auth/guard";
 
 // GET /api/uploads/{id}?exp=…&sig=… → the private image, only with a valid, unexpired link made
@@ -15,8 +15,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/uploads/[id]
     return notFound();
   }
   try {
-    await assertCanReadUpload(user, id);
-    const { buf, mime } = await readUpload(id);
+    const { buf, mime } = await readUpload(id, { user }); // RLS: owner or officer only
     return new Response(new Uint8Array(buf), {
       headers: {
         "content-type": mime,

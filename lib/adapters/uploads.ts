@@ -5,7 +5,7 @@ import { saveUpload, UploadError } from "./storage";
 
 // Who owns each private upload, checked through Row Level Security, plus short-lived signed URLs.
 //
-// * storeUpload writes the file and an `uploads` row AS the user (role app_user): the RLS insert
+// * storeUpload writes the image and its `uploads` row AS the user (role app_user): the RLS insert
 //   policy only accepts rows whose owner is the signed-in user.
 // * assertCanReadUpload selects the row AS the user: RLS returns it only to its owner or to an
 //   officer/admin. Anyone else gets "not found" — we never reveal that the id exists.
@@ -18,14 +18,7 @@ export async function storeUpload(
   user: SessionUser,
   buf: Buffer,
 ): Promise<{ id: string; mime: string }> {
-  const saved = await saveUpload(buf);
-  await withUser(
-    user,
-    (tx) => tx`
-    insert into uploads (id, owner_user_id, mime, size_bytes)
-    values (${saved.id}, ${user.id}, ${saved.mime}, ${buf.length})`,
-  );
-  return saved;
+  return saveUpload(buf, user);
 }
 
 export async function assertCanReadUpload(user: SessionUser | null, id: string): Promise<void> {

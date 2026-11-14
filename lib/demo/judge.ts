@@ -137,7 +137,8 @@ export const JUDGE_STEPS: ((sql: ReturnType<typeof getSql>) => Promise<JudgeCard
       scenario: "G8",
       title_bn: "সাথী এআই — বাংলায় প্রশ্ন",
       caption_bn: `নাগরিক জিজ্ঞাসা করলেন: “${question}”। সাথী নিজে যাচাই টুল চালিয়ে উত্তর দিল: একটু আগের বায়না ও বিক্রির পরে দাগ ১৪৫-এ আর বিক্রয়যোগ্য জমি নেই — কেনা নিরাপদ নয়।`,
-      caption_en: "A Bangla question (typed or spoken): Sathi runs the same check; after G1 nothing is left to sell.",
+      caption_en:
+        "A Bangla question (typed or spoken): Sathi runs the same check; after G1 nothing is left to sell.",
       verdict: check?.verdict,
       lines: [res.reply.slice(0, 400)],
       link: { href: `/chat?q=${encodeURIComponent(question)}`, label_bn: "নিজে জিজ্ঞাসা করুন" },

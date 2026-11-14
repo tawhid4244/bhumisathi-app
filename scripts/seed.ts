@@ -40,21 +40,3 @@ export async function seed(sql: postgres.Sql): Promise<Record<string, number>> {
   });
   return counts;
 }
-
-if (process.argv[1]?.endsWith("seed.ts")) {
-  (async () => {
-    const { ensureLocalDb } = await import("./local-db");
-    const { migrate } = await import("./migrate");
-    const { getSql, closeSql } = await import("../lib/sql");
-    if (!process.env.DATABASE_URL) await ensureLocalDb();
-    const sql = getSql();
-    await migrate(sql, true);
-    const counts = await seed(sql);
-    console.log("Seeded synthetic world (seed 2026). Rows per table:");
-    console.table(counts);
-    await closeSql();
-  })().catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
-}

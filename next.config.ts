@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // The law library is read from disk at runtime (lib/ai/laws.ts): ship it with the server code.
   outputFileTracingIncludes: {
-    "/api/**": ["./content/laws/**", "./content/qa.json"],
+    "/api/**": ["./content/laws/**", "./content/qa.json", "./content/deeds/**"],
     "/chat": ["./content/laws/**", "./content/qa.json"],
   },
   turbopack: {

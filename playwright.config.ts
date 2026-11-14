@@ -3,14 +3,12 @@ import { AUTH } from "./tests/e2e/auth-files";
 import { ensureAuthSecrets } from "./scripts/demo-users";
 
 // Demo-account password and AUTH_SECRET come from .env.local (generated on first run, never printed).
-if (!process.env.E2E_BASE_URL) {
-  try {
-    process.loadEnvFile(".env.local");
-  } catch {
-    /* no .env.local yet */
-  }
-  ensureAuthSecrets();
+try {
+  process.loadEnvFile(".env.local"); // the demo-account password, also for a live site
+} catch {
+  /* no .env.local yet */
 }
+if (!process.env.E2E_BASE_URL) ensureAuthSecrets();
 
 // One e2e file per golden scenario lives in tests/e2e (gN-*.spec.ts).
 // Set E2E_BASE_URL to run the same tests against a deployed URL (task 19).

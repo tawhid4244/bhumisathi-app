@@ -23,7 +23,9 @@ export function ensureAuthSecrets(envPath = path.join(process.cwd(), ".env.local
   if (!process.env.SEAL_PRIVATE_KEY) {
     // BhumiSeal signing key (Ed25519, PKCS#8 DER in base64). The public key is derived from it.
     const { privateKey } = generateKeyPairSync("ed25519");
-    created.SEAL_PRIVATE_KEY = privateKey.export({ format: "der", type: "pkcs8" }).toString("base64");
+    created.SEAL_PRIVATE_KEY = privateKey
+      .export({ format: "der", type: "pkcs8" })
+      .toString("base64");
   }
   if (!process.env.DEMO_USER_PASSWORD) {
     created.DEMO_USER_PASSWORD = `Demo-${randomBytes(12).toString("base64url")}`;
@@ -72,8 +74,7 @@ if (process.argv[1]?.endsWith("demo-users.ts")) {
     const { migrate } = await import("./migrate");
     const { getSql, closeSql } = await import("../lib/sql");
     const created = ensureAuthSecrets();
-    if (created.length)
-      console.log(`✓ Generated ${created.join(", ")} in .env.local (not shown).`);
+    if (created.length) console.log(`✓ Generated ${created.join(", ")} in .env.local (not shown).`);
     if (!process.env.DATABASE_URL) await ensureLocalDb();
     const sql = getSql();
     await migrate(sql, true);
