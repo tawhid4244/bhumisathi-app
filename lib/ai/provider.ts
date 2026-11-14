@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { DEFAULT_GEMINI_MODEL, GeminiProvider } from "./gemini";
+import { MockProvider } from "./mock-provider";
 
 // One adapter between BhumiSathi and the AI model. Model name and key come only from the
 // environment (.env.local / Vercel). Tests swap in a scripted provider with the same interface.
@@ -75,6 +76,11 @@ export function getProvider(): ModelProvider {
   if (cached) return cached;
   const provider = (process.env.AI_PROVIDER || "").trim().toLowerCase();
   const model = process.env.AI_CHAT_MODEL?.trim();
+  if (provider === "mock") {
+    // Scripted stand-in for browser tests and offline demos (no key, no cost).
+    cached = new MockProvider();
+    return cached;
+  }
   if (provider === "gemini") {
     const key = process.env.AI_API_KEY || process.env.GEMINI_API_KEY;
     if (!key) throw new AiNotConfiguredError();

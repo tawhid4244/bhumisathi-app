@@ -67,6 +67,8 @@ export interface RunAgentOptions {
   maxSteps?: number;
   /** The citizen's answer to a pending write action from the previous turn. */
   resolvePending?: { tool_use_id: string; approved: boolean };
+  /** Language chosen in the app; English adds one line to the system prompt. */
+  replyLanguage?: "bn" | "en";
   /** Builds the read-back text for a write action (owner names etc.). */
   describe?: (name: string, input: Record<string, unknown>) => Promise<string>;
 }
@@ -196,10 +198,15 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
 
   // 2. The loop: ask the model, run read tools, repeat until it answers.
   const maxSteps = opts.maxSteps ?? 8;
+  const system =
+    opts.replyLanguage === "en"
+      ? `${SATHI_SYSTEM_PROMPT}
+
+The person chose English in the app: reply in English.`
+      : SATHI_SYSTEM_PROMPT;
   for (let step = 0; step < maxSteps; step++) {
-    const res = await opts.provider.send(
-      { system: SATHI_SYSTEM_PROMPT, tools, messages },
-      (delta) => emit({ type: "text", delta }),
+    const res = await opts.provider.send({ system, tools, messages }, (delta) =>
+      emit({ type: "text", delta }),
     );
     messages.push({ role: "assistant", content: res.content });
 

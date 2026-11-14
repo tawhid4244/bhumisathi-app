@@ -7,7 +7,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | Session | Tasks | State |
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
-| 2 | 6–10 | in progress (tasks 6–7 done, verified on real Gemini) |
+| 2 | 6–10 | in progress (tasks 6–8 done, verified on real Gemini) |
 | 3 | 11–15 | not started |
 | 4 | 16–20 | not started |
 
@@ -18,6 +18,27 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | – | partial (check only) | pass | pass | pass (real Gemini) | – | pass (typed, real Gemini; voice in task 9) |
 
 ## Entries
+
+### 2026-11-15 03:20 — Session 2, task 8 (/chat page)
+- Done: `POST /api/agent/stream` (NDJSON events: text, tool badge, pending action, done, error);
+  shared request checks in `lib/ai/agent-request.ts` (size limit, either message or confirmation,
+  `lang`), lean `ToolBadge`s (verdict for jomi_check, ref/blocked reason for writes).
+  `/chat` (`components/chat/ChatPanel.tsx`): streamed answers, tool badges ("জমি যাচাই করা হয়েছে"),
+  verdict chip linking to `/check?mouza=…&no=…`, sources list under legal answers ("ধারা ১৪৩",
+  link to the official page), amber Yes/No confirmation card before any write (text box locked until
+  answered; card removed after one press), বাংলা/English toggle (screen text + `replyLanguage`),
+  suggestion chips, new-conversation button, sticky input, safe mini-markdown renderer (no HTML
+  injection). `AI_PROVIDER=mock` (`lib/ai/mock-provider.ts`): scripted model with the real tool
+  protocol, used by browser tests. Removed obsolete `interest-cohort` from Permissions-Policy
+  (browser warning).
+- Tests: npm run check green (101). npm run e2e green: 52 (mobile 375 px + desktop), new
+  `chat.spec.ts`: G8 typed (badge, "সবুজ", chip → /check shows the same verdict), G6 (Tk 1,170 +
+  sources "ধারা ১৪৩" with https link), Yes registers B-0021 and nothing is written before Yes, No
+  records nothing, no-source refusal, English toggle, no horizontal scroll at 375 px.
+  REAL: /api/agent/stream with Gemini → find_dag → jomi_check (green) → Bangla answer with caveat.
+- Known issues: Gemini adapter is not token-streamed (text arrives in one piece per step); a
+  Windows command-line curl mangles Bangla unless the body is sent from a UTF-8 file (test-only).
+- Next step: task 9 (voice: push-to-talk, number read-back, speech reply).
 
 ### 2026-11-15 02:30 — Session 2, task 7 (legal knowledge with sources, RAG)
 - Research: official texts read on bdlaws.minlaw.gov.bd with the built-in browser (the automated

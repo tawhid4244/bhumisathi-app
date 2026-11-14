@@ -10,6 +10,8 @@ export default defineConfig({
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,
   workers: 1,
+  // The dev server compiles a page the first time it is opened; give it time.
+  expect: { timeout: 15_000 },
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
@@ -29,5 +31,7 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
+        // Browser tests use the scripted mock model: no API key, no cost, same answers every run.
+        env: { AI_PROVIDER: "mock", EMBEDDING_PROVIDER: "none" },
       },
 });

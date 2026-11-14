@@ -1,38 +1,15 @@
-import { z } from "zod";
 import { runAgent } from "@/lib/ai/agent";
+import { finalPayload, parseAgentRequest } from "@/lib/ai/agent-request";
 import { describeWithNames } from "@/lib/ai/describe";
-import { AiNotConfiguredError, getProvider, type AgentMessage } from "@/lib/ai/provider";
+import { AiNotConfiguredError, getProvider } from "@/lib/ai/provider";
 
-// POST /api/agent → one turn of the Sathi agent.
-// Body: { messages: previous history, message?: new user text, confirm?: { tool_use_id, approved } }
-// The browser keeps the history and sends it back each turn (the server stores nothing).
-// Size limits stop abuse; task 16 adds rate limiting and task 10 adds PII masking.
-
-const MAX_BODY_BYTES = 400_000;
-
-const bodySchema = z
-  .object({
-    messages: z.array(z.any()).max(80).default([]),
-    message: z.string().trim().min(1).max(1000).optional(),
-    confirm: z
-      .object({ tool_use_id: z.string().min(1).max(100), approved: z.boolean() })
-      .optional(),
-  })
-  .refine((b) => (b.message ? 1 : 0) + (b.confirm ? 1 : 0) === 1, {
-    message: "Send either a message or a confirmation.",
-  });
+// POST /api/agent → one turn of the Sathi agent, as a single JSON response.
+// The chat page uses /api/agent/stream (same request, streamed events).
+// Task 16 adds rate limiting; task 10 adds PII masking.
 
 export async function POST(request: Request) {
-  const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) {
-    return Response.json({ error: { bn: "কথোপকথন খুব বড় হয়ে গেছে। নতুন করে শুরু করুন।", en: "Conversation too long." } }, { status: 413 }); // prettier-ignore
-  }
-  let parsed: z.infer<typeof bodySchema>;
-  try {
-    parsed = bodySchema.parse(JSON.parse(raw));
-  } catch {
-    return Response.json({ error: { bn: "অনুরোধটি সঠিক নয়।", en: "Invalid request." } }, { status: 400 }); // prettier-ignore
-  }
+  const parsed = parseAgentRequest(await request.text());
+  if (!parsed.ok) return Response.json({ error: parsed.error }, { status: parsed.status });
 
   let provider;
   try {
@@ -44,19 +21,15 @@ export async function POST(request: Request) {
     throw err;
   }
 
-  const history = parsed.messages as AgentMessage[];
-  const messages: AgentMessage[] = parsed.message
-    ? [...history, { role: "user", content: parsed.message }]
-    : history;
-
   try {
     const result = await runAgent({
-      messages,
+      messages: parsed.messages,
       provider,
-      resolvePending: parsed.confirm,
+      resolvePending: parsed.body.confirm,
+      replyLanguage: parsed.body.lang,
       describe: describeWithNames,
     });
-    return Response.json(result);
+    return Response.json(finalPayload(result));
   } catch (err) {
     console.error("agent failed", err);
     return Response.json({ error: { bn: "দুঃখিত, সাথী এখন উত্তর দিতে পারছে না। একটু পরে চেষ্টা করুন।", en: "Agent failed." } }, { status: 502 }); // prettier-ignore

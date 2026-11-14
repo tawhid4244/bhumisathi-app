@@ -13,8 +13,7 @@ const securityHeaders = [
   // Microphone is allowed for our own pages only (push-to-talk); camera for deed photos.
   {
     key: "Permissions-Policy",
-    value:
-      "microphone=(self), camera=(self), geolocation=(), payment=(), usb=(), interest-cohort=()",
+    value: "microphone=(self), camera=(self), geolocation=(), payment=(), usb=()",
   },
   {
     key: "Content-Security-Policy",
