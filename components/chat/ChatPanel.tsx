@@ -1,16 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { PendingAction, SourceRef } from "@/lib/ai/agent";
 import type { ToolBadge } from "@/lib/ai/agent-request";
 import type { AgentMessage } from "@/lib/ai/provider";
+import {
+  canSpeak,
+  readBackQuestion,
+  recognizerCtor,
+  speak,
+  stopSpeaking,
+  type Recognizer,
+} from "@/lib/voice";
 import { RichText } from "./RichText";
 import { sectionLabel, STR, SUGGESTIONS, TOOL_LABEL, type Lang } from "./strings";
 
 // The Sathi chat. The browser keeps the conversation history (sent back each turn) and reads
 // the streamed events from /api/agent/stream: answer text, tool badges, a pending action that
 // needs the citizen's Yes/No, and the final sources.
+// Voice: tap the mic, speak Bangla (bn-BD). If numbers were heard, Sathi reads them back and asks
+// "ঠিক আছে?" before sending. Answers to spoken questions are read aloud. No speech support → no mic.
 
 interface Turn {
   id: string;
@@ -29,6 +39,9 @@ const VERDICT_CHIP = {
   green: "bg-verdict-green text-white",
 } as const;
 
+// Browser features never change while the page is open, so there is nothing to subscribe to.
+const noSubscribe = () => () => {};
+
 let seq = 0;
 const newId = () => `t${Date.now().toString(36)}${seq++}`;
 
@@ -38,7 +51,13 @@ export function ChatPanel() {
   const [history, setHistory] = useState<AgentMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [heard, setHeard] = useState<{ text: string; question: string } | null>(null);
+  const [voiceNote, setVoiceNote] = useState<string | null>(null);
+  const recognizer = useRef<Recognizer | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const micSupported = useSyncExternalStore(noSubscribe, () => recognizerCtor() !== null, () => false); // prettier-ignore
+  const ttsSupported = useSyncExternalStore(noSubscribe, canSpeak, () => false);
   const t = STR[lang];
 
   useEffect(() => {
@@ -48,7 +67,7 @@ export function ChatPanel() {
   const patchLast = (fn: (turn: Turn) => Turn) =>
     setTurns((all) => (all.length ? [...all.slice(0, -1), fn(all[all.length - 1]!)] : all));
 
-  async function run(body: Record<string, unknown>) {
+  async function run(body: Record<string, unknown>, voice = false) {
     setBusy(true);
     setTurns((all) => [
       ...all,
@@ -93,6 +112,8 @@ export function ChatPanel() {
           else if (ev.type === "done") {
             const r = ev.result;
             setHistory(r.messages);
+            // A spoken question gets a spoken answer (or the confirmation read-back).
+            if (voice) speak(r.pending?.summary_bn ?? r.reply, lang);
             patchLast((x) => ({
               ...x,
               text: r.reply || x.text,
@@ -110,15 +131,52 @@ export function ChatPanel() {
     }
   }
 
-  function ask(text: string) {
+  function ask(text: string, voice = false) {
     const q = text.trim();
     if (!q || busy) return;
     setInput("");
+    setHeard(null);
     setTurns((all) => [
       ...all,
       { id: newId(), role: "user", text: q, badges: [], sources: [], pending: null },
     ]);
-    void run({ message: q });
+    void run({ message: q }, voice);
+  }
+
+  // ---------- voice ----------
+  function onHeard(text: string) {
+    const question = readBackQuestion(text, lang);
+    if (!question) return ask(text, true);
+    // Numbers were heard: read them back and wait for "yes" before anything runs.
+    setHeard({ text, question });
+    speak(question, lang);
+  }
+
+  function toggleMic() {
+    if (listening) {
+      recognizer.current?.stop();
+      return;
+    }
+    const Ctor = recognizerCtor();
+    if (!Ctor || busy) return;
+    stopSpeaking();
+    setVoiceNote(null);
+    const rec = new Ctor();
+    rec.lang = lang === "bn" ? "bn-BD" : "en-US";
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e) => {
+      const transcript = e.results[0]?.[0]?.transcript?.trim();
+      if (transcript) onHeard(transcript);
+    };
+    rec.onerror = (e) => {
+      setVoiceNote(e.error === "not-allowed" || e.error === "service-not-allowed" ? t.micDenied : t.micError); // prettier-ignore
+    };
+    rec.onend = () => setListening(false);
+    recognizer.current = rec;
+    setListening(true);
+    rec.start();
   }
 
   function answer(action: PendingAction, approved: boolean) {
@@ -142,8 +200,10 @@ export function ChatPanel() {
   }
 
   function reset() {
+    stopSpeaking();
     setTurns([]);
     setHistory([]);
+    setHeard(null);
   }
 
   const waitingForAnswer = turns.some((x) => x.pending);
@@ -240,6 +300,16 @@ export function ChatPanel() {
                 <p className="animate-pulse text-ink-soft">{t.thinking}</p>
               ) : null}
 
+              {ttsSupported && turn.text && !turn.streaming ? (
+                <button
+                  type="button"
+                  onClick={() => speak(turn.text, lang)}
+                  className="mt-1 inline-flex min-h-9 items-center rounded-md px-2 text-sm text-brand hover:bg-brand-soft"
+                >
+                  ▶ {t.listen}
+                </button>
+              ) : null}
+
               {turn.badges
                 .filter((b) => b.verdict && b.dag_no)
                 .map((b) => (
@@ -313,6 +383,37 @@ export function ChatPanel() {
             </article>
           ),
         )}
+        {heard ? (
+          <section
+            className="rounded-xl border-2 border-brand bg-brand-soft p-3"
+            aria-label={t.heardTitle}
+            data-testid="readback-card"
+          >
+            <p className="text-sm text-ink-soft">
+              {t.heardTitle}: “{heard.text}”
+            </p>
+            <p className="mt-1 font-semibold">{heard.question}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => ask(heard.text, true)}
+                className="min-h-11 rounded-lg bg-ink px-4 font-semibold text-white"
+              >
+                {t.heardYes}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInput(heard.text);
+                  setHeard(null);
+                }}
+                className="min-h-11 rounded-lg border border-line bg-white px-4"
+              >
+                {t.heardNo}
+              </button>
+            </div>
+          </section>
+        ) : null}
         <div ref={endRef} />
       </div>
 
@@ -341,9 +442,36 @@ export function ChatPanel() {
             rows={1}
             maxLength={1000}
             placeholder={t.placeholder}
-            disabled={busy || waitingForAnswer}
+            disabled={busy || waitingForAnswer || Boolean(heard)}
             className="min-h-11 flex-1 resize-none rounded-lg border border-line bg-white px-3 py-2 text-base"
           />
+          {micSupported ? (
+            <button
+              type="button"
+              onClick={toggleMic}
+              disabled={busy || waitingForAnswer || Boolean(heard)}
+              aria-pressed={listening}
+              aria-label={listening ? t.micStop : t.micStart}
+              title={listening ? t.micStop : t.micStart}
+              className={`flex min-h-11 min-w-11 items-center justify-center rounded-lg border disabled:opacity-60 ${
+                listening
+                  ? "animate-pulse border-verdict-red bg-verdict-red text-white"
+                  : "border-line bg-white text-ink"
+              }`}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <rect x="9" y="3" width="6" height="11" rx="3" />
+                <path d="M5 11a7 7 0 0 0 14 0M12 18v3" strokeLinecap="round" />
+              </svg>
+            </button>
+          ) : null}
           <button
             type="submit"
             disabled={busy || waitingForAnswer || !input.trim()}
@@ -352,6 +480,16 @@ export function ChatPanel() {
             {t.send}
           </button>
         </div>
+        {listening ? (
+          <p className="mt-1 text-sm font-medium text-verdict-red" role="status">
+            {t.listening}
+          </p>
+        ) : null}
+        {voiceNote ? (
+          <p className="mt-1 text-sm text-verdict-amber" role="alert">
+            {voiceNote}
+          </p>
+        ) : null}
         <p className="mt-1 text-xs text-ink-soft">{t.disclaimer}</p>
       </form>
     </div>

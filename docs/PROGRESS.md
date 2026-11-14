@@ -7,7 +7,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | Session | Tasks | State |
 | --- | --- | --- |
 | 1 | 1–5 | done (2026-11-14) |
-| 2 | 6–10 | in progress (tasks 6–8 done, verified on real Gemini) |
+| 2 | 6–10 | in progress (tasks 6–9 done, verified on real Gemini) |
 | 3 | 11–15 | not started |
 | 4 | 16–20 | not started |
 
@@ -15,9 +15,27 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 | G1 | G2 | G3 | G4 | G5 | G6 | G7 | G8 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| pass | – | partial (check only) | pass | pass | pass (real Gemini) | – | pass (typed, real Gemini; voice in task 9) |
+| pass | – | partial (check only) | pass | pass | pass (real Gemini) | – | pass (typed real Gemini; voice e2e with fake speech engine; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 04:10 — Session 2, task 9 (voice)
+- Done: `lib/voice.ts` (extractNumbers for Bangla/English digits; `readBackQuestion` →
+  "আপনি কি ১৪৫ নম্বর দাগ বলেছেন? ঠিক আছে?" or a list of all numbers; `speakable` strips markdown,
+  links and cuts at a sentence end; recognizer detection (SpeechRecognition or webkit prefix);
+  `speak` picks a bn-BD voice when the device has one). `/chat`: mic button (tap to talk, `bn-BD`
+  or `en-US` with the toggle; red pulse while listening), read-back card before sending anything
+  with numbers ("হ্যাঁ, পাঠান" / "না, ঠিক করি" puts the text in the box), spoken reply for spoken
+  questions (or the confirmation read-back), "▶ শুনুন" on every answer, clear messages for blocked
+  mic / not understood, no mic button where unsupported (typed path unchanged).
+  `docs/VOICE_TESTING.md`: manual Chrome test steps and troubleshooting.
+- Tests: npm run check green (109; +8 voice unit tests). npm run e2e green (62): new
+  `g8-voice.spec.ts` with a fake speech engine: read-back shown and spoken, nothing sent before Yes,
+  then jomi_check → "সবুজ" (same verdict chip as /check) and the answer is spoken; "না, ঠিক করি";
+  no-number speech sent directly; blocked mic message + typing still works; no mic without support.
+- Known issues: Bangla number WORDS ("একশো পঁয়তাল্লিশ") rely on Chrome writing digits; Windows often
+  has no Bangla text-to-speech voice (use Android Chrome for the demo). Real-microphone test is manual.
+- Next step: task 10 (PII masking, document-as-data guard, 20-question AI evaluation).
 
 ### 2026-11-15 03:20 — Session 2, task 8 (/chat page)
 - Done: `POST /api/agent/stream` (NDJSON events: text, tool badge, pending action, done, error);
