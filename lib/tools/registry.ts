@@ -4,6 +4,7 @@ import {
   registerLienTool,
   registerSaleTool,
 } from "./ledger-tools";
+import { jomiCheckTool } from "./check-tools";
 import type { ToolDefinition } from "./types";
 
 // The single list of everything BhumiSathi can do.
@@ -17,6 +18,7 @@ export const tools: ToolDefinition[] = [
   registerBainaTool,
   registerSaleTool,
   registerLienTool,
+  jomiCheckTool,
 ] as ToolDefinition[];
 
 export function getTool(name: string): ToolDefinition | undefined {

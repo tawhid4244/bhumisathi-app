@@ -19,6 +19,27 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 ## Entries
 
+### 2026-11-14 22:40 — Session 1, task 4 (Jomi Check)
+- Done: `lib/engines/records.ts` (loads all facts for a dag: holders, CS→SA→RS→BS chain, khas, cases,
+  liens, bainas, unmutated deeds, tax, map area, refused oversell attempts in the last 90 days);
+  `lib/engines/rules.ts` (pure rules: KHAS, COURT_CASE (TPA s.52), EXCEEDS_SELLABLE / SELLER_NOT_RECORDED
+  for a specific request, BLOCKED_ATTEMPT, OWNER_DECEASED, MORTGAGE, BAINA, MUTATION_PENDING
+  (SAT Act s.143), TAX_ARREARS (LD Tax Act 2023, one fiscal year of grace), MAP_MISMATCH (≥2 dec or ≥10%),
+  MAP_SMALL_DIFF (info), CHAIN_MISMATCH (>1 dec between surveys); verdict = most serious);
+  `lib/engines/jomi-check.ts` (lookup by dag or BS khatian); tool `jomi_check`.
+  `/check` page: GET search form (mouza, dag or khatian, Bangla digits OK), big verdict banner with
+  shape icon (colour-blind safe), reasons with legal basis, holder balance table, chain timeline,
+  map vs khatian, disclaimer; works without JavaScript; empty, not-found and invalid-number states.
+  `POST /api/demo/reset` (reseeds). Playwright global setup migrates + seeds.
+- Tests: npm run check green (63). npm run e2e green (30, mobile + desktop): G1 on /check
+  (green → amber after B-0021 → red "Requested area exceeds sellable balance"; Bangla digit search),
+  G4 (149 red, sale blocked), G5 (146 amber Demo Bank, 142 red case 101/2025, mortgaged sale blocked).
+  Seeded verdicts: 141 green, 142 red, 143 amber (map +3.04 dec, deed 4512 unmutated), 144 green,
+  145 green, 146 amber, 147 amber (tax), 148 amber (chain), 149 red, Charpara 210 amber (deceased).
+- Decisions: G1 "RED after step 2" is produced by a rule that flags a recent refused oversell attempt
+  (a fraud signal a buyer should see), as well as by checking a specific request.
+- Next step: task 5 (/registry demo screen).
+
 ### 2026-11-14 22:10 — Session 1, task 3 (share ledger)
 - Done: Migration `0002_share_ledger.sql`: `ledger_events` (accepted AND rejected attempts), `sms_log`
   (mock outbox), `mutation_cases`, `dags.ledger_version`; views `bs_holdings`, `dag_locks`,

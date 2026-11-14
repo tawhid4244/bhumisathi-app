@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { KhatianNotFoundError } from "@/lib/engines/jomi-check";
 import { DagNotFoundError } from "@/lib/engines/ledger";
 import { runTool, UnknownToolError } from "@/lib/tools/registry";
 
@@ -36,9 +37,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/tools/[name
         { status: 400 },
       );
     }
-    if (err instanceof DagNotFoundError) {
+    if (err instanceof DagNotFoundError || err instanceof KhatianNotFoundError) {
       return Response.json(
-        { error: { bn: "এই মৌজায় দাগটি পাওয়া যায়নি।", en: err.message } },
+        { error: { bn: "এই মৌজায় দাগ বা খতিয়ানটি পাওয়া যায়নি।", en: err.message } },
         { status: 404 },
       );
     }
