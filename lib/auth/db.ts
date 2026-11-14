@@ -12,7 +12,8 @@ export async function withUser<T>(
 ): Promise<T> {
   return getSql().begin(async (tx) => {
     await tx`select set_config('app.user_id', ${user?.id ?? ""}, true),
-                    set_config('app.user_role', ${user?.role ?? "anon"}, true)`;
+                    set_config('app.user_role', ${user?.role ?? "anon"}, true),
+                    set_config('app.owner_id', ${String(user?.owner_id ?? "")}, true)`;
     await tx.unsafe("set local role app_user");
     return fn(tx);
   }) as Promise<T>;

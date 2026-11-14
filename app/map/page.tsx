@@ -6,7 +6,9 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { MapTabs } from "@/components/map/MapTabs";
 import { MouzaMap } from "@/components/map/MouzaMap";
 import { UploadMeasure } from "@/components/map/UploadMeasure";
-import { loadMouzaMap, mapArea, type MapAreaResult } from "@/lib/engines/map";
+import { currentUser } from "@/lib/auth/current";
+import { runTool } from "@/lib/tools/registry";
+import { loadMouzaMap, type MapAreaResult } from "@/lib/engines/map";
 
 export const metadata: Metadata = { title: "মৌজা ম্যাপে মাপ" };
 
@@ -35,7 +37,8 @@ async function Content({ searchParams }: Pick<PageProps<"/map">, "searchParams">
   const dag = Number((await searchParams).dag);
   let initial: MapAreaResult | null = null;
   if (Number.isInteger(dag) && map.dags.some((d) => d.dag_no === dag)) {
-    initial = await mapArea(map.mouza_en, dag);
+    // Through the tool, so the view goes into the audit log ("who checked my land").
+    initial = (await runTool("map_area", { mouza: map.mouza_en, dag_no: dag }, { user: await currentUser() })) as MapAreaResult; // prettier-ignore
   }
   return <MapTabs mouzaMap={<MouzaMap map={map} initial={initial} />} upload={<UploadMeasure />} />;
 }

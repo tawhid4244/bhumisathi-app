@@ -13,13 +13,29 @@ export interface ToolDefinition<I extends z.ZodType = z.ZodType, O extends z.Zod
   name: string;
   kind: ToolKind;
   description: { bn: string; en: string };
+  /** Not offered to Sathi AI (e.g. output is a QR image the model has no use for). */
+  hiddenFromAgent?: boolean;
   /** Lowest role that may run it (default "public"). Checked by runTool on every call. */
   access?: Access;
+  /**
+   * What to write to the hash-chained audit log after a successful call by a real user
+   * (views and writes). Return null to skip. Runs only for requests, not trusted scripts.
+   */
+  audit?: (input: z.infer<I>, output: z.infer<O>) => AuditSpec | null;
   /** Output contains outside document text (retrieved or uploaded): wrapped as data for the model. */
   untrusted?: boolean;
   input: I;
   output: O;
   handler: (input: z.infer<I>, ctx: ToolContext) => Promise<z.infer<O>>;
+}
+
+export interface AuditSpec {
+  action: string;
+  /** The dag concerned: by id, or by mouza + dag number (resolved by runTool). */
+  dag_id?: number | null;
+  mouza?: string;
+  dag_no?: number;
+  detail?: Record<string, string | number | boolean | null>;
 }
 
 /** Who is calling. `system` is for trusted server code (seed, scripts, tests), never a request. */

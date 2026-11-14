@@ -6,6 +6,7 @@ import { UploadError } from "@/lib/adapters/storage";
 import { VisionNotConfiguredError } from "@/lib/ai/vision";
 import { DeceasedNotFoundError } from "@/lib/engines/warish-land";
 import { NoMapError } from "@/lib/engines/map";
+import { SealKeyMissingError } from "@/lib/engines/seal";
 import { currentUser } from "@/lib/auth/current";
 import { FORBIDDEN, UNAUTHORIZED } from "@/lib/auth/guard";
 import { AccessDeniedError, runTool, UnknownToolError } from "@/lib/tools/registry";
@@ -48,6 +49,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/tools/[name
     }
     if (err instanceof UploadError) {
       return Response.json({ error: { bn: "দলিলের ছবি পাওয়া যায়নি। আবার আপলোড করুন।", en: err.message } }, { status: 404 }); // prettier-ignore
+    }
+    if (err instanceof SealKeyMissingError) {
+      return Response.json({ error: { bn: "সিলের চাবি সেট করা হয়নি।", en: err.message } }, { status: 503 }); // prettier-ignore
     }
     if (err instanceof VisionNotConfiguredError) {
       return Response.json({ error: { bn: "দলিল পড়ার এআই চালু করা হয়নি।", en: err.message } }, { status: 503 }); // prettier-ignore

@@ -4,7 +4,9 @@ import { PageHeader } from "@/components/PageHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ReportView } from "@/components/check/ReportView";
 import { SearchForm } from "@/components/check/SearchForm";
-import { jomiCheck, KhatianNotFoundError, type JomiReport } from "@/lib/engines/jomi-check";
+import { KhatianNotFoundError, type JomiReport } from "@/lib/engines/jomi-check";
+import { currentUser } from "@/lib/auth/current";
+import { runTool } from "@/lib/tools/registry";
 import { DagNotFoundError, westernDigits } from "@/lib/engines/ledger";
 import { listMouzas } from "@/lib/engines/mouzas";
 
@@ -47,9 +49,12 @@ async function CheckContent({ searchParams }: Pick<PageProps<"/check">, "searchP
       problem = { bn: "সঠিক নম্বর লিখুন (যেমন ১৪৫)।", en: "Enter a valid number, e.g. 145." };
     } else {
       try {
-        report = await jomiCheck(
+        // Through the tool, as the signed-in user (or a visitor): the view goes into the audit log.
+        report = (await runTool(
+          "jomi_check",
           by === "khatian" ? { mouza, khatian_no: no } : { mouza, dag_no: no },
-        );
+          { user: await currentUser() },
+        )) as JomiReport;
       } catch (err) {
         if (err instanceof DagNotFoundError || err instanceof KhatianNotFoundError) {
           problem = {

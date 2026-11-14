@@ -1,11 +1,12 @@
 // npm run users → make sure the auth secrets exist in .env.local and the demo accounts exist.
 //
-// * AUTH_SECRET (signs short-lived upload links) and DEMO_USER_PASSWORD are generated with a
+// * AUTH_SECRET (signs short-lived upload links), SEAL_PRIVATE_KEY (signs BhumiSeal reports) and
+//   DEMO_USER_PASSWORD are generated with a
 //   secure random generator the first time and written to .env.local (git-ignored). They are
 //   never printed. To see the demo password, open .env.local yourself.
 // * One synthetic account per role. Emails use the reserved .test domain, so they can never
 //   belong to a real person. Demo reset does NOT touch accounts.
-import { randomBytes } from "node:crypto";
+import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type postgres from "postgres";
@@ -19,6 +20,11 @@ export { DEMO_USERS };
 export function ensureAuthSecrets(envPath = path.join(process.cwd(), ".env.local")): string[] {
   const created: Record<string, string> = {};
   if (!process.env.AUTH_SECRET) created.AUTH_SECRET = randomBytes(32).toString("base64url");
+  if (!process.env.SEAL_PRIVATE_KEY) {
+    // BhumiSeal signing key (Ed25519, PKCS#8 DER in base64). The public key is derived from it.
+    const { privateKey } = generateKeyPairSync("ed25519");
+    created.SEAL_PRIVATE_KEY = privateKey.export({ format: "der", type: "pkcs8" }).toString("base64");
+  }
   if (!process.env.DEMO_USER_PASSWORD) {
     created.DEMO_USER_PASSWORD = `Demo-${randomBytes(12).toString("base64url")}`;
   }
@@ -42,12 +48,18 @@ export async function ensureDemoUsers(sql: postgres.Sql, force = false): Promise
   );
   let made = 0;
   for (const u of DEMO_USERS) {
-    if (!force && existing.has(u.email)) continue;
+    if (!force && existing.has(u.email)) {
+      // Cheap update (no re-hash): keep name, role and land link in step with the list.
+      await sql`update users set name_bn = ${u.name_bn}, role = ${u.role}, owner_id = ${u.owner_id ?? null}
+                where email = ${u.email}`;
+      continue;
+    }
     const hash = await hashPassword(password);
     await sql`
-      insert into users (email, name_bn, role, password_hash)
-      values (${u.email}, ${u.name_bn}, ${u.role}, ${hash})
+      insert into users (email, name_bn, role, password_hash, owner_id)
+      values (${u.email}, ${u.name_bn}, ${u.role}, ${hash}, ${u.owner_id ?? null})
       on conflict (email) do update set name_bn = excluded.name_bn, role = excluded.role,
+        owner_id = excluded.owner_id,
         password_hash = excluded.password_hash, failed_logins = 0, locked_until = null`;
     made++;
   }
@@ -61,7 +73,7 @@ if (process.argv[1]?.endsWith("demo-users.ts")) {
     const { getSql, closeSql } = await import("../lib/sql");
     const created = ensureAuthSecrets();
     if (created.length)
-      console.log(`✓ Generated ${created.join(" and ")} in .env.local (not shown).`);
+      console.log(`✓ Generated ${created.join(", ")} in .env.local (not shown).`);
     if (!process.env.DATABASE_URL) await ensureLocalDb();
     const sql = getSql();
     await migrate(sql, true);

@@ -11,9 +11,12 @@ import { deedReadTool } from "./deed-tools";
 import { lawSearchTool } from "./law-tools";
 import { mapAreaTool } from "./map-tools";
 import { feeGuideTool, unitConvertTool } from "./units-tools";
+import { auditStatusTool, sealIssueTool, sealVerifyTool, whoCheckedTool } from "./seal-tools";
 import { warishComputeTool } from "./warish-tools";
 import { allowed, type SessionUser } from "../auth/roles";
-import type { ToolContext, ToolDefinition } from "./types";
+import { appendAudit } from "../engines/audit";
+import { resolveDag } from "../engines/ledger";
+import type { AuditSpec, ToolContext, ToolDefinition } from "./types";
 
 // The single list of everything BhumiSathi can do.
 // Pages, API routes and the Sathi AI agent all call tools from here, so every feature
@@ -35,6 +38,10 @@ export const tools: ToolDefinition[] = [
   mapAreaTool,
   unitConvertTool,
   feeGuideTool,
+  sealIssueTool,
+  sealVerifyTool,
+  whoCheckedTool,
+  auditStatusTool,
 ] as ToolDefinition[];
 
 export function getTool(name: string): ToolDefinition | undefined {
@@ -82,8 +89,25 @@ export async function runTool(
 ): Promise<unknown> {
   const tool = registry.find((t) => t.name === name);
   if (!tool) throw new UnknownToolError(name);
-  if (!ctx.system && !canUse(tool, ctx.user)) throw new AccessDeniedError(name, ctx.user !== null);
+  if (!ctx.system && !canUse(tool, ctx.user)) {
+    // A refused attempt to change the ledger is itself worth recording.
+    if (tool.kind === "write") await audit(ctx, { action: "denied", detail: { tool: name } });
+    throw new AccessDeniedError(name, ctx.user !== null);
+  }
   const input = tool.input.parse(rawInput);
-  const output = await tool.handler(input, ctx);
-  return tool.output.parse(output);
+  const output = tool.output.parse(await tool.handler(input, ctx));
+  if (!ctx.system && tool.audit) {
+    const spec = tool.audit(input, output);
+    if (spec) await audit(ctx, spec); // fail closed: no audit entry, no answer
+  }
+  return output;
+}
+
+/** Append to the hash-chained audit log, resolving the dag when given by mouza + number. */
+async function audit(ctx: ToolContext, spec: AuditSpec): Promise<void> {
+  let dagId = spec.dag_id ?? null;
+  if (dagId === null && spec.mouza && spec.dag_no) {
+    dagId = (await resolveDag(spec.mouza, spec.dag_no).catch(() => null))?.id ?? null;
+  }
+  await appendAudit({ user: ctx.user, action: spec.action, dag_id: dagId, detail: spec.detail });
 }

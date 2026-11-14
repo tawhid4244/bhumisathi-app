@@ -23,7 +23,7 @@ export async function login(emailRaw: string, password: string): Promise<LoginRe
   const sql = getSql();
   const email = emailRaw.trim().toLowerCase();
   const [u] = await sql<UserRow[]>`
-    select id, email, name_bn, role, password_hash, failed_logins,
+    select id, email, name_bn, role, owner_id, password_hash, failed_logins,
            coalesce(locked_until > now(), false) as locked
     from users where email = ${email}`;
   if (!u) {
@@ -44,14 +44,18 @@ export async function login(emailRaw: string, password: string): Promise<LoginRe
   await sql`
     insert into sessions (token_hash, user_id, expires_at)
     values (${sha256(token)}, ${u.id}, now() + make_interval(hours => ${SESSION_HOURS}))`;
-  return { ok: true, token, user: { id: u.id, email: u.email, name_bn: u.name_bn, role: u.role } };
+  return {
+    ok: true,
+    token,
+    user: { id: u.id, email: u.email, name_bn: u.name_bn, role: u.role, owner_id: u.owner_id },
+  };
 }
 
 export async function userFromToken(token: string | undefined | null): Promise<SessionUser | null> {
   if (!token || token.length < 20 || token.length > 100) return null;
   const sql = getSql();
   const [u] = await sql<SessionUser[]>`
-    select u.id, u.email, u.name_bn, u.role
+    select u.id, u.email, u.name_bn, u.role, u.owner_id
     from sessions s join users u on u.id = s.user_id
     where s.token_hash = ${sha256(token)} and s.expires_at > now()`;
   return u ?? null;

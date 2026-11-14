@@ -49,6 +49,18 @@ const journeys = [
     hint: "নামজারি ১,১৭০ টাকা — দালাল ছাড়াই জানুন",
   },
   {
+    href: "/verify",
+    bn: "সিলযুক্ত রিপোর্ট যাচাই",
+    en: "Verify a sealed report",
+    hint: "QR স্ক্যান করে দেখুন রিপোর্ট আসল ও হালনাগাদ কি না",
+  },
+  {
+    href: "/my-land",
+    bn: "আমার জমি কে দেখেছে",
+    en: "Who checked my land",
+    hint: "আপনার দাগের প্রতিটি যাচাই ও নিবন্ধনের চেষ্টা অডিট লগে",
+  },
+  {
     href: "/registry",
     bn: "সাব-রেজিস্ট্রি ডেমো",
     en: "Sub-registry demo",

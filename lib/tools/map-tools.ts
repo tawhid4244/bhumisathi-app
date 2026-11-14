@@ -32,4 +32,5 @@ export const mapAreaTool = defineTool({
     note_bn: z.string(),
   }),
   handler: async ({ mouza, dag_no }) => mapArea(mouza, dag_no),
+  audit: (i) => ({ action: "view_map", mouza: i.mouza, dag_no: i.dag_no }),
 });

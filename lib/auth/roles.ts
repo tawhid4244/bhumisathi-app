@@ -11,6 +11,8 @@ export interface SessionUser {
   email: string;
   name_bn: string;
   role: Role;
+  /** The land holder (owners.id) this account stands for, if any: "who checked my land". */
+  owner_id?: number | null;
 }
 
 /** True when this user (or nobody, for public) may use something that needs `need`. */

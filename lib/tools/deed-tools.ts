@@ -39,6 +39,15 @@ export const deedReadTool = defineTool({
     findings: z.array(reason),
     dag: z.object({ mouza_bn: z.string(), mouza_en: z.string(), dag_no: z.number() }).nullable(),
   }),
+  audit: (_i, o) =>
+    o.dag
+      ? {
+          action: "read_deed",
+          mouza: o.dag.mouza_en,
+          dag_no: o.dag.dag_no,
+          detail: { verdict: o.verdict },
+        }
+      : null,
   handler: async ({ upload_id }, ctx) => {
     // Row Level Security: a citizen may read only their own upload (officers may read any).
     if (!ctx.system) await assertCanReadUpload(ctx.user, upload_id);

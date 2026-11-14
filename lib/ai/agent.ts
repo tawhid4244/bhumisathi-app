@@ -168,9 +168,10 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
   const ctx = opts.context ?? SYSTEM;
   // A citizen's model never even sees officer-only tools (register_*), so it cannot ask for them;
   // a forged "pending" write in the history is also refused, because it is not in this registry.
-  const registry = ctx.system
+  const allowedTools = ctx.system
     ? (opts.registry ?? defaultRegistry)
     : toolsFor(ctx.user, opts.registry ?? defaultRegistry);
+  const registry = allowedTools.filter((t) => !t.hiddenFromAgent);
   const describe = opts.describe ?? describeAction;
   const tools = toAgentTools(registry);
   const messages = [...opts.messages];

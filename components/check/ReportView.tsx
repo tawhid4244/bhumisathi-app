@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { JomiReport } from "@/lib/engines/jomi-check";
 import { bn, type Severity } from "@/lib/engines/rules";
 import { VerdictIcon } from "../VerdictIcon";
+import { SealPanel } from "../seal/SealPanel";
 
 const SURVEY_BN = { CS: "সিএস", SA: "এসএ", RS: "আরএস", BS: "বিএস" } as const;
 
@@ -222,6 +223,8 @@ export function ReportView({ report }: { report: JomiReport }) {
           </Link>
         </div>
       </nav>
+
+      <SealPanel mouza={dag.mouza_en} dagNo={dag.dag_no} />
 
       <p className="rounded-xl bg-brand-soft p-3 text-sm">
         {report.disclaimer_bn}

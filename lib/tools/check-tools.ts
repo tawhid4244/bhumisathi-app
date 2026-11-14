@@ -63,6 +63,12 @@ export const jomiCheckTool = defineTool({
       message: "dag_no or khatian_no is required",
     }),
   output: jomiReportSchema,
+  audit: (_i, o) => ({
+    action: "view_report",
+    mouza: o.dag.mouza_en,
+    dag_no: o.dag.dag_no,
+    detail: { verdict: o.verdict },
+  }),
   handler: async (i) =>
     jomiCheck({
       mouza: i.mouza,

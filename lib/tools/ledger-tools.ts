@@ -88,6 +88,16 @@ export const registerOutput = z.object({
   version: z.number(),
 });
 
+/** Every attempt to record a baina, sale or mortgage is logged, accepted or refused. */
+const auditWrite =
+  (action: string) =>
+  (i: { mouza: string; dag_no: number; area_dec: number }, o: { ok: boolean; ref?: string }) => ({
+    action,
+    mouza: i.mouza,
+    dag_no: i.dag_no,
+    detail: { ok: o.ok, ref: o.ref ?? null, area_dec: i.area_dec },
+  });
+
 export const ledgerStatusTool = defineTool({
   name: "ledger_status",
   kind: "read",
@@ -98,6 +108,7 @@ export const ledgerStatusTool = defineTool({
   },
   input: dagRef,
   output: ledgerStatusOutput,
+  audit: (i) => ({ action: "view_ledger", mouza: i.mouza, dag_no: i.dag_no }),
   handler: async ({ mouza, dag_no }) => getLedgerStatus(mouza, dag_no),
 });
 
@@ -116,6 +127,7 @@ export const registerBainaTool = defineTool({
     days: z.number().int().min(1).max(365).default(90).describe("Validity in days"),
   }),
   output: registerOutput,
+  audit: auditWrite("register_baina"),
   handler: async (i) =>
     registerEvent({
       type: "baina",
@@ -138,6 +150,7 @@ export const registerSaleTool = defineTool({
   },
   input: dagRef.extend({ seller_id: ownerId, buyer_id: ownerId, area_dec: area }),
   output: registerOutput,
+  audit: auditWrite("register_sale"),
   handler: async (i) =>
     registerEvent({
       type: "sale",
@@ -164,6 +177,7 @@ export const registerLienTool = defineTool({
     loan_ref: z.string().trim().min(1).max(40).optional(),
   }),
   output: registerOutput,
+  audit: auditWrite("register_lien"),
   handler: async (i) =>
     registerEvent({
       type: "lien",
