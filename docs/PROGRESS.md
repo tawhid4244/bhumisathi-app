@@ -9,7 +9,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
 | 3 | 11–15 | done (2026-11-15) |
-| 4 | 16–20 | in progress: tasks 16–18 done |
+| 4 | 16–20 | in progress: tasks 16–19 done + UI redesign; task 20 left |
 
 ## Golden scenarios
 
@@ -18,6 +18,41 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-15 20:30 — Session 4, task 19 (deploy) + new look
+- Live: https://bhumisathi-app.vercel.app (Vercel, Singapore `sin1`) on Supabase Postgres 17
+  (Singapore). `/api/health` reports settings present (yes/no only), database and seal key.
+- Deploy work: uploads stored in Postgres (RLS); `0006_cloud_ready.sql` revokes everything from
+  Supabase's `anon`/`authenticated` (tables, views, functions, defaults) — verified on the cloud
+  DB; seed CLI split so the app never bundles the local Postgres binary; TLS to the cloud DB;
+  scripts `set-db` (hidden input), `cloud:setup`, `vercel:env`, `vercel:push-env`, `e2e:live`;
+  docs/DEPLOY.md. Every push to main deploys automatically.
+- Live-only bugs found and fixed (all reproduced first, then fixed):
+  1. Pages that read the DB hung: postgres.js pipelines queries; Supabase's TRANSACTION pooler
+     (6543) loses or mixes up results (one request even got another query's rows). The app now
+     always uses the SESSION pooler (5432), pool 3, idle connections closed after 2 s, pool
+     replaced after 10 s idle (performance.now — Date.now is not allowed while Next prerenders).
+  2. Sign-in sent people back to /login: the production router had prefetched /chat while signed
+     out (a redirect) and reused it after login. Login/logout now do a full page load.
+  3. The login form had no method: a press before scripts loaded would have sent a GET with the
+     password in the address. It now always POSTs; the API also accepts form posts and redirects.
+- New look (user request): original logo (sunrise over paddy fields, a plot divided into shares,
+  verified tick; favicon too; no government emblem). Bangla/English switch for the whole site
+  (remembered per browser). Government-portal layout: flag-green strip, prototype notice, sticky
+  header with menu + active page, phone menu panel, account menu, green footer, floating "Ask
+  Sathi". Home: hero with quick dag check and original illustration, pausable notice ticker,
+  animated numbers, tabbed service cards, how-it-works, hands-on ledger demo, FAQ, 16122 card.
+  Inner pages: green title band with breadcrumb. Reduced motion respected. The measuring map
+  now always fits below the sticky header (corners could hide under it on laptops).
+- Tests: check 228/228; local e2e green at 375 px and desktop (incl. axe on 18 pages, language
+  switch, ledger demo, quick check, login before scripts load); live e2e 82/82
+  (`npm run e2e:live`, phone width; mock-only chat tests and the judge tour excluded).
+- Known issues: English mode covers the shell, home and page titles; text inside the tools
+  (reports, chat, forms) is still Bangla-first with English lines. Waiting for the user's design
+  references for the next UI pass. Cloud audit log has one "debug_probe" entry from testing
+  (cleared by the next demo reset). Free Supabase projects pause after a week without traffic.
+- Next step: user's UI references → second UI pass; then task 20 (README, ARCHITECTURE,
+  SECURITY, VIDEO_SCRIPT, tag v0.1.0).
 
 ### 2026-11-15 16:45 — Session 4, task 18 (office/admin view, judge mode, accessibility)
 - Done:
