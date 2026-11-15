@@ -19,6 +19,24 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 ## Entries
 
+### 2026-11-16 — Session 4, English mode for every tool screen
+- Done: the বাং | EN switch now covers every screen, not only the shell and home: report,
+  sub-registry desk, chat (follows the site switch), inheritance, deed reader, mouza map and the
+  measuring tool, units, fees, verify, my-land, office/admin, judge mode, login, error and 404.
+  Engines return English alongside Bangla: warish `steps_en`/`basis_en`, deed `summary_en`, unit
+  labels and rules, fee times/conditions/cost parts (content/fees.json, units.json), seal light
+  explanations, audit role/action labels, verdict `advice_en`, judge card titles/lines (the AI step
+  asks and answers in English). Names come from `name_en` where the records have it; citizens' SMS
+  text stays Bangla (it is what they would receive).
+- Fixed: hydration mismatch when parts of a page stream in after the language switch (the account
+  menu): `useLang` now reads the store per component (useSyncExternalStore), so each part hydrates
+  with the server's Bangla and then switches. Removed the unused ComingSoon component.
+- Tests: check 231/231 (new English engine tests); e2e english.spec (no Bangla in headings in
+  English mode) + full suite at 375 px and desktop; zero hydration errors in the run.
+  Live: English mode checked on bhumisathi-app.vercel.app (report, fees, home, warish; no page
+  errors); live e2e 82/82.
+- Next step: the user's UI references (if any) → design pass; task 20 (submission documents).
+
 ### 2026-11-15 20:30 — Session 4, task 19 (deploy) + new look
 - Live: https://bhumisathi-app.vercel.app (Vercel, Singapore `sin1`) on Supabase Postgres 17
   (Singapore). `/api/health` reports settings present (yes/no only), database and seal key.
