@@ -9,7 +9,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | 1 | 1–5 | done (2026-11-14) |
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
 | 3 | 11–15 | done (2026-11-15) |
-| 4 | 16–20 | in progress: tasks 16–19 done + UI redesign; task 20 left |
+| 4 | 16–20 | done (2026-11-16), v0.1.0 tagged |
 
 ## Golden scenarios
 
@@ -18,6 +18,31 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-16 — Session 4 summary (tasks 16–20 done) · release v0.1.0
+- Done:
+  - Task 16 identity, roles, RLS, private uploads, rate limits, CSRF. Task 17 hash-chained audit
+    log, "who checked my land", BhumiSeal-lite + /verify (G7). Task 18 office/admin view, judge
+    mode, accessibility pass. Task 19 deploy (Vercel sin1 + Supabase Singapore), live-only bugs
+    fixed (session pooler, sign-in loop, login before scripts load). New look with original logo
+    and Bangla/English for every screen.
+  - Task 20 documents: README.md (problem, features, demo accounts without password, run in about
+    15 minutes, every AI model/tool and what for, roadmap), docs/ARCHITECTURE.md (Mermaid
+    diagrams: system, agent sequence, deployment), docs/SECURITY.md (threats, controls with the
+    tests that prove them, known gaps), docs/VIDEO_SCRIPT.md (3-minute judge-mode script, Bangla
+    narration + English subtitles). docs/AI_EVAL.md now states the last full-run scores.
+    `.env.example` AI comment corrected.
+- Golden scenarios: G1 ✅ G2 ✅ G3 ✅ G4 ✅ G5 ✅ G6 ✅ (real Gemini) G7 ✅ G8 ✅ (typed on real Gemini;
+  voice with a fake speech engine in tests — the real microphone is a manual check,
+  docs/VOICE_TESTING.md).
+- Tests: npm run seed OK; npm run check 231/231; npm run e2e 216/216 (375 px + desktop, 0 hydration errors); live e2e 82/82 (last run).
+- Decisions: documents quote the last full AI evaluation instead of spending free quota on a re-run;
+  demo password never written in any document.
+- Known issues: nonce CSP deferred; law summaries and some fees await mentor review; free Supabase
+  pauses after a week idle; GitHub repository is still PRIVATE (must be made public for submission
+  — the owner's decision).
+- Next step: make the repository public; record the video with docs/VIDEO_SCRIPT.md; test the
+  real microphone on a phone; submit.
 
 ### 2026-11-16 — Session 4, English mode for every tool screen
 - Done: the বাং | EN switch now covers every screen, not only the shell and home: report,

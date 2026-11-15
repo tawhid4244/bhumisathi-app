@@ -3,6 +3,12 @@
 Run: 2026-11-14 19:30 UTC · model: `gemini-3.5-flash` · 20 held-out Bangla/English questions from
 `content/eval-questions.json` (not in `qa.json` or the tests) · regenerate with `npm run eval:ai`.
 
+> **Last full run (all 20 questions, real `gemini-3.5-flash`, 2026-11-14):** correct tool 95% ·
+> verdict same as `/check` 83% (the only miss was a Google 504 timeout; it passed on retry) ·
+> citation with the right law 100% · write held for confirmation 100% · correct refusal 100% ·
+> false “not sure” 0%. The table below is from a later **single-question** re-run
+> (`npm run eval:ai -- E04`); run `npm run eval:ai` to regenerate the full table (uses AI quota).
+
 ## Scores
 
 | Measure | Score |
