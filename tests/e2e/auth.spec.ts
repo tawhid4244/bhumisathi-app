@@ -117,7 +117,9 @@ test.describe("before the page's JavaScript has loaded (slow phone)", () => {
     await page.getByLabel(/ইমেইল/).fill("nobody@demo.bhumisathi.test");
     await page.getByLabel(/পাসওয়ার্ড/).fill("not-the-password-123");
     await page.getByRole("button", { name: "লগইন করুন" }).click();
-    await expect(page).toHaveURL(/\/login\?next=%2F&error=invalid/);
+    // Plain form post → redirect with a message; if the scripts did load after all, the same
+    // message appears in place. Either way: a message, and no password in any address.
     await expect(page.locator("#login-error")).toHaveText("ইমেইল বা পাসওয়ার্ড সঠিক নয়।");
+    expect(page.url()).not.toContain("password");
   });
 });

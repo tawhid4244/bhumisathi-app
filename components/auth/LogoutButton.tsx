@@ -1,17 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { T } from "../i18n/LangProvider";
 
 export function LogoutButton() {
-  const router = useRouter();
   return (
     <button
       type="button"
       onClick={async () => {
         await fetch("/api/auth/logout", { method: "POST" });
-        router.replace("/");
-        router.refresh();
+        // Full page load on purpose: drop every page the router cached while signed in.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.assign("/");
       }}
       className="flex min-h-11 w-full items-center rounded-lg px-3 text-left text-verdict-red hover:bg-red-50"
     >

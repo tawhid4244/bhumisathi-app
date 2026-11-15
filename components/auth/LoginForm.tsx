@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 // Email + password. The password goes only to our own /api/auth/login over HTTPS; the session
@@ -13,7 +12,6 @@ const MESSAGES: Record<string, string> = {
 };
 
 export function LoginForm({ next, initialError }: { next: string; initialError?: string }) {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(
     initialError ? (MESSAGES[initialError] ?? null) : null,
   );
@@ -35,8 +33,9 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
         setError(json?.error?.bn ?? "লগইন করা যায়নি।");
         return;
       }
-      router.replace(next);
-      router.refresh();
+      // A full page load, not router.replace: the router may hold a prefetched copy of the
+      // page from before sign-in (a redirect to /login), which would send the user back here.
+      window.location.assign(next);
     } finally {
       setBusy(false);
     }
