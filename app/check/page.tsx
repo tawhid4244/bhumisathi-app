@@ -33,17 +33,12 @@ function first(v: string | string[] | undefined): string | undefined {
 }
 
 async function CheckContent({ searchParams }: Pick<PageProps<"/check">, "searchParams">) {
-  const t0 = Date.now();
-  const dbg = (s: string) => console.log(`[dbg-check] +${Date.now() - t0}ms ${s}`); // TEMP
-  dbg("start");
   const params = await searchParams;
-  dbg("params");
   const mouza = first(params.mouza)?.slice(0, 40);
   const by = first(params.by) === "khatian" ? "khatian" : "dag";
   const rawNo = first(params.no)?.slice(0, 8);
   const no = rawNo ? Number(westernDigits(rawNo.trim())) : NaN;
   const mouzas = await listMouzas();
-  dbg("mouzas");
 
   let report: JomiReport | null = null;
   let problem: { bn: string; en: string } | null = null;
@@ -58,7 +53,6 @@ async function CheckContent({ searchParams }: Pick<PageProps<"/check">, "searchP
           by === "khatian" ? { mouza, khatian_no: no } : { mouza, dag_no: no },
           { user: await currentUser() },
         )) as JomiReport;
-        dbg("report");
       } catch (err) {
         if (err instanceof DagNotFoundError || err instanceof KhatianNotFoundError) {
           problem = {

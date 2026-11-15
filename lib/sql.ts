@@ -22,20 +22,22 @@ const globalForSql = globalThis as unknown as { __bhumiSql?: Sql; __bhumiSqlUsed
 /**
  * On Vercel a function instance is frozen between requests; while frozen, the cloud pooler drops
  * its idle connections, and timers (idle_timeout) do not run. A query sent on such a dead socket
- * waits forever. So we look at the wall clock: if the pool has not been used for a while, it is
- * replaced by a fresh one before anything is sent (the old one is closed in the background).
+ * fails or waits forever. Two guards:
+ *  - idle connections are closed after 2 s (normally long before the instance is frozen);
+ *  - if the pool has not been used for a while, it is replaced by a fresh one before anything is
+ *    sent. performance.now() is used (Date.now() is not allowed while Next.js prerenders).
  */
-const STALE_AFTER_MS = 15_000;
+const STALE_AFTER_MS = 10_000;
+const clock = () => performance.now();
 
 export function getSql(): Sql {
   if (typeof window !== "undefined") throw new Error("getSql() is server-only.");
-  const now = Date.now();
+  const now = clock();
   const last = globalForSql.__bhumiSqlUsed ?? now;
   if (globalForSql.__bhumiSql && process.env.VERCEL && now - last > STALE_AFTER_MS) {
     const old = globalForSql.__bhumiSql;
     globalForSql.__bhumiSql = undefined;
     void old.end({ timeout: 5 }).catch(() => {});
-    if (process.env.VERCEL) console.log(`[dbg-sql] pool replaced after ${now - last} ms idle`); // TEMP
   }
   globalForSql.__bhumiSqlUsed = now;
   if (!globalForSql.__bhumiSql) {
@@ -43,19 +45,13 @@ export function getSql(): Sql {
     const local = /@(localhost|127\.0\.0\.1)[:/]/.test(url);
     globalForSql.__bhumiSql = postgres(url, {
       max: local ? 10 : 5,
-      // Serverless: an instance can sleep for minutes, and the cloud pooler drops idle
-      // connections. Close idle ones ourselves and cap their lifetime, so a request never waits
-      // on a dead socket; give up on a connect that does not answer in 10 s.
-      idle_timeout: local ? undefined : 20,
+      // Serverless (see above): close idle connections quickly, cap their lifetime, and give up on
+      // a connect that does not answer in 10 s. A new connection to the pooler costs ~10 ms.
+      idle_timeout: local ? undefined : 2,
       max_lifetime: local ? undefined : 60 * 5,
       connect_timeout: 10,
       // numeric columns come back as strings by default; areas are converted explicitly.
       onnotice: () => {},
-      // TEMP diagnostics on Vercel: which connection sends which query (no parameters logged).
-      debug: process.env.VERCEL
-        ? (conn: number, query: string) =>
-            console.log(`[dbg-sql] conn=${conn} t=${Date.now() % 100000} ${query.replace(/\s+/g, " ").slice(0, 60)}`)
-        : undefined,
       prepare: false, // required by Supabase's transaction pooler; harmless locally
       ssl: local ? false : "require", // the cloud database is only ever reached over TLS
     });
