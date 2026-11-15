@@ -60,6 +60,20 @@ export const UNIT_BN: Record<UnitId, string> = {
   kranti: "ক্রান্তি",
 };
 
+export const UNIT_EN: Record<UnitId, string> = {
+  decimal: "decimal",
+  acre: "acre",
+  sqft: "square feet",
+  sqm: "square metres",
+  hectare: "hectare",
+  katha: "katha",
+  bigha: "bigha",
+  kani: "kani",
+  gonda: "gonda",
+  kora: "kora",
+  kranti: "kranti",
+};
+
 export interface Amount {
   value: number;
   unit: UnitId;
@@ -85,7 +99,9 @@ export function toDecimals(amounts: Amount[], kaniDec: number, bighaDec: number)
 export interface ConversionVariant {
   kani_dec: number | null;
   label_bn: string;
+  label_en: string;
   where_bn: string;
+  where_en: string;
   source: string;
   units: AreaUnits & { kani: number | null };
 }
@@ -94,6 +110,7 @@ export interface Conversion {
   uses_kani: boolean;
   variants: ConversionVariant[];
   rules_bn: string[];
+  rules_en: string[];
 }
 
 /**
@@ -121,7 +138,9 @@ export function convertUnits(
     return {
       kani_dec: k,
       label_bn: k == null ? "রূপান্তর" : (known?.bn ?? `${toBn(k ?? 0)} শতকের কানি (আপনার দেওয়া)`),
+      label_en: k == null ? "Conversion" : (known?.en ?? `Kani of ${k} decimals (your size)`),
       where_bn: k == null ? "" : (known?.where_bn ?? "আপনার এলাকার মাপ"),
+      where_en: k == null ? "" : (known?.where_en ?? "The size in your area"),
       source: k == null ? "" : (known?.source ?? "Size given by the user"),
       units: { ...fromDecimals(dec, bighaDec), kani: k ? round(dec / k, 4) : null },
     };
@@ -130,9 +149,15 @@ export function convertUnits(
     "১ শতক = ৪৩৫.৬ বর্গফুট; ১০০ শতক = ১ একর; ১ কাঠা = ৭২০ বর্গফুট।",
     `বিঘা ধরা হয়েছে ${toBn(round(bighaDec, 2))} শতক${opts.bighaDec ? " (আপনার দেওয়া)" : " (প্রমিত ২০ কাঠা)"}; এলাকাভেদে ভিন্ন হতে পারে।`,
   ];
+  const rulesEn = [
+    "1 decimal = 435.6 sq ft; 100 decimals = 1 acre; 1 katha = 720 sq ft.",
+    `A bigha is taken as ${round(bighaDec, 2)} decimals${opts.bighaDec ? " (your size)" : " (standard 20 katha)"}; it differs by region.`,
+  ];
   if (usesKani) {
+    rulesEn.push("1 kani = 20 gonda, 1 gonda = 4 kora, 1 kora = 3 kranti.");
+    rulesEn.push(opts.kaniDec ? `A kani is taken as ${opts.kaniDec} decimals (your size).` : "The kani differs by region, so the result is shown for every common size — pick the one for the area your deed is from."); // prettier-ignore
     rules.push("১ কানি = ২০ গন্ডা, ১ গন্ডা = ৪ কড়া, ১ কড়া = ৩ ক্রান্তি।");
     rules.push(opts.kaniDec ? `কানি ধরা হয়েছে ${toBn(opts.kaniDec)} শতক (আপনার দেওয়া)।` : "কানির মাপ এলাকাভেদে ভিন্ন, তাই প্রতিটি প্রচলিত মাপে ফল দেখানো হলো — আপনার দলিল কোন এলাকার তা দেখে বেছে নিন।"); // prettier-ignore
   }
-  return { uses_kani: usesKani, variants, rules_bn: rules };
+  return { uses_kani: usesKani, variants, rules_bn: rules, rules_en: rulesEn };
 }

@@ -5,7 +5,7 @@ import type { Activity, Person } from "@/lib/engines/demo";
 import type { JomiReport } from "@/lib/engines/jomi-check";
 import type { LedgerStatus, RegisterResult } from "@/lib/engines/ledger";
 import type { MouzaOption } from "@/lib/engines/mouzas";
-import { bn } from "@/lib/engines/rules";
+import { useLang, useNum } from "../i18n/LangProvider";
 import { VerdictIcon } from "../VerdictIcon";
 
 // The sub-registrar's desk. Every number and decision comes from the registry tools
@@ -14,21 +14,23 @@ import { VerdictIcon } from "../VerdictIcon";
 
 type Action = "sale" | "baina" | "lien";
 const ACTION_BN: Record<Action, string> = { sale: "বিক্রয় দলিল", baina: "বায়না", lien: "বন্ধক" };
+const ACTION_EN: Record<Action, string> = { sale: "Sale deed", baina: "Baina", lien: "Mortgage" };
 const EVENT_BN: Record<string, string> = { sale: "বিক্রি", baina: "বায়না", lien: "বন্ধক" };
+const EVENT_EN: Record<string, string> = { sale: "sale", baina: "baina", lien: "mortgage" };
 const TOOL: Record<Action, string> = {
   sale: "register_sale",
   baina: "register_baina",
   lien: "register_lien",
 };
 
-async function callTool<T>(name: string, body: unknown): Promise<T> {
+async function callTool<T>(name: string, body: unknown, en = false): Promise<T> {
   const res = await fetch(`/api/tools/${name}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
   const json = await res.json();
-  if (!res.ok) throw new Error(json?.error?.bn ?? "সমস্যা হয়েছে");
+  if (!res.ok) throw new Error((en ? json?.error?.en : json?.error?.bn) ?? (en ? "Something went wrong" : "সমস্যা হয়েছে")); // prettier-ignore
   return json as T;
 }
 
@@ -66,6 +68,11 @@ export function RegistryDesk({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [activity, setActivity] = useState<Activity>(initialActivity);
+  const { t, lang } = useLang();
+  const en = lang === "en";
+  const num = useNum();
+  const nm = (b: string | undefined, e: string | undefined) => (en && e ? e : (b ?? ""));
+  const dec = (n: number | string) => t(`${num(n)} শতক`, `${num(n)} dec`);
 
   const refreshActivity = useCallback(async () => {
     const res = await fetch("/api/demo/activity", { cache: "no-store" });
@@ -88,7 +95,7 @@ export function RegistryDesk({
     setResult(null);
     setConfirming(false);
     try {
-      const s = await callTool<LedgerStatus>("ledger_status", { mouza, dag_no: dagNumber });
+      const s = await callTool<LedgerStatus>("ledger_status", { mouza, dag_no: dagNumber }, en);
       setStatus(s);
       setSellerId(s.holders[0]?.owner_id ?? "");
     } catch (err) {
@@ -106,12 +113,16 @@ export function RegistryDesk({
     setError(null);
     setResult(null);
     try {
-      const r = await callTool<JomiReport>("jomi_check", {
-        mouza,
-        dag_no: dagNumber,
-        seller_id: sellerId,
-        area_dec: areaNumber,
-      });
+      const r = await callTool<JomiReport>(
+        "jomi_check",
+        {
+          mouza,
+          dag_no: dagNumber,
+          seller_id: sellerId,
+          area_dec: areaNumber,
+        },
+        en,
+      );
       setReport(r);
       setConfirming(true);
     } catch (err) {
@@ -133,7 +144,7 @@ export function RegistryDesk({
           : action === "baina"
             ? { ...base, seller_id: sellerId, buyer_id: buyerId, days: Number(days) || 90 }
             : { ...base, seller_id: sellerId, buyer_id: buyerId };
-      const r = await callTool<RegisterResult>(TOOL[action], body);
+      const r = await callTool<RegisterResult>(TOOL[action], body, en);
       setResult(r);
       setConfirming(false);
       setStatus(await callTool<LedgerStatus>("ledger_status", { mouza, dag_no: dagNumber }));
@@ -164,20 +175,20 @@ export function RegistryDesk({
       <div className="space-y-4">
         {/* Step 1: dag */}
         <form onSubmit={loadDag} className="rounded-xl border border-line bg-card p-4 shadow-sm">
-          <h2 className="font-semibold">১. দাগ নির্বাচন</h2>
+          <h2 className="font-semibold">{t("১. দাগ নির্বাচন", "1. Choose the dag")}</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
             <label className="grid gap-1 text-sm font-medium">
-              মৌজা
+              {t("মৌজা", "Mouza")}
               <select value={mouza} onChange={(e) => setMouza(e.target.value)} className={field}>
                 {mouzas.map((m) => (
                   <option key={m.code} value={m.code.toLowerCase()}>
-                    {m.name_bn} (জেএল {bn(m.jl_no)})
+                    {en ? `${m.name_en} (JL ${m.jl_no})` : `${m.name_bn} (জেএল ${num(m.jl_no)})`}
                   </option>
                 ))}
               </select>
             </label>
             <label className="grid gap-1 text-sm font-medium">
-              দাগ নম্বর
+              {t("দাগ নম্বর", "Dag number")}
               <input
                 value={dagNo}
                 onChange={(e) => setDagNo(e.target.value)}
@@ -190,33 +201,37 @@ export function RegistryDesk({
               disabled={busy}
               className="min-h-11 rounded-lg bg-ink px-4 font-semibold text-white disabled:opacity-60"
             >
-              লেজার দেখুন
+              {t("লেজার দেখুন", "Show ledger")}
             </button>
           </div>
           {status ? (
             <div className="mt-3 rounded-lg bg-paper p-3 text-sm" data-testid="ledger-summary">
               <p className="font-medium">
-                {status.dag.mouza_bn} দাগ {bn(status.dag.dag_no)} · আয়তন{" "}
-                {bn(status.dag.recorded_area_dec)} শতক · লেজার সংস্করণ {bn(status.dag.version)}
+                {t(
+                  `${status.dag.mouza_bn} দাগ ${num(status.dag.dag_no)} · আয়তন ${num(status.dag.recorded_area_dec)} শতক · লেজার সংস্করণ ${num(status.dag.version)}`,
+                  `${status.dag.mouza_en} dag ${status.dag.dag_no} · area ${status.dag.recorded_area_dec} dec · ledger version ${status.dag.version}`,
+                )}
               </p>
               <ul className="mt-1 space-y-0.5">
                 {status.holders.map((h) => (
                   <li key={h.owner_id}>
-                    {h.name_bn}: রেকর্ডীয় {bn(h.recorded_dec)}, বিক্রয়যোগ্য{" "}
+                    {nm(h.name_bn, h.name_en)}: {t("রেকর্ডীয়", "recorded")} {num(h.recorded_dec)},{" "}
+                    {t("বিক্রয়যোগ্য", "sellable")}{" "}
                     <strong data-testid={`desk-sellable-${h.owner_id}`}>
-                      {bn(h.sellable_dec)} শতক
+                      {dec(h.sellable_dec)}
                     </strong>
                   </li>
                 ))}
               </ul>
               {status.active_bainas.map((b) => (
                 <p key={b.id} className="text-verdict-amber">
-                  বায়না {b.id}: {bn(b.area_dec)} শতক, {b.buyer_bn}, মেয়াদ {bn(b.expires_on)}
+                  {t("বায়না", "Baina")} {b.id}: {dec(b.area_dec)}, {nm(b.buyer_bn, b.buyer_en)},{" "}
+                  {t("মেয়াদ", "valid until")} {num(b.expires_on)}
                 </p>
               ))}
               {status.active_liens.map((l) => (
                 <p key={l.id} className="text-verdict-amber">
-                  বন্ধক {l.id}: {bn(l.area_dec)} শতক, {l.lender_bn}
+                  {t("বন্ধক", "Mortgage")} {l.id}: {dec(l.area_dec)}, {nm(l.lender_bn, l.lender_en)}
                 </p>
               ))}
             </div>
@@ -226,9 +241,9 @@ export function RegistryDesk({
         {/* Step 2: transaction */}
         {status ? (
           <form onSubmit={runCheck} className="rounded-xl border border-line bg-card p-4 shadow-sm">
-            <h2 className="font-semibold">২. লেনদেনের তথ্য</h2>
+            <h2 className="font-semibold">{t("২. লেনদেনের তথ্য", "2. The transaction")}</h2>
             <fieldset className="mt-3">
-              <legend className="text-sm font-medium">ধরন</legend>
+              <legend className="text-sm font-medium">{t("ধরন", "Type")}</legend>
               <div className="mt-1 flex flex-wrap gap-2">
                 {(Object.keys(ACTION_BN) as Action[]).map((a) => (
                   <label
@@ -248,14 +263,16 @@ export function RegistryDesk({
                         setConfirming(false);
                       }}
                     />
-                    {ACTION_BN[a]}
+                    {en ? ACTION_EN[a] : ACTION_BN[a]}
                   </label>
                 ))}
               </div>
             </fieldset>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1 text-sm font-medium">
-                {action === "lien" ? "জমির মালিক (ঋণগ্রহীতা)" : "বিক্রেতা"}
+                {action === "lien"
+                  ? t("জমির মালিক (ঋণগ্রহীতা)", "Land owner (borrower)")
+                  : t("বিক্রেতা", "Seller")}
                 <select
                   value={sellerId}
                   onChange={(e) => setSellerId(Number(e.target.value))}
@@ -263,31 +280,31 @@ export function RegistryDesk({
                 >
                   {status.holders.map((h) => (
                     <option key={h.owner_id} value={h.owner_id}>
-                      {h.name_bn}
+                      {nm(h.name_bn, h.name_en)}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="grid gap-1 text-sm font-medium">
-                {action === "lien" ? "ব্যাংক" : "ক্রেতা"}
+                {action === "lien" ? t("ব্যাংক", "Bank") : t("ক্রেতা", "Buyer")}
                 <select
                   value={buyerId}
                   onChange={(e) => setBuyerId(e.target.value ? Number(e.target.value) : "")}
                   className={field}
                   required
                 >
-                  <option value="">বেছে নিন…</option>
+                  <option value="">{t("বেছে নিন…", "Choose…")}</option>
                   {counterparties
                     .filter((p) => p.id !== sellerId)
                     .map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name_bn}
+                        {nm(p.name_bn, p.name_en)}
                       </option>
                     ))}
                 </select>
               </label>
               <label className="grid gap-1 text-sm font-medium">
-                জমির পরিমাণ (শতক)
+                {t("জমির পরিমাণ (শতক)", "Area (decimals)")}
                 <input
                   value={area}
                   onChange={(e) => setArea(e.target.value)}
@@ -298,7 +315,7 @@ export function RegistryDesk({
               </label>
               {action === "baina" ? (
                 <label className="grid gap-1 text-sm font-medium">
-                  বায়নার মেয়াদ (দিন)
+                  {t("বায়নার মেয়াদ (দিন)", "Baina valid for (days)")}
                   <input
                     value={days}
                     onChange={(e) => setDays(e.target.value)}
@@ -313,7 +330,7 @@ export function RegistryDesk({
               disabled={busy || buyerId === "" || !(areaNumber > 0)}
               className="mt-4 min-h-11 w-full rounded-lg bg-brand px-4 font-semibold text-white disabled:opacity-60 sm:w-auto"
             >
-              জমি যাচাই করুন
+              {t("জমি যাচাই করুন", "Check the land")}
             </button>
           </form>
         ) : null}
@@ -321,7 +338,7 @@ export function RegistryDesk({
         {/* Step 3: check result + read-back confirmation */}
         {report && confirming ? (
           <section
-            aria-label="যাচাইয়ের ফল ও নিশ্চিতকরণ"
+            aria-label={t("যাচাইয়ের ফল ও নিশ্চিতকরণ", "Check result and confirmation")}
             className="rounded-xl border border-line bg-card p-4 shadow-sm"
           >
             <div
@@ -330,16 +347,18 @@ export function RegistryDesk({
             >
               <VerdictIcon verdict={report.verdict} className="h-8 w-8 shrink-0" />
               <div>
-                <p className="font-bold">{report.verdict_bn}</p>
-                <p className="text-sm">{report.reasons[0]?.bn}</p>
+                <p className="font-bold">{en ? report.verdict_en : report.verdict_bn}</p>
+                <p className="text-sm">{en ? report.reasons[0]?.en : report.reasons[0]?.bn}</p>
               </div>
             </div>
             <div className="mt-3 rounded-lg bg-paper p-3">
-              <p className="font-semibold">৩. সংখ্যাগুলো আবার মিলিয়ে নিন</p>
+              <p className="font-semibold">
+                {t("৩. সংখ্যাগুলো আবার মিলিয়ে নিন", "3. Read the numbers back")}
+              </p>
               <p className="mt-1" data-testid="readback">
-                {ACTION_BN[action]}: {status?.dag.mouza_bn} দাগ {bn(dagNumber)}, {seller?.name_bn} →{" "}
-                {buyer?.name_bn}, {bn(areaNumber)} শতক
-                {action === "baina" ? `, ${bn(days)} দিন` : ""}। ঠিক আছে?
+                {en
+                  ? `${ACTION_EN[action]}: ${status?.dag.mouza_en} dag ${dagNumber}, ${nm(seller?.name_bn, seller?.name_en)} → ${nm(buyer?.name_bn, buyer?.name_en)}, ${areaNumber} dec${action === "baina" ? `, ${days} days` : ""}. Is that right?`
+                  : `${ACTION_BN[action]}: ${status?.dag.mouza_bn} দাগ ${num(dagNumber)}, ${seller?.name_bn} → ${buyer?.name_bn}, ${num(areaNumber)} শতক${action === "baina" ? `, ${num(days)} দিন` : ""}। ঠিক আছে?`}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
@@ -348,14 +367,14 @@ export function RegistryDesk({
                   disabled={busy}
                   className="min-h-11 rounded-lg bg-ink px-4 font-semibold text-white disabled:opacity-60"
                 >
-                  হ্যাঁ, নিবন্ধন করুন
+                  {t("হ্যাঁ, নিবন্ধন করুন", "Yes, register")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirming(false)}
                   className="min-h-11 rounded-lg border border-line px-4"
                 >
-                  বাতিল
+                  {t("বাতিল", "Cancel")}
                 </button>
               </div>
             </div>
@@ -373,24 +392,28 @@ export function RegistryDesk({
           >
             {result.ok ? (
               <>
-                <p className="text-xl font-bold">নিবন্ধিত হয়েছে</p>
+                <p className="text-xl font-bold">{t("নিবন্ধিত হয়েছে", "Registered")}</p>
                 <p>
-                  নম্বর: <strong>{result.ref}</strong>
+                  {t("নম্বর:", "Number:")} <strong>{result.ref}</strong>
                   {result.mutation_case ? (
                     <>
                       {" "}
-                      · নামজারি মামলা <strong>{result.mutation_case}</strong> খোলা হয়েছে (২৮ দিন)
+                      · {t("নামজারি মামলা", "Mutation case")}{" "}
+                      <strong>{result.mutation_case}</strong>{" "}
+                      {t("খোলা হয়েছে (২৮ দিন)", "opened (28 days)")}
                     </>
                   ) : null}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-xl font-bold">দলিল আটকানো হয়েছে</p>
-                <p>{result.reason_bn}</p>
-                <p lang="en" className="mt-1 text-sm opacity-90">
-                  {result.reason_en}
-                </p>
+                <p className="text-xl font-bold">{t("দলিল আটকানো হয়েছে", "Deed blocked")}</p>
+                <p>{en ? result.reason_en : result.reason_bn}</p>
+                {en ? null : (
+                  <p lang="en" className="mt-1 text-sm opacity-90">
+                    {result.reason_en}
+                  </p>
+                )}
               </>
             )}
           </section>
@@ -406,7 +429,7 @@ export function RegistryDesk({
       {/* Live activity */}
       <aside className="space-y-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="font-semibold">সরাসরি কার্যক্রম</h2>
+          <h2 className="font-semibold">{t("সরাসরি কার্যক্রম", "Live activity")}</h2>
           {canReset ? (
             <button
               type="button"
@@ -414,60 +437,67 @@ export function RegistryDesk({
               disabled={busy}
               className="min-h-11 rounded-lg border border-line bg-card px-3 text-sm"
             >
-              ডেমো রিসেট
+              {t("ডেমো রিসেট", "Reset demo")}
             </button>
           ) : null}
         </div>
 
         <section aria-labelledby="sms-title" className="rounded-xl border border-line bg-card p-3">
           <h3 id="sms-title" className="font-medium">
-            মোবাইল বার্তা (ডেমো)
+            {t("মোবাইল বার্তা (ডেমো)", "Mobile messages (demo)")}
           </h3>
-          <p className="text-xs text-ink-soft">কোনো আসল এসএমএস পাঠানো হয় না। Mock SMS log.</p>
+          <p className="text-xs text-ink-soft">
+            {t(
+              "কোনো আসল এসএমএস পাঠানো হয় না।",
+              "No real SMS is sent. Messages to citizens are in Bangla.",
+            )}
+          </p>
           <ul className="mt-2 space-y-2 text-sm" data-testid="sms-log">
             {activity.sms.length ? (
               activity.sms.map((s) => (
                 <li key={s.id} className="rounded-lg bg-paper p-2">
                   <p className="text-xs text-ink-soft">
-                    {s.name_bn} · {s.phone} · {bn(s.at)}
+                    {nm(s.name_bn, s.name_en)} · {s.phone} · {num(s.at)}
                   </p>
                   <p>{s.body_bn}</p>
                 </li>
               ))
             ) : (
-              <li className="text-ink-soft">এখনও কোনো বার্তা নেই।</li>
+              <li className="text-ink-soft">{t("এখনও কোনো বার্তা নেই।", "No messages yet.")}</li>
             )}
           </ul>
         </section>
 
         <section aria-labelledby="mut-title" className="rounded-xl border border-line bg-card p-3">
           <h3 id="mut-title" className="font-medium">
-            নামজারি মামলা
+            {t("নামজারি মামলা", "Mutation cases")}
           </h3>
           <ul className="mt-2 space-y-1 text-sm" data-testid="mutation-list">
             {activity.mutations.length ? (
               activity.mutations.map((m) => (
                 <li key={m.case_no}>
-                  <strong>{m.case_no}</strong>: {m.mouza_bn} দাগ {bn(m.dag_no)}, {m.from_bn} →{" "}
-                  {m.to_bn}, {bn(m.area_dec)} শতক · অপেক্ষমাণ · শেষ তারিখ {bn(m.deadline_on)}
+                  <strong>{m.case_no}</strong>:{" "}
+                  {en
+                    ? `${m.mouza_en} dag ${m.dag_no}, ${m.from_en} → ${m.to_en}, ${m.area_dec} dec · pending · due ${m.deadline_on}`
+                    : `${m.mouza_bn} দাগ ${num(m.dag_no)}, ${m.from_bn} → ${m.to_bn}, ${num(m.area_dec)} শতক · অপেক্ষমাণ · শেষ তারিখ ${num(m.deadline_on)}`}
                 </li>
               ))
             ) : (
-              <li className="text-ink-soft">কোনো মামলা নেই।</li>
+              <li className="text-ink-soft">{t("কোনো মামলা নেই।", "No cases.")}</li>
             )}
           </ul>
         </section>
 
         <section aria-labelledby="ev-title" className="rounded-xl border border-line bg-card p-3">
           <h3 id="ev-title" className="font-medium">
-            লেজার ঘটনা
+            {t("লেজার ঘটনা", "Ledger events")}
           </h3>
           <ul className="mt-2 space-y-1 text-sm">
             {activity.events.length ? (
               activity.events.map((e) => (
                 <li key={e.id}>
-                  {bn(e.at)} · দাগ {bn(e.dag_no)} · {EVENT_BN[e.event_type] ?? e.event_type}{" "}
-                  {bn(e.area_dec)} শতক ·{" "}
+                  {num(e.at)} · {t("দাগ", "dag")} {num(e.dag_no)} ·{" "}
+                  {(en ? EVENT_EN : EVENT_BN)[e.event_type] ?? e.event_type} {dec(e.area_dec)} ·{" "}
                   <span
                     className={
                       e.status === "accepted"
@@ -475,12 +505,14 @@ export function RegistryDesk({
                         : "font-semibold text-verdict-red"
                     }
                   >
-                    {e.status === "accepted" ? `গৃহীত ${e.ref ?? ""}` : "আটকানো"}
+                    {e.status === "accepted"
+                      ? `${t("গৃহীত", "accepted")} ${e.ref ?? ""}`
+                      : t("আটকানো", "blocked")}
                   </span>
                 </li>
               ))
             ) : (
-              <li className="text-ink-soft">কোনো ঘটনা নেই।</li>
+              <li className="text-ink-soft">{t("কোনো ঘটনা নেই।", "No events.")}</li>
             )}
           </ul>
         </section>

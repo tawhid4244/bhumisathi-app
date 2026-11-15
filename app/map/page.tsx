@@ -18,6 +18,7 @@ export default function MapPage(props: PageProps<"/map">) {
         titleBn="মৌজা ম্যাপে মাপ"
         titleEn="Mouza map area: tap a dag, or measure on your own map photo"
         subtitleBn="দাগের মাপ শতক, কাঠা, বিঘা ও একরে — খতিয়ানের সাথে মিলিয়ে।"
+        subtitleEn="A dag's area in decimals, katha, bigha and acres — matched with the khatian."
       />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <Suspense fallback={<p className="text-ink-soft">লোড হচ্ছে… Loading…</p>}>

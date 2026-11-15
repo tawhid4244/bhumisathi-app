@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { DeceasedOwner, WarishLandResult } from "@/lib/engines/warish-land";
-import { bnNum } from "@/lib/engines/warish";
+import { useLang, useNum } from "../i18n/LangProvider";
 
 // The warish screen. All maths happens in the warish_compute tool (lib/engines/warish.ts);
 // this component only collects the family, shows the result, and runs a MOCK consent step.
@@ -43,11 +43,11 @@ const EMPTY: FormState = {
 };
 
 /** Names for the G2 example family (synthetic). */
-const G2_NAMES: Record<string, string> = {
-  wife: "রোকেয়া বেগম",
-  "son-1": "সোহেল",
-  "son-2": "রুবেল",
-  daughter: "নাসরিন",
+const G2_NAMES: Record<string, { bn: string; en: string }> = {
+  wife: { bn: "রোকেয়া বেগম", en: "Rokeya Begum" },
+  "son-1": { bn: "সোহেল", en: "Sohel" },
+  "son-2": { bn: "রুবেল", en: "Rubel" },
+  daughter: { bn: "নাসরিন", en: "Nasrin" },
 };
 
 const WOMEN = new Set(["wife", "mother", "daughter", "granddaughter", "sister"]);
@@ -69,6 +69,8 @@ function Counter(props: {
   onChange: (n: number) => void;
 }) {
   const { label, value, max = 20, onChange } = props;
+  const { t } = useLang();
+  const num = useNum();
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-line bg-white px-3 py-1">
       <span className="text-sm font-medium" id={`lbl-${label}`}>
@@ -77,7 +79,7 @@ function Counter(props: {
       <div className="flex items-center gap-1" role="group" aria-labelledby={`lbl-${label}`}>
         <button
           type="button"
-          aria-label={`${label} কমান`}
+          aria-label={t(`${label} কমান`, `Fewer: ${label}`)}
           onClick={() => onChange(Math.max(0, value - 1))}
           className="h-10 w-10 rounded-md border border-line text-lg"
         >
@@ -85,11 +87,11 @@ function Counter(props: {
         </button>
         {/* prettier-ignore */}
         <output className="w-8 text-center font-semibold" aria-label={label}>
-          {bnNum(value)}
+          {num(value)}
         </output>
         <button
           type="button"
-          aria-label={`${label} বাড়ান`}
+          aria-label={t(`${label} বাড়ান`, `More: ${label}`)}
           onClick={() => onChange(Math.min(max, value + 1))}
           className="h-10 w-10 rounded-md border border-line text-lg"
         >
@@ -114,7 +116,11 @@ export function WarishCalculator({
       ? { ...EMPTY, deceasedId: initialOwnerId }
       : EMPTY,
   );
-  const [names, setNames] = useState<Record<string, string>>({});
+  const [names, setNames] = useState<Record<string, { bn: string; en: string }>>({});
+  const { t, lang } = useLang();
+  const en = lang === "en";
+  const num = useNum();
+  const dec = (n: number | string) => t(`${num(n)} শতক`, `${num(n)} dec`);
   const [result, setResult] = useState<WarishLandResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -164,7 +170,7 @@ export function WarishCalculator({
         body: JSON.stringify(body),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error?.bn ?? "হিসাব করা যায়নি।");
+      if (!res.ok) throw new Error((en ? json?.error?.en : json?.error?.bn) ?? t("হিসাব করা যায়নি।", "Could not calculate.")); // prettier-ignore
       setResult(json as WarishLandResult);
     } catch (err) {
       setResult(null);
@@ -179,7 +185,11 @@ export function WarishCalculator({
     setCodes((c) => ({ ...c, [key]: code }));
   }
 
-  const who = (s: WarishLandResult["shares"][number]) => (names[s.key] ? `${names[s.key]} (${s.label_bn})` : s.label_bn); // prettier-ignore
+  const who = (s: WarishLandResult["shares"][number]) => {
+    const label = en ? s.label_en : s.label_bn;
+    const name = names[s.key];
+    return name ? `${en ? name.en : name.bn} (${label})` : label;
+  };
   const allConfirmed = result !== null && result.shares.every((s) => confirmed[s.key]);
   const women = result?.shares.filter((s) => WOMEN.has(s.relation)) ?? [];
 
@@ -190,17 +200,17 @@ export function WarishCalculator({
         className="space-y-4 rounded-xl border border-line bg-card p-4 shadow-sm"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">১. কার জমি?</h2>
+          <h2 className="font-semibold">{t("১. কার জমি?", "1. Whose land?")}</h2>
           <button
             type="button"
             onClick={loadExample}
             className="min-h-10 rounded-lg border border-brand px-3 text-sm text-brand"
           >
-            উদাহরণ: আব্দুল করিমের পরিবার
+            {t("উদাহরণ: আব্দুল করিমের পরিবার", "Example: Abdul Karim's family")}
           </button>
         </div>
         <label className="grid min-w-0 gap-1 text-sm font-medium">
-          মৃত ব্যক্তি ও তাঁর জমি
+          {t("মৃত ব্যক্তি ও তাঁর জমি", "The deceased and their land")}
           <select
             value={String(form.deceasedId)}
             onChange={(e) =>
@@ -210,18 +220,24 @@ export function WarishCalculator({
           >
             {deceased.map((d) => (
               <option key={d.owner_id} value={d.owner_id}>
-                {d.name_bn} —{" "}
+                {en ? d.name_en : d.name_bn} —{" "}
                 {d.holdings
-                  .map((h) => `${h.mouza_bn} দাগ ${bnNum(h.dag_no)} (${bnNum(h.share_dec)} শতক)`)
+                  .map((h) =>
+                    en
+                      ? `${h.mouza_en} dag ${h.dag_no} (${h.share_dec} dec)`
+                      : `${h.mouza_bn} দাগ ${num(h.dag_no)} (${num(h.share_dec)} শতক)`,
+                  )
                   .join(", ")}
               </option>
             ))}
-            <option value="manual">অন্য কেউ — মোট জমি নিজে লিখব</option>
+            <option value="manual">
+              {t("অন্য কেউ — মোট জমি নিজে লিখব", "Someone else — I will type the total land")}
+            </option>
           </select>
         </label>
         {form.deceasedId === "manual" ? (
           <label className="grid min-w-0 gap-1 text-sm font-medium">
-            মোট জমি (শতক)
+            {t("মোট জমি (শতক)", "Total land (decimals)")}
             <input
               value={form.totalDec}
               onChange={(e) => set("totalDec", e.target.value)}
@@ -231,15 +247,15 @@ export function WarishCalculator({
           </label>
         ) : null}
 
-        <h2 className="pt-2 font-semibold">২. কে কে জীবিত আছেন?</h2>
+        <h2 className="pt-2 font-semibold">{t("২. কে কে জীবিত আছেন?", "2. Who is alive?")}</h2>
         <fieldset>
-          <legend className="text-sm font-medium">স্বামী / স্ত্রী</legend>
+          <legend className="text-sm font-medium">{t("স্বামী / স্ত্রী", "Husband / wife")}</legend>
           <div className="mt-1 flex flex-wrap gap-2">
             {(
               [
-                ["none", "নেই"],
-                ["husband", "স্বামী"],
-                ["wife", "স্ত্রী"],
+                ["none", t("নেই", "None")],
+                ["husband", t("স্বামী", "Husband")],
+                ["wife", t("স্ত্রী", "Wife")],
               ] as const
             ).map(([v, l]) => (
               <label
@@ -260,7 +276,7 @@ export function WarishCalculator({
         <div className="grid gap-2 sm:grid-cols-2">
           {form.spouse === "wife" ? (
             <Counter
-              label="স্ত্রীর সংখ্যা"
+              label={t("স্ত্রীর সংখ্যা", "Number of wives")}
               value={form.wives}
               max={4}
               onChange={(n) => set("wives", Math.max(1, n))}
@@ -272,7 +288,7 @@ export function WarishCalculator({
               checked={form.father}
               onChange={(e) => set("father", e.target.checked)}
             />{" "}
-            বাবা জীবিত
+            {t("বাবা জীবিত", "Father alive")}
           </label>
           <label className="flex min-h-11 items-center gap-2 rounded-lg border border-line bg-white px-3">
             <input
@@ -280,17 +296,32 @@ export function WarishCalculator({
               checked={form.mother}
               onChange={(e) => set("mother", e.target.checked)}
             />{" "}
-            মা জীবিত
+            {t("মা জীবিত", "Mother alive")}
           </label>
-          <Counter label="ছেলে" value={form.sons} onChange={(n) => set("sons", n)} />
-          <Counter label="মেয়ে" value={form.daughters} onChange={(n) => set("daughters", n)} />
-          <Counter label="আপন ভাই" value={form.brothers} onChange={(n) => set("brothers", n)} />
-          <Counter label="আপন বোন" value={form.sisters} onChange={(n) => set("sisters", n)} />
+          <Counter label={t("ছেলে", "Sons")} value={form.sons} onChange={(n) => set("sons", n)} />
+          <Counter
+            label={t("মেয়ে", "Daughters")}
+            value={form.daughters}
+            onChange={(n) => set("daughters", n)}
+          />
+          <Counter
+            label={t("আপন ভাই", "Full brothers")}
+            value={form.brothers}
+            onChange={(n) => set("brothers", n)}
+          />
+          <Counter
+            label={t("আপন বোন", "Full sisters")}
+            value={form.sisters}
+            onChange={(n) => set("sisters", n)}
+          />
         </div>
 
         <div className="space-y-2">
           <p className="text-sm font-medium">
-            আগে মারা যাওয়া ছেলে/মেয়ে, যাঁদের সন্তান আছে (মুসলিম পারিবারিক আইন অধ্যাদেশ ১৯৬১, ধারা ৪)
+            {t(
+              "আগে মারা যাওয়া ছেলে/মেয়ে, যাঁদের সন্তান আছে (মুসলিম পারিবারিক আইন অধ্যাদেশ ১৯৬১, ধারা ৪)",
+              "Sons or daughters who died earlier and left children (Muslim Family Laws Ordinance 1961, s.4)",
+            )}
           </p>
           {form.preds.map((p, i) => (
             <div
@@ -298,7 +329,7 @@ export function WarishCalculator({
               className="grid gap-2 rounded-lg border border-line bg-paper p-2 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-center"
             >
               <select
-                aria-label="মৃত সন্তান"
+                aria-label={t("মৃত সন্তান", "Predeceased child")}
                 value={p.type}
                 onChange={(e) =>
                   set(
@@ -310,11 +341,11 @@ export function WarishCalculator({
                 }
                 className={field}
               >
-                <option value="son">মৃত ছেলে</option>
-                <option value="daughter">মৃত মেয়ে</option>
+                <option value="son">{t("মৃত ছেলে", "Predeceased son")}</option>
+                <option value="daughter">{t("মৃত মেয়ে", "Predeceased daughter")}</option>
               </select>
               <Counter
-                label={`তাঁর ছেলে ${bnNum(i + 1)}`}
+                label={t(`তাঁর ছেলে ${num(i + 1)}`, `Their sons ${i + 1}`)}
                 value={p.sons}
                 onChange={(n) =>
                   set(
@@ -324,7 +355,7 @@ export function WarishCalculator({
                 }
               />
               <Counter
-                label={`তাঁর মেয়ে ${bnNum(i + 1)}`}
+                label={t(`তাঁর মেয়ে ${num(i + 1)}`, `Their daughters ${i + 1}`)}
                 value={p.daughters}
                 onChange={(n) =>
                   set(
@@ -343,7 +374,7 @@ export function WarishCalculator({
                 }
                 className="min-h-10 rounded-md border border-line px-2 text-sm"
               >
-                বাদ দিন
+                {t("বাদ দিন", "Remove")}
               </button>
             </div>
           ))}
@@ -352,7 +383,7 @@ export function WarishCalculator({
             onClick={() => set("preds", [...form.preds, { type: "son", sons: 1, daughters: 0 }])}
             className="min-h-10 rounded-lg border border-line bg-white px-3 text-sm"
           >
-            + আগে মারা যাওয়া সন্তান যোগ করুন
+            {t("+ আগে মারা যাওয়া সন্তান যোগ করুন", "+ Add a child who died earlier")}
           </button>
         </div>
 
@@ -361,7 +392,7 @@ export function WarishCalculator({
           disabled={busy}
           className="min-h-11 w-full rounded-lg bg-brand px-4 font-semibold text-white disabled:opacity-60 sm:w-auto"
         >
-          হিসাব করুন
+          {t("হিসাব করুন", "Calculate")}
         </button>
       </form>
 
@@ -374,22 +405,26 @@ export function WarishCalculator({
       {result ? (
         <section className="space-y-4" aria-labelledby="result-title" data-testid="warish-result">
           <h2 id="result-title" className="text-lg font-semibold">
-            ৩. প্রত্যেকের অংশ{result.deceased ? ` — ${result.deceased.name_bn}-এর জমি` : ""}
+            {en
+              ? `3. Everyone's share${result.deceased ? ` — ${result.deceased.name_en}'s land` : ""}`
+              : `৩. প্রত্যেকের অংশ${result.deceased ? ` — ${result.deceased.name_bn}-এর জমি` : ""}`}
           </h2>
           <div className="overflow-x-auto rounded-xl border border-line bg-card">
             <table className="w-full text-left text-xs sm:text-sm">
               <thead className="bg-paper text-ink-soft">
                 <tr>
                   <th scope="col" className="p-2">
-                    ওয়ারিশ
+                    {t("ওয়ারিশ", "Heir")}
                   </th>
                   <th scope="col" className="p-2">
-                    অংশ
+                    {t("অংশ", "Share")}
                   </th>
                   {result.holdings.map((h) => (
                     <th key={`${h.mouza_bn}${h.dag_no}`} scope="col" className="p-2">
-                      {h.dag_no ? `দাগ ${bnNum(h.dag_no)}` : "মোট জমি"}{" "}
-                      <span className="block font-normal">({bnNum(h.share_dec)} শতক)</span>
+                      {h.dag_no
+                        ? `${t("দাগ", "Dag")} ${num(h.dag_no)}`
+                        : t("মোট জমি", "Total land")}{" "}
+                      <span className="block font-normal">({dec(h.share_dec)})</span>
                     </th>
                   ))}
                 </tr>
@@ -399,13 +434,15 @@ export function WarishCalculator({
                   <tr key={s.key} className="border-t border-line" data-heir={s.key}>
                     <td className="p-2">
                       <span className="font-medium">{who(s)}</span>
-                      <span className="block text-xs text-ink-soft">{s.basis_bn}</span>
+                      <span className="block text-xs text-ink-soft">
+                        {en ? s.basis_en : s.basis_bn}
+                      </span>
                     </td>
                     <td className="p-2">
                       <span className="font-semibold" data-testid={`frac-${s.key}`}>
-                        {bnNum(s.fraction)}
+                        {num(s.fraction)}
                       </span>
-                      <span className="block text-xs text-ink-soft">{bnNum(s.percent)}%</span>
+                      <span className="block text-xs text-ink-soft">{num(s.percent)}%</span>
                     </td>
                     {s.per_dag.map((p) => (
                       <td
@@ -413,7 +450,7 @@ export function WarishCalculator({
                         className="p-2 font-semibold"
                         data-testid={`dec-${s.key}-${p.dag_no}`}
                       >
-                        {bnNum(p.decimals)} শতক
+                        {dec(p.decimals)}
                       </td>
                     ))}
                   </tr>
@@ -425,16 +462,19 @@ export function WarishCalculator({
           {women.length > 0 ? (
             <section
               className="rounded-xl border border-brand/40 bg-brand-soft p-3 text-sm"
-              aria-label="নারীর অংশ"
+              aria-label={t("নারীর অংশ", "Women's shares")}
             >
               <p className="font-semibold">
-                নারীর অংশ আইনে নির্ধারিত — কেউ তা থেকে বঞ্চিত করতে পারে না
+                {t(
+                  "নারীর অংশ আইনে নির্ধারিত — কেউ তা থেকে বঞ্চিত করতে পারে না",
+                  "Women's shares are fixed by law — nobody can take them away",
+                )}
               </p>
               <ul className="mt-1 list-disc pl-5">
                 {women.map((s) => (
                   <li key={s.key}>
-                    {who(s)}: {bnNum(s.fraction)} ({bnNum(s.percent)}%)
-                    {s.total_dec ? `, মোট ${bnNum(s.total_dec)} শতক` : ""}
+                    {who(s)}: {num(s.fraction)} ({num(s.percent)}%)
+                    {s.total_dec ? `, ${t("মোট", "total")} ${dec(s.total_dec)}` : ""}
                   </li>
                 ))}
               </ul>
@@ -442,9 +482,11 @@ export function WarishCalculator({
           ) : null}
 
           <details className="rounded-xl border border-line bg-card p-3 text-sm" open>
-            <summary className="cursor-pointer font-semibold">হিসাব কীভাবে হলো</summary>
+            <summary className="cursor-pointer font-semibold">
+              {t("হিসাব কীভাবে হলো", "How it was worked out")}
+            </summary>
             <ol className="mt-2 list-decimal space-y-1 pl-5">
-              {result.steps_bn.map((s, i) => (
+              {(en ? result.steps_en : result.steps_bn).map((s, i) => (
                 <li key={i}>{s}</li>
               ))}
             </ol>
@@ -455,11 +497,13 @@ export function WarishCalculator({
             aria-labelledby="consent-title"
           >
             <h3 id="consent-title" className="font-semibold">
-              ৪. প্রত্যেক ওয়ারিশের সম্মতি (ডেমো ওটিপি)
+              {t("৪. প্রত্যেক ওয়ারিশের সম্মতি (ডেমো ওটিপি)", "4. Consent from every heir (demo OTP)")}
             </h3>
             <p className="text-xs text-ink-soft">
-              আসল ব্যবস্থায় কোড প্রত্যেকের নিজের মোবাইলে এসএমএস হিসেবে যাবে। এখানে কোড পর্দায় দেখানো
-              হচ্ছে।
+              {t(
+                "আসল ব্যবস্থায় কোড প্রত্যেকের নিজের মোবাইলে এসএমএস হিসেবে যাবে। এখানে কোড পর্দায় দেখানো হচ্ছে।",
+                "In a real system each code goes by SMS to the heir's own phone. Here it is shown on screen.",
+              )}
             </p>
             <ul className="mt-2 space-y-2">
               {result.shares.map((s) => (
@@ -467,24 +511,27 @@ export function WarishCalculator({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-medium">{who(s)}</span>
                     {confirmed[s.key] ? (
-                      <span className="font-semibold text-verdict-green">✓ সম্মতি দিয়েছেন</span>
+                      <span className="font-semibold text-verdict-green">
+                        {t("✓ সম্মতি দিয়েছেন", "✓ Consented")}
+                      </span>
                     ) : !codes[s.key] ? (
                       <button
                         type="button"
                         onClick={() => sendOtp(s.key)}
                         className="min-h-10 rounded-md border border-line bg-white px-3 text-sm"
                       >
-                        ওটিপি পাঠান
+                        {t("ওটিপি পাঠান", "Send OTP")}
                       </button>
                     ) : null}
                   </div>
                   {codes[s.key] && !confirmed[s.key] ? (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <span className="text-xs text-ink-soft">
-                        ডেমো এসএমএস: কোড <span data-testid={`otp-${s.key}`}>{codes[s.key]}</span>
+                        {t("ডেমো এসএমএস: কোড", "Demo SMS: code")}{" "}
+                        <span data-testid={`otp-${s.key}`}>{codes[s.key]}</span>
                       </span>
                       <input
-                        aria-label={`${who(s)}-এর ওটিপি`}
+                        aria-label={t(`${who(s)}-এর ওটিপি`, `OTP for ${who(s)}`)}
                         value={typed[s.key] ?? ""}
                         onChange={(e) => setTyped((t) => ({ ...t, [s.key]: e.target.value }))}
                         inputMode="numeric"
@@ -498,10 +545,12 @@ export function WarishCalculator({
                         }
                         className="min-h-10 rounded-md bg-ink px-3 text-sm text-white"
                       >
-                        নিশ্চিত করুন
+                        {t("নিশ্চিত করুন", "Confirm")}
                       </button>
                       {confirmed[s.key] === false ? (
-                        <span className="text-xs text-verdict-red">কোড মেলেনি</span>
+                        <span className="text-xs text-verdict-red">
+                          {t("কোড মেলেনি", "Code does not match")}
+                        </span>
                       ) : null}
                     </div>
                   ) : null}
@@ -515,32 +564,53 @@ export function WarishCalculator({
               className="rounded-xl border-2 border-verdict-green bg-white p-3"
               data-testid="bontonnama-checklist"
             >
-              <h3 className="font-semibold">৫. এরপর যা করতে হবে: বণ্টননামা → নামজারি</h3>
+              <h3 className="font-semibold">
+                {t(
+                  "৫. এরপর যা করতে হবে: বণ্টননামা → নামজারি",
+                  "5. Next: partition deed (bontonnama) → mutation",
+                )}
+              </h3>
               <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">
-                <li>ইউনিয়ন পরিষদ / পৌরসভা থেকে ওয়ারিশ সনদ নিন।</li>
                 <li>
-                  সব ওয়ারিশ মিলে বণ্টননামা দলিল তৈরি ও সাব-রেজিস্ট্রি অফিসে রেজিস্ট্রি করুন (রাষ্ট্রীয়
-                  অধিগ্রহণ ও প্রজাস্বত্ব আইন, ধারা ১৪৩খ; রেজিস্ট্রেশন আইন, ধারা ১৭)।
+                  {t(
+                    "ইউনিয়ন পরিষদ / পৌরসভা থেকে ওয়ারিশ সনদ নিন।",
+                    "Get a succession certificate (warish sonod) from the Union Parishad or municipality.",
+                  )}
                 </li>
                 <li>
-                  রেজিস্ট্রিকৃত বণ্টননামা দিয়ে প্রত্যেকে নিজ অংশের নামজারি করুন (ধারা ১৪৩; সরকারি ফি মোট
-                  ১,১৭০ টাকা)।
+                  {t(
+                    "সব ওয়ারিশ মিলে বণ্টননামা দলিল তৈরি ও সাব-রেজিস্ট্রি অফিসে রেজিস্ট্রি করুন (রাষ্ট্রীয় অধিগ্রহণ ও প্রজাস্বত্ব আইন, ধারা ১৪৩খ; রেজিস্ট্রেশন আইন, ধারা ১৭)।",
+                    "All heirs together make a partition deed and register it at the sub-registry office (State Acquisition and Tenancy Act, s.143B; Registration Act, s.17).",
+                  )}
                 </li>
-                <li>নামজারির পর নিজ নামে ভূমি উন্নয়ন কর দিন।</li>
+                <li>
+                  {t(
+                    "রেজিস্ট্রিকৃত বণ্টননামা দিয়ে প্রত্যেকে নিজ অংশের নামজারি করুন (ধারা ১৪৩; সরকারি ফি মোট ১,১৭০ টাকা)।",
+                    "With the registered partition deed, each heir applies for mutation of their own share (s.143; official fee Tk 1,170 in total).",
+                  )}
+                </li>
+                <li>
+                  {t(
+                    "নামজারির পর নিজ নামে ভূমি উন্নয়ন কর দিন।",
+                    "After mutation, pay land development tax in your own name.",
+                  )}
+                </li>
               </ol>
               <p className="mt-2 text-sm">
-                প্রশ্ন থাকলে{" "}
+                {t("প্রশ্ন থাকলে", "Questions?")}{" "}
                 <Link href="/chat" className="text-brand underline">
-                  সাথী এআই-কে জিজ্ঞাসা করুন
+                  {t("সাথী এআই-কে জিজ্ঞাসা করুন", "Ask Sathi AI")}
                 </Link>{" "}
-                বা ১৬১২২-এ কল করুন।
+                {t("বা ১৬১২২-এ কল করুন।", "or call 16122.")}
               </p>
             </section>
           ) : null}
 
           <p className="rounded-xl bg-brand-soft p-3 text-xs">
-            এটি হিসাবের সহায়ক (হানাফি ফারায়েজ, কাল্পনিক তথ্য)। বণ্টন বৈধ হয় রেজিস্ট্রিকৃত বণ্টননামা বা
-            আদালতের মাধ্যমে। হিন্দু, খ্রিস্টান ও অন্যান্য উত্তরাধিকার আইন এখনও যুক্ত হয়নি।
+            {t(
+              "এটি হিসাবের সহায়ক (হানাফি ফারায়েজ, কাল্পনিক তথ্য)। বণ্টন বৈধ হয় রেজিস্ট্রিকৃত বণ্টননামা বা আদালতের মাধ্যমে। হিন্দু, খ্রিস্টান ও অন্যান্য উত্তরাধিকার আইন এখনও যুক্ত হয়নি।",
+              "A calculation aid (Hanafi faraid, synthetic data). A division is valid only through a registered partition deed or a court. Hindu, Christian and other succession laws are not added yet.",
+            )}
           </p>
         </section>
       ) : null}

@@ -19,13 +19,23 @@ export async function listPeople(): Promise<Person[]> {
 }
 
 export interface Activity {
-  sms: { id: number; name_bn: string; phone: string; body_bn: string; at: string }[];
+  sms: {
+    id: number;
+    name_bn: string;
+    name_en: string;
+    phone: string;
+    body_bn: string;
+    at: string;
+  }[];
   mutations: {
     case_no: string;
     dag_no: number;
     mouza_bn: string;
+    mouza_en: string;
     from_bn: string;
+    from_en: string;
     to_bn: string;
+    to_en: string;
     area_dec: number;
     status: string;
     deadline_on: string;
@@ -45,12 +55,13 @@ export async function recentActivity(): Promise<Activity> {
   const sql = getSql();
   const [sms, mutations, events] = await Promise.all([
     sql<Activity["sms"]>`
-      select s.id::int, o.name_bn, s.phone, s.body_bn,
+      select s.id::int, o.name_bn, o.name_en, s.phone, s.body_bn,
              to_char(s.created_at at time zone 'Asia/Dhaka', 'HH24:MI:SS') as at
       from sms_log s join owners o on o.id = s.owner_id
       order by s.id desc limit 20`,
     sql<Activity["mutations"]>`
-      select m.case_no, d.dag_no, mz.name_bn as mouza_bn, f.name_bn as from_bn, t.name_bn as to_bn,
+      select m.case_no, d.dag_no, mz.name_bn as mouza_bn, mz.name_en as mouza_en, f.name_bn as from_bn, f.name_en as from_en,
+             t.name_bn as to_bn, t.name_en as to_en,
              m.area_dec::float8 as area_dec, m.status, to_char(m.deadline_on, 'YYYY-MM-DD') as deadline_on
       from mutation_cases m
       join dags d on d.id = m.dag_id join mouzas mz on mz.id = d.mouza_id

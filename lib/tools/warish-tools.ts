@@ -36,6 +36,7 @@ const share = z.object({
   fraction: z.string(),
   percent: z.number(),
   basis_bn: z.string(),
+  basis_en: z.string(),
   per_dag: z.array(z.object({ mouza_bn: z.string(), dag_no: z.number(), decimals: z.number() })),
   total_dec: z.number(),
 });
@@ -83,6 +84,7 @@ export const warishComputeTool = defineTool({
       spouseRadd: z.boolean(),
     }),
     steps_bn: z.array(z.string()),
+    steps_en: z.array(z.string()),
   }),
   handler: async (i) => computeWarishLand(i),
 });

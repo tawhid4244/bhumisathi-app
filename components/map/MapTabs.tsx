@@ -1,19 +1,21 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useLang } from "../i18n/LangProvider";
 
 // Two views of the map page: the mouza map, and measuring on your own map photo.
 export function MapTabs({ mouzaMap, upload }: { mouzaMap: ReactNode; upload: ReactNode }) {
   const [tab, setTab] = useState<"mouza" | "upload">("mouza");
+  const { t } = useLang();
   const tabs = [
-    ["mouza", "মৌজা ম্যাপ"],
-    ["upload", "নিজের ম্যাপে মাপুন"],
+    ["mouza", t("মৌজা ম্যাপ", "Mouza map")],
+    ["upload", t("নিজের ম্যাপে মাপুন", "Measure on your own map")],
   ] as const;
   return (
     <div className="space-y-4">
       <div
         role="tablist"
-        aria-label="ম্যাপ"
+        aria-label={t("ম্যাপ", "Map")}
         className="inline-flex rounded-lg border border-line bg-card p-0.5"
       >
         {tabs.map(([id, label]) => (

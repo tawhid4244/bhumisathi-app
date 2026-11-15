@@ -56,6 +56,7 @@ export interface LedgerStatus {
     seller_id: number;
     buyer_id: number;
     buyer_bn: string;
+    buyer_en: string;
     area_dec: number;
     expires_on: string;
   }[];
@@ -121,7 +122,7 @@ export async function getLedgerStatus(mouza: string, dagNo: number): Promise<Led
       from share_sellable s join owners o on o.id = s.owner_id
       where s.dag_id = ${dag.id} order by s.owner_id`,
     sql<LedgerStatus["active_bainas"]>`
-      select b.id, b.seller_owner_id as seller_id, b.buyer_owner_id as buyer_id, o.name_bn as buyer_bn,
+      select b.id, b.seller_owner_id as seller_id, b.buyer_owner_id as buyer_id, o.name_bn as buyer_bn, o.name_en as buyer_en,
              b.area_dec::float8 as area_dec, to_char(b.expires_on, 'YYYY-MM-DD') as expires_on
       from bainas b join owners o on o.id = b.buyer_owner_id
       where b.dag_id = ${dag.id} and b.status = 'active' and b.expires_on >= bd_today()

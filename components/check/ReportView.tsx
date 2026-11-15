@@ -1,10 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import type { JomiReport } from "@/lib/engines/jomi-check";
-import { bn, type Severity } from "@/lib/engines/rules";
+import type { Severity } from "@/lib/engines/rules";
+import { Bi, useLang, useNum } from "../i18n/LangProvider";
 import { VerdictIcon } from "../VerdictIcon";
 import { SealPanel } from "../seal/SealPanel";
 
-const SURVEY_BN = { CS: "সিএস", SA: "এসএ", RS: "আরএস", BS: "বিএস" } as const;
+// The Jomi Check report, in the visitor's language. Every text comes from the engine in both
+// Bangla and English (reasons, verdict, names, land class); this view only picks one.
+
+const SURVEY = {
+  CS: { bn: "সিএস", en: "CS" },
+  SA: { bn: "এসএ", en: "SA" },
+  RS: { bn: "আরএস", en: "RS" },
+  BS: { bn: "বিএস", en: "BS" },
+} as const;
 
 const VERDICT_STYLE = {
   red: "bg-verdict-red text-white",
@@ -17,12 +28,22 @@ const SEVERITY_STYLE: Record<Severity, string> = {
   amber: "border-verdict-amber/40 bg-amber-50",
   info: "border-line bg-card",
 };
-const SEVERITY_LABEL: Record<Severity, string> = { red: "গুরুতর", amber: "সতর্কতা", info: "তথ্য" };
+const SEVERITY_LABEL: Record<Severity, { bn: string; en: string }> = {
+  red: { bn: "গুরুতর", en: "Serious" },
+  amber: { bn: "সতর্কতা", en: "Warning" },
+  info: { bn: "তথ্য", en: "Info" },
+};
 
-const dec = (n: number) => `${bn(n)} শতক`;
+const btn = "inline-flex min-h-11 items-center rounded-lg border px-3";
 
 export function ReportView({ report }: { report: JomiReport }) {
   const { dag } = report;
+  const { t, lang } = useLang();
+  const num = useNum();
+  const dec = (n: number) => t(`${num(n)} শতক`, `${num(n)} dec`);
+  const en = lang === "en";
+  const holderName = (h: { name_bn: string; name_en?: string }) => (en && h.name_en ? h.name_en : h.name_bn); // prettier-ignore
+
   return (
     <article aria-labelledby="verdict-title" className="space-y-6">
       {/* Verdict */}
@@ -33,28 +54,33 @@ export function ReportView({ report }: { report: JomiReport }) {
         <VerdictIcon verdict={report.verdict} className="h-12 w-12 shrink-0" />
         <div>
           <p className="text-sm opacity-90">
-            {dag.mouza_bn} মৌজা (জেএল {bn(dag.jl_no)}), দাগ {bn(dag.dag_no)}
+            {t(
+              `${dag.mouza_bn} মৌজা (জেএল ${num(dag.jl_no)}), দাগ ${num(dag.dag_no)}`,
+              `${dag.mouza_en} mouza (JL ${dag.jl_no}), dag ${dag.dag_no}`,
+            )}
           </p>
           <h2 id="verdict-title" className="text-2xl font-bold">
-            {report.verdict_bn}
+            {en ? report.verdict_en : report.verdict_bn}
           </h2>
-          <p lang="en" className="text-sm opacity-90">
-            {report.verdict_en}
-          </p>
-          <p className="mt-1 font-medium">{report.advice_bn}</p>
+          {en ? null : (
+            <p lang="en" className="text-sm opacity-90">
+              {report.verdict_en}
+            </p>
+          )}
+          <p className="mt-1 font-medium">{en ? report.advice_en : report.advice_bn}</p>
         </div>
       </section>
 
       {report.khatian_dags && report.khatian_dags.length > 1 ? (
-        <nav aria-label="খতিয়ানের অন্য দাগ" className="text-sm">
-          এই খতিয়ানের দাগ:{" "}
+        <nav aria-label={t("খতিয়ানের অন্য দাগ", "Other dags on this khatian")} className="text-sm">
+          {t("এই খতিয়ানের দাগ:", "Dags on this khatian:")}{" "}
           {report.khatian_dags.map((d) => (
             <Link
               key={d}
               href={`/check?mouza=${dag.mouza_en.toLowerCase()}&by=dag&no=${d}`}
               className="mr-2 inline-flex min-h-11 items-center rounded-md px-2 text-brand underline"
             >
-              {bn(d)}
+              {num(d)}
             </Link>
           ))}
         </nav>
@@ -63,10 +89,7 @@ export function ReportView({ report }: { report: JomiReport }) {
       {/* Reasons */}
       <section aria-labelledby="reasons-title">
         <h3 id="reasons-title" className="text-lg font-semibold">
-          কারণসমূহ{" "}
-          <span lang="en" className="text-sm font-normal text-ink-soft">
-            Reasons
-          </span>
+          <Bi bn="কারণসমূহ" en="Reasons" />
         </h3>
         <ul className="mt-2 space-y-2">
           {report.reasons.map((r, i) => (
@@ -76,13 +99,19 @@ export function ReportView({ report }: { report: JomiReport }) {
               data-code={r.code}
             >
               <span className="mr-2 rounded bg-white/70 px-1.5 py-0.5 text-xs font-semibold">
-                {SEVERITY_LABEL[r.severity]}
+                {t(SEVERITY_LABEL[r.severity].bn, SEVERITY_LABEL[r.severity].en)}
               </span>
-              <span>{r.bn}</span>
-              <p lang="en" className="mt-1 text-sm text-ink-soft">
-                {r.en}
-              </p>
-              {r.basis ? <p className="mt-1 text-xs text-ink-soft">ভিত্তি: {r.basis}</p> : null}
+              <span>{en ? r.en : r.bn}</span>
+              {en ? null : (
+                <p lang="en" className="mt-1 text-sm text-ink-soft">
+                  {r.en}
+                </p>
+              )}
+              {r.basis ? (
+                <p className="mt-1 text-xs text-ink-soft">
+                  {t("ভিত্তি:", "Basis:")} {r.basis}
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -91,26 +120,23 @@ export function ReportView({ report }: { report: JomiReport }) {
       {/* Holders and balances */}
       <section aria-labelledby="holders-title">
         <h3 id="holders-title" className="text-lg font-semibold">
-          মালিক ও বিক্রয়যোগ্য অংশ{" "}
-          <span lang="en" className="text-sm font-normal text-ink-soft">
-            Holders and sellable share
-          </span>
+          <Bi bn="মালিক ও বিক্রয়যোগ্য অংশ" en="Holders and sellable share" />
         </h3>
         <div className="mt-2 overflow-x-auto rounded-xl border border-line bg-card">
           <table className="w-full text-left text-xs sm:text-sm">
             <thead className="bg-paper text-ink-soft">
               <tr>
                 <th scope="col" className="p-1.5 sm:p-2">
-                  মালিক
+                  {t("মালিক", "Holder")}
                 </th>
                 <th scope="col" className="p-1.5 sm:p-2">
-                  রেকর্ডীয়
+                  {t("রেকর্ডীয়", "Recorded")}
                 </th>
                 <th scope="col" className="p-1.5 sm:p-2">
-                  বিক্রি/বায়না/বন্ধক
+                  {t("বিক্রি/বায়না/বন্ধক", "Sold/baina/mortgage")}
                 </th>
                 <th scope="col" className="p-1.5 sm:p-2">
-                  বিক্রয়যোগ্য
+                  {t("বিক্রয়যোগ্য", "Sellable")}
                 </th>
               </tr>
             </thead>
@@ -118,14 +144,16 @@ export function ReportView({ report }: { report: JomiReport }) {
               {report.holders.map((h) => (
                 <tr key={h.owner_id} className="border-t border-line">
                   <td className="p-1.5 sm:p-2">
-                    {h.name_bn}
+                    {holderName(h)}
                     {h.is_deceased ? (
-                      <span className="ml-1 text-xs text-verdict-amber">(মৃত)</span>
+                      <span className="ml-1 text-xs text-verdict-amber">
+                        {t("(মৃত)", "(deceased)")}
+                      </span>
                     ) : null}
                   </td>
                   <td className="p-1.5 sm:p-2">{dec(h.recorded_dec)}</td>
                   <td className="p-1.5 sm:p-2">
-                    {bn(h.sold_dec)} / {bn(h.reserved_dec)} / {bn(h.locked_dec)}
+                    {num(h.sold_dec)} / {num(h.reserved_dec)} / {num(h.locked_dec)}
                   </td>
                   <td className="p-1.5 font-semibold sm:p-2" data-testid={`sellable-${h.owner_id}`}>
                     {dec(h.sellable_dec)}
@@ -136,17 +164,17 @@ export function ReportView({ report }: { report: JomiReport }) {
           </table>
         </div>
         <p className="mt-1 text-xs text-ink-soft">
-          বিক্রয়যোগ্য = রেকর্ডীয় অংশ − বিক্রি − চলমান বায়না − বন্ধক।
+          {t(
+            "বিক্রয়যোগ্য = রেকর্ডীয় অংশ − বিক্রি − চলমান বায়না − বন্ধক।",
+            "Sellable = recorded share − sold − active bainas − mortgages.",
+          )}
         </p>
       </section>
 
       {/* Record chain */}
       <section aria-labelledby="chain-title">
         <h3 id="chain-title" className="text-lg font-semibold">
-          রেকর্ডের ধারা{" "}
-          <span lang="en" className="text-sm font-normal text-ink-soft">
-            Record chain CS → SA → RS → BS
-          </span>
+          <Bi bn="রেকর্ডের ধারা" en="Record chain CS → SA → RS → BS" />
         </h3>
         <ol className="mt-2 grid gap-2 sm:grid-cols-4">
           {report.chain.map((c) => (
@@ -155,12 +183,16 @@ export function ReportView({ report }: { report: JomiReport }) {
               className="relative rounded-xl border border-line bg-card p-3 text-sm"
             >
               <p className="font-semibold text-brand">
-                {SURVEY_BN[c.survey]} ({bn(c.year)})
+                {t(SURVEY[c.survey].bn, SURVEY[c.survey].en)} ({num(c.year)})
               </p>
-              <p>খতিয়ান {bn(c.khatian_no)}</p>
-              <p>দাগ {bn(c.survey_dag_no)}</p>
+              <p>
+                {t("খতিয়ান", "Khatian")} {num(c.khatian_no)}
+              </p>
+              <p>
+                {t("দাগ", "Dag")} {num(c.survey_dag_no)}
+              </p>
               <p>{dec(c.area_dec)}</p>
-              <p className="mt-1 text-ink-soft">{c.owners.map((o) => o.name_bn).join(", ")}</p>
+              <p className="mt-1 text-ink-soft">{c.owners.map(holderName).join(", ")}</p>
             </li>
           ))}
         </ol>
@@ -169,57 +201,60 @@ export function ReportView({ report }: { report: JomiReport }) {
       {/* Area */}
       <section className="rounded-xl border border-line bg-card p-3 text-sm">
         <p>
-          খতিয়ানে আয়তন: <strong>{dec(dag.recorded_area_dec)}</strong>
+          {t("খতিয়ানে আয়তন:", "Area on the khatian:")} <strong>{dec(dag.recorded_area_dec)}</strong>
           {report.map_area_dec != null ? (
             <>
               {" "}
-              · মৌজা ম্যাপে মাপ: <strong>{dec(report.map_area_dec)}</strong>
+              · {t("মৌজা ম্যাপে মাপ:", "Measured on the mouza map:")}{" "}
+              <strong>{dec(report.map_area_dec)}</strong>
             </>
           ) : (
-            <> · এই মৌজার ম্যাপ নেই</>
+            <> · {t("এই মৌজার ম্যাপ নেই", "No map for this mouza")}</>
           )}
         </p>
         <p className="mt-1 text-ink-soft">
-          শ্রেণি: {dag.land_class_bn} · লেজার সংস্করণ {bn(report.ledger_version)} · যাচাইয়ের তারিখ{" "}
-          {bn(report.checked_on)}
+          {t("শ্রেণি:", "Land class:")} {en ? dag.land_class_en : dag.land_class_bn} ·{" "}
+          {t("লেজার সংস্করণ", "Ledger version")} {num(report.ledger_version)} ·{" "}
+          {t("যাচাইয়ের তারিখ", "Checked on")} {num(report.checked_on)}
         </p>
       </section>
 
       {/* Next steps: the same dag carried into the other tools. */}
       <nav
-        aria-label="এরপর কী করবেন"
+        aria-label={t("এরপর কী করবেন", "What next")}
         className="rounded-xl border border-line bg-card p-3"
         data-testid="next-steps"
       >
-        <p className="text-sm font-semibold">এরপর কী করবেন</p>
+        <p className="text-sm font-semibold">{t("এরপর কী করবেন", "What next")}</p>
         <div className="mt-2 flex flex-wrap gap-2 text-sm">
           {report.map_area_dec != null ? (
             <Link
               href={`/map?mouza=${dag.mouza_en.toLowerCase()}&dag=${dag.dag_no}`}
-              className="inline-flex min-h-11 items-center rounded-lg border border-brand px-3 text-brand"
+              className={`${btn} border-brand text-brand`}
             >
-              ম্যাপে দেখুন
+              {t("ম্যাপে দেখুন", "See on the map")}
             </Link>
           ) : null}
           {report.holders.some((h) => h.is_deceased) ? (
             <Link
               href={`/warish?owner=${report.holders.find((h) => h.is_deceased)!.owner_id}`}
-              className="inline-flex min-h-11 items-center rounded-lg border border-brand px-3 text-brand"
+              className={`${btn} border-brand text-brand`}
             >
-              ওয়ারিশ হিসাব
+              {t("ওয়ারিশ হিসাব", "Inheritance shares")}
             </Link>
           ) : null}
           <Link
-            href={`/chat?q=${encodeURIComponent(`${dag.mouza_bn} মৌজার ${bn(dag.dag_no)} নম্বর দাগ নিয়ে জানতে চাই: `)}`}
-            className="inline-flex min-h-11 items-center rounded-lg border border-brand px-3 text-brand"
+            href={`/chat?q=${encodeURIComponent(
+              en
+                ? `I want to know about dag ${dag.dag_no} in ${dag.mouza_en} mouza: `
+                : `${dag.mouza_bn} মৌজার ${num(dag.dag_no)} নম্বর দাগ নিয়ে জানতে চাই: `,
+            )}`}
+            className={`${btn} border-brand text-brand`}
           >
-            সাথীকে জিজ্ঞাসা করুন
+            {t("সাথীকে জিজ্ঞাসা করুন", "Ask Sathi")}
           </Link>
-          <Link
-            href="/deed"
-            className="inline-flex min-h-11 items-center rounded-lg border border-line px-3"
-          >
-            দলিল যাচাই
+          <Link href="/deed" className={`${btn} border-line`}>
+            {t("দলিল যাচাই", "Check a deed")}
           </Link>
         </div>
       </nav>
@@ -227,10 +262,12 @@ export function ReportView({ report }: { report: JomiReport }) {
       <SealPanel mouza={dag.mouza_en} dagNo={dag.dag_no} />
 
       <p className="rounded-xl bg-brand-soft p-3 text-sm">
-        {report.disclaimer_bn}
-        <span lang="en" className="mt-1 block text-ink-soft">
-          {report.disclaimer_en}
-        </span>
+        {en ? report.disclaimer_en : report.disclaimer_bn}
+        {en ? null : (
+          <span lang="en" className="mt-1 block text-ink-soft">
+            {report.disclaimer_en}
+          </span>
+        )}
       </p>
     </article>
   );

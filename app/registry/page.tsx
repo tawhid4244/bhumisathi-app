@@ -17,6 +17,7 @@ export default function RegistryPage() {
         titleBn="সাব-রেজিস্ট্রি ডেমো"
         titleEn="Sub-registry demo: the check runs before the deed is registered"
         subtitleBn="দলিল নিবন্ধনের আগে সিস্টেম জমি যাচাই ও শেয়ার লেজার দেখে; বিক্রয়যোগ্য না হলে দলিল আটকে দেয়।"
+        subtitleEn="Before a deed is registered the system checks the land and the share ledger; if the share is not sellable, the deed is blocked."
       />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
         <Suspense fallback={<p className="text-ink-soft">লোড হচ্ছে… Loading…</p>}>

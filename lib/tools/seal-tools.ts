@@ -29,7 +29,12 @@ const payloadSchema = z.object({
   area_dec: z.number(),
   verdict: z.enum(["red", "amber", "green"]),
   holders: z.array(
-    z.object({ name_bn: z.string(), recorded_dec: z.number(), sellable_dec: z.number() }),
+    z.object({
+      name_bn: z.string(),
+      name_en: z.string().optional(),
+      recorded_dec: z.number(),
+      sellable_dec: z.number(),
+    }),
   ),
   ledger_version: z.number(),
 });
@@ -73,7 +78,7 @@ export const sealIssueTool = defineTool({
   },
 });
 
-const light = z.object({ ok: z.boolean(), bn: z.string() });
+const light = z.object({ ok: z.boolean(), bn: z.string(), en: z.string() });
 
 export const sealVerifyTool = defineTool({
   name: "seal_verify",
@@ -123,9 +128,12 @@ export const whoCheckedTool = defineTool({
         at: z.string(),
         role: z.string(),
         role_bn: z.string(),
+        role_en: z.string(),
         action: z.string(),
         action_bn: z.string(),
+        action_en: z.string(),
         mouza_bn: z.string(),
+        mouza_en: z.string(),
         dag_no: z.number(),
         detail: z.record(z.string(), z.unknown()),
       }),

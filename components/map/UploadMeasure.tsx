@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { calibratedAreaDecimals, type Point } from "@/lib/engines/area";
-import { bn } from "@/lib/engines/rules";
+import { useLang, useNum } from "../i18n/LangProvider";
 import { fromDecimals } from "@/lib/engines/units";
 
 // "Measure on your own map": the image never leaves the phone (no upload to the server).
@@ -16,6 +16,12 @@ const UNIT_BN: Record<Unit, string> = {
   chain: "চেইন (৬৬ ফুট)",
   link: "লিংক (০.৬৬ ফুট)",
 };
+const UNIT_EN: Record<Unit, string> = {
+  ft: "feet",
+  m: "metres",
+  chain: "chain (66 ft)",
+  link: "link (0.66 ft)",
+};
 
 export function UploadMeasure() {
   const [src, setSrc] = useState<string | null>(null);
@@ -25,6 +31,9 @@ export function UploadMeasure() {
   const [unit, setUnit] = useState<Unit>("ft");
   const [corners, setCorners] = useState<Point[]>([]);
   const [done, setDone] = useState(false);
+  const { t, lang } = useLang();
+  const en = lang === "en";
+  const bn = useNum();
   const svgRef = useRef<SVGSVGElement>(null);
 
   const knownFeet = Number(distance.replace(/[০-৯]/g, (d) => String("০১২৩৪৫৬৭৮৯".indexOf(d)))) * UNIT_FEET[unit]; // prettier-ignore
@@ -70,10 +79,10 @@ export function UploadMeasure() {
   }
   const units = area != null ? fromDecimals(area) : null;
   const STEPS = [
-    "ম্যাপের ছবি দিন",
-    "স্কেলের দুই প্রান্তে চাপ দিন",
-    "দুই বিন্দুর আসল দূরত্ব লিখুন",
-    "জমির কোণাগুলোতে একে একে চাপ দিন",
+    t("ম্যাপের ছবি দিন", "Give a photo of the map"),
+    t("স্কেলের দুই প্রান্তে চাপ দিন", "Tap both ends of the scale"),
+    t("দুই বিন্দুর আসল দূরত্ব লিখুন", "Type the real distance between the two points"),
+    t("জমির কোণাগুলোতে একে একে চাপ দিন", "Tap the corners of the land one by one"),
   ];
 
   return (
@@ -90,10 +99,15 @@ export function UploadMeasure() {
       </ol>
 
       <label className="inline-flex min-h-11 cursor-pointer items-center rounded-lg bg-brand px-4 font-semibold text-white">
-        ম্যাপের ছবি বেছে নিন
+        {t("ম্যাপের ছবি বেছে নিন", "Choose a map photo")}
         <input type="file" accept="image/*" onChange={onFile} className="sr-only" />
       </label>
-      <p className="text-xs text-ink-soft">ছবি আপনার ফোনেই থাকে, কোথাও পাঠানো হয় না।</p>
+      <p className="text-xs text-ink-soft">
+        {t(
+          "ছবি আপনার ফোনেই থাকে, কোথাও পাঠানো হয় না।",
+          "The photo stays on your phone; it is not sent anywhere.",
+        )}
+      </p>
 
       {src ? (
         // Sized by the picture, and never taller than the screen below the sticky header, so
@@ -102,7 +116,7 @@ export function UploadMeasure() {
           {/* eslint-disable-next-line @next/next/no-img-element -- local preview of the user's own file */}
           <img
             src={src}
-            alt="আপলোড করা ম্যাপ"
+            alt={t("আপলোড করা ম্যাপ", "The uploaded map")}
             className="block h-auto max-h-[calc(100svh-8rem)] w-auto max-w-full rounded-xl"
             onLoad={(e) =>
               setSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
@@ -115,7 +129,7 @@ export function UploadMeasure() {
               className="absolute inset-0 h-full w-full cursor-crosshair"
               onClick={onClick}
               data-testid="measure-surface"
-              aria-label="ম্যাপের উপর চাপ দিয়ে বিন্দু বসান"
+              aria-label={t("ম্যাপের উপর চাপ দিয়ে বিন্দু বসান", "Tap on the map to place points")}
             >
               {calib.length ? (
                 <polyline
@@ -147,7 +161,7 @@ export function UploadMeasure() {
       {calib.length === 2 ? (
         <div className="flex flex-wrap items-end gap-2">
           <label className="grid gap-1 text-sm font-medium">
-            দুই লাল বিন্দুর আসল দূরত্ব
+            {t("দুই লাল বিন্দুর আসল দূরত্ব", "Real distance between the two red points")}
             <input
               value={distance}
               onChange={(e) => setDistance(e.target.value)}
@@ -156,7 +170,7 @@ export function UploadMeasure() {
             />
           </label>
           <label className="grid gap-1 text-sm font-medium">
-            একক
+            {t("একক", "Unit")}
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value as Unit)}
@@ -164,7 +178,7 @@ export function UploadMeasure() {
             >
               {(Object.keys(UNIT_FEET) as Unit[]).map((u) => (
                 <option key={u} value={u}>
-                  {UNIT_BN[u]}
+                  {en ? UNIT_EN[u] : UNIT_BN[u]}
                 </option>
               ))}
             </select>
@@ -181,7 +195,7 @@ export function UploadMeasure() {
               onClick={() => setDone(true)}
               className="min-h-11 rounded-lg bg-ink px-4 font-semibold text-white disabled:opacity-50"
             >
-              মাপ দেখুন ({bn(corners.length)}টি কোণ)
+              {t(`মাপ দেখুন (${bn(corners.length)}টি কোণ)`, `Show area (${corners.length} corners)`)}
             </button>
           ) : null}
           {corners.length && !done ? (
@@ -190,7 +204,7 @@ export function UploadMeasure() {
               onClick={() => setCorners((c) => c.slice(0, -1))}
               className="min-h-11 rounded-lg border border-line px-3"
             >
-              শেষ বিন্দু মুছুন
+              {t("শেষ বিন্দু মুছুন", "Undo last point")}
             </button>
           ) : null}
           <button
@@ -198,7 +212,7 @@ export function UploadMeasure() {
             onClick={() => reset()}
             className="min-h-11 rounded-lg border border-line px-3"
           >
-            আবার শুরু করুন
+            {t("আবার শুরু করুন", "Start again")}
           </button>
         </div>
       ) : null}
@@ -209,14 +223,22 @@ export function UploadMeasure() {
           data-testid="measure-result"
           data-decimals={units.decimals}
         >
-          <p className="text-lg font-semibold">আনুমানিক মাপ: {bn(units.decimals)} শতক</p>
+          <p className="text-lg font-semibold">
+            {t(
+              `আনুমানিক মাপ: ${bn(units.decimals)} শতক`,
+              `Approximate area: ${units.decimals} decimals`,
+            )}
+          </p>
           <p className="text-sm">
-            {bn(units.katha)} কাঠা · {bn(units.acre)} একর · {bn(units.sqft.toLocaleString("en-IN"))}{" "}
-            বর্গফুট · {bn(units.sqm)} বর্গমিটার
+            {en
+              ? `${units.katha} katha · ${units.acre} acres · ${units.sqft.toLocaleString("en-IN")} sq ft · ${units.sqm} sq m`
+              : `${bn(units.katha)} কাঠা · ${bn(units.acre)} একর · ${bn(units.sqft.toLocaleString("en-IN"))} বর্গফুট · ${bn(units.sqm)} বর্গমিটার`}
           </p>
           <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs">
-            এটি ছবি থেকে আনুমানিক হিসাব, জরিপ নয়। ছবি বাঁকা বা ভাঁজ থাকলে মাপ ভুল হতে পারে। আইনি মাপের
-            জন্য আমিন দিয়ে জরিপ করান।
+            {t(
+              "এটি ছবি থেকে আনুমানিক হিসাব, জরিপ নয়। ছবি বাঁকা বা ভাঁজ থাকলে মাপ ভুল হতে পারে। আইনি মাপের জন্য আমিন দিয়ে জরিপ করান।",
+              "This is an estimate from a photo, not a survey. A tilted or folded photo gives a wrong area. For a legal measurement, have an amin survey the land.",
+            )}
           </p>
         </section>
       ) : null}

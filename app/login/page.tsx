@@ -4,7 +4,13 @@ import { PageHeader } from "@/components/PageHeader";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { safeNext } from "@/lib/auth/guard";
 import { DEMO_USERS } from "@/lib/auth/demo-accounts";
-import { ROLE_BN } from "@/lib/auth/roles";
+import { Bi, T } from "@/components/i18n/LangProvider";
+
+const ROLE_LABEL = {
+  citizen: { bn: "নাগরিক", en: "Citizen" },
+  officer: { bn: "কর্মকর্তা", en: "Officer" },
+  admin: { bn: "প্রশাসক", en: "Admin" },
+} as const;
 
 export const metadata: Metadata = { title: "লগইন" };
 
@@ -17,14 +23,21 @@ export default function LoginPage(props: PageProps<"/login">) {
           <Form searchParams={props.searchParams} />
         </Suspense>
         <section className="mt-8 rounded-xl border border-line bg-card p-4 text-sm">
-          <h2 className="font-semibold">ডেমো অ্যাকাউন্ট (কাল্পনিক) · Demo accounts</h2>
+          <h2 className="font-semibold">
+            <Bi bn="ডেমো অ্যাকাউন্ট (কাল্পনিক)" en="Demo accounts (synthetic)" />
+          </h2>
           <p className="mt-1 text-ink-soft">
-            প্রতিটি ভূমিকার জন্য একটি অ্যাকাউন্ট। পাসওয়ার্ড ডেমো পরিচালকের কাছ থেকে নিন।
+            <T
+              bn="প্রতিটি ভূমিকার জন্য একটি অ্যাকাউন্ট। পাসওয়ার্ড ডেমো পরিচালকের কাছ থেকে নিন।"
+              en="One account per role. Ask the demo host for the password."
+            />
           </p>
           <ul className="mt-2 space-y-1">
             {DEMO_USERS.map((u) => (
               <li key={u.email} className="flex flex-wrap gap-x-2">
-                <span className="font-medium">{ROLE_BN[u.role]}</span>
+                <span className="font-medium">
+                  <T bn={ROLE_LABEL[u.role].bn} en={ROLE_LABEL[u.role].en} />
+                </span>
                 <span lang="en" className="break-all font-mono text-xs leading-6">
                   {u.email}
                 </span>

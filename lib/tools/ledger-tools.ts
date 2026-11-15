@@ -51,6 +51,7 @@ export const ledgerStatusOutput = z.object({
       seller_id: z.number(),
       buyer_id: z.number(),
       buyer_bn: z.string(),
+      buyer_en: z.string(),
       area_dec: z.number(),
       expires_on: z.string(),
     }),

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { ReportView } from "@/components/check/ReportView";
+import { Bi, T } from "@/components/i18n/LangProvider";
 import { SearchForm } from "@/components/check/SearchForm";
 import { KhatianNotFoundError, type JomiReport } from "@/lib/engines/jomi-check";
 import { currentUser } from "@/lib/auth/current";
@@ -18,6 +19,7 @@ export default function CheckPage(props: PageProps<"/check">) {
         titleBn="জমি যাচাই"
         titleEn="Jomi Check: check land before you buy"
         subtitleBn="টাকা দেওয়ার আগে দেখে নিন: মালিক কে, কতটুকু বিক্রি করা যায়, কোনো মামলা, বন্ধক বা বায়না আছে কি না।"
+        subtitleEn="Before you pay: who owns it, how much can be sold, and whether there is a court case, mortgage or baina."
       />
       <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-6">
         <Suspense fallback={<p className="text-ink-soft">লোড হচ্ছে… Loading…</p>}>
@@ -71,18 +73,17 @@ async function CheckContent({ searchParams }: Pick<PageProps<"/check">, "searchP
       <SearchForm mouzas={mouzas} mouza={mouza} by={by} no={rawNo} />
       {problem ? (
         <p role="alert" className="rounded-xl border border-verdict-amber/40 bg-amber-50 p-3">
-          {problem.bn}
-          <span lang="en" className="block text-sm text-ink-soft">
-            {problem.en}
-          </span>
+          <Bi bn={problem.bn} en={problem.en} sub="text-sm text-ink-soft" block />
         </p>
       ) : null}
       {report ? <ReportView report={report} /> : null}
       {!report && !problem ? (
         <section className="rounded-xl border border-dashed border-line p-4 text-sm text-ink-soft">
-          <p>উদাহরণ (কাল্পনিক তথ্য): নয়াপাড়া দাগ ১৪৫, ১৪২, ১৪৬, ১৪৯ অথবা চরপাড়া দাগ ২১০।</p>
-          <p lang="en">
-            Try (synthetic data): Nayapara dag 145, 142, 146, 149 or Charpara dag 210.
+          <p>
+            <T
+              bn="উদাহরণ (কাল্পনিক তথ্য): নয়াপাড়া দাগ ১৪৫, ১৪২, ১৪৬, ১৪৯ অথবা চরপাড়া দাগ ২১০।"
+              en="Try (synthetic data): Nayapara dag 145, 142, 146, 149 or Charpara dag 210."
+            />
           </p>
         </section>
       ) : null}

@@ -14,6 +14,7 @@ export default function WarishPage(props: PageProps<"/warish">) {
         titleBn="ওয়ারিশ হিসাব"
         titleEn="Inheritance (warish) shares per dag"
         subtitleBn="ফারায়েজ অনুযায়ী প্রত্যেক ওয়ারিশ — মেয়ে ও স্ত্রীসহ — প্রতিটি দাগে কত শতক পাবেন।"
+        subtitleEn="Faraid shares for every heir — daughters and wife included — in decimals on every dag."
       />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <Suspense fallback={<p className="text-ink-soft">লোড হচ্ছে… Loading…</p>}>

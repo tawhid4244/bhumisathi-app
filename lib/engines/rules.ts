@@ -237,17 +237,22 @@ export function evaluate(
   return { verdict, reasons };
 }
 
-export const VERDICT_LABEL: Record<Verdict, { bn: string; en: string; advice_bn: string }> = {
-  red: { bn: "লাল: ঝুঁকিপূর্ণ", en: "Red: high risk", advice_bn: "এই অবস্থায় টাকা দেবেন না।" },
+export const VERDICT_LABEL: Record<
+  Verdict,
+  { bn: string; en: string; advice_bn: string; advice_en: string }
+> = {
+  red: { bn: "লাল: ঝুঁকিপূর্ণ", en: "Red: high risk", advice_bn: "এই অবস্থায় টাকা দেবেন না।", advice_en: "Do not pay anything in this situation." }, // prettier-ignore
   amber: {
     bn: "হলুদ: সতর্কতা",
     en: "Amber: check first",
     advice_bn: "কেনার আগে নিচের বিষয়গুলো যাচাই করুন।",
+    advice_en: "Check the points below before you buy.",
   },
   green: {
     bn: "সবুজ: রেকর্ডে ঝুঁকি নেই",
     en: "Green: no risk in records",
     advice_bn: "তবুও দলিল লেখার আগে মূল কাগজ দেখে নিন।",
+    advice_en: "Still, see the original papers before the deed is written.",
   },
 };
 

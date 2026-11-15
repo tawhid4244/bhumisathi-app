@@ -48,19 +48,25 @@
         "kani_dec": 120,
         "bn": "১২০ শতকের কানি",
         "where_bn": "যেমন নোয়াখালী অঞ্চলে প্রচলিত; কুমিল্লায়ও ব্যবহৃত",
-        "source": "Banglapedia (Agrometrology): 1 kani = 120 decimal; Legalseba: Noakhali kani typically 120 decimal"
+        "source": "Banglapedia (Agrometrology): 1 kani = 120 decimal; Legalseba: Noakhali kani typically 120 decimal",
+        "en": "Kani of 120 decimals",
+        "where_en": "Common in Noakhali; also used in Comilla"
       },
       {
         "kani_dec": 40,
         "bn": "৪০ শতকের কানি",
         "where_bn": "কিছু অঞ্চলে প্রচলিত",
-        "source": "Banglapedia lists a 40-decimal kani as a regional variant; ministry unit page gives both 40 and 120 (project research)"
+        "source": "Banglapedia lists a 40-decimal kani as a regional variant; ministry unit page gives both 40 and 120 (project research)",
+        "en": "Kani of 40 decimals",
+        "where_en": "Used in some regions"
       },
       {
         "kani_dec": 30,
         "bn": "৩০ শতকের কানি",
         "where_bn": "কুমিল্লার কোনো কোনো এলাকায়",
-        "source": "Legalseba: in Comilla a kani can mean 120 or 30 decimal"
+        "source": "Legalseba: in Comilla a kani can mean 120 or 30 decimal",
+        "en": "Kani of 30 decimals",
+        "where_en": "In some parts of Comilla"
       }
     ]
   },

@@ -3,44 +3,63 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { JudgeCard } from "@/lib/demo/judge";
+import { useLang, useNum } from "../i18n/LangProvider";
 import { VerdictIcon } from "../VerdictIcon";
 
 // The guided tour. Each step asks the server to run ONE fixed action (/api/judge/step) and shows
-// its Bangla caption and result. It moves on by itself (about 3 minutes in all) or with "পরের ধাপ".
+// its caption and result in the visitor's language. It moves on by itself (about 3 minutes in
+// all) or with the "next step" button.
 
 const TOTAL = 9;
 const AUTO_MS = 18_000;
-const SCENARIO_BN: Record<string, string> = {
-  শুরু: "শুরু",
-  G1: "দুইবার বিক্রি আটকানো",
-  G3: "দলিল পড়া",
-  G8: "সাথী এআই",
-  G2: "ওয়ারিশ",
-  G7: "সিলযুক্ত রিপোর্ট",
+const SCENARIO: Record<string, { bn: string; en: string }> = {
+  শুরু: { bn: "শুরু", en: "Start" },
+  G1: { bn: "দুইবার বিক্রি আটকানো", en: "Double sale blocked" },
+  G3: { bn: "দলিল পড়া", en: "Deed reading" },
+  G8: { bn: "সাথী এআই", en: "Sathi AI" },
+  G2: { bn: "ওয়ারিশ", en: "Inheritance" },
+  G7: { bn: "সিলযুক্ত রিপোর্ট", en: "Sealed report" },
 };
-const bn = (n: number) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]!);
+
+type Failed = { error: { bn: string; en: string } };
 
 export function JudgeTour() {
-  const [cards, setCards] = useState<(JudgeCard | { error: string })[]>([]);
+  const { t, lang } = useLang();
+  const num = useNum();
+  const [cards, setCards] = useState<(JudgeCard | Failed)[]>([]);
   const [busy, setBusy] = useState(false);
   const [playing, setPlaying] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const done = cards.length >= TOTAL;
+  const scenarioName = (s: string) => t(SCENARIO[s]?.bn ?? s, SCENARIO[s]?.en ?? s);
 
-  const runStep = useCallback(async (step: number) => {
-    setBusy(true);
-    try {
-      const res = await fetch("/api/judge/step", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ step }),
-      });
-      const json = await res.json().catch(() => null);
-      setCards((c) => [...c, res.ok ? (json.card as JudgeCard) : { error: json?.error?.bn ?? "সমস্যা হয়েছে।" }]); // prettier-ignore
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+  const runStep = useCallback(
+    async (step: number) => {
+      setBusy(true);
+      try {
+        const res = await fetch("/api/judge/step", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ step, lang }),
+        });
+        const json = await res.json().catch(() => null);
+        setCards((c) => [
+          ...c,
+          res.ok
+            ? (json.card as JudgeCard)
+            : {
+                error: {
+                  bn: json?.error?.bn ?? "সমস্যা হয়েছে।",
+                  en: json?.error?.en ?? "Something went wrong.",
+                },
+              },
+        ]);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [lang],
+  );
 
   const next = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -63,10 +82,10 @@ export function JudgeTour() {
       {cards.length === 0 ? (
         <div className="rounded-xl border border-line bg-card p-4">
           <p>
-            শুরু করলে ডেমোর সব তথ্য (কাল্পনিক) রিসেট হবে। প্রতিটি ধাপ প্রকৃত ইঞ্জিন চালায় — কোনো ভিডিও নয়।
-          </p>
-          <p lang="en" className="text-sm text-ink-soft">
-            Starting resets the synthetic demo data. Every step runs the real engines.
+            {t(
+              "শুরু করলে ডেমোর সব তথ্য (কাল্পনিক) রিসেট হবে। প্রতিটি ধাপ প্রকৃত ইঞ্জিন চালায় — কোনো ভিডিও নয়।",
+              "Starting resets the synthetic demo data. Every step runs the real engines — it is not a video.",
+            )}
           </p>
           <button
             type="button"
@@ -77,15 +96,15 @@ export function JudgeTour() {
             disabled={busy}
             className="mt-3 min-h-12 rounded-lg bg-brand px-5 text-lg font-semibold text-white disabled:opacity-60"
           >
-            জাজ মোড শুরু করুন
+            {t("জাজ মোড শুরু করুন", "Start judge mode")}
           </button>
         </div>
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2" data-testid="judge-controls">
             <p className="mr-auto font-medium" aria-live="polite">
-              ধাপ {bn(cards.length)} / {bn(TOTAL)}
-              {busy ? " · চলছে…" : done ? " · শেষ" : ""}
+              {t("ধাপ", "Step")} {num(cards.length)} / {num(TOTAL)}
+              {busy ? t(" · চলছে…", " · running…") : done ? t(" · শেষ", " · done") : ""}
             </p>
             {!done ? (
               <>
@@ -94,7 +113,7 @@ export function JudgeTour() {
                   onClick={() => setPlaying((p) => !p)}
                   className="min-h-11 rounded-lg border border-line bg-card px-3"
                 >
-                  {playing ? "থামান" : "চালু করুন"}
+                  {playing ? t("থামান", "Pause") : t("চালু করুন", "Play")}
                 </button>
                 <button
                   type="button"
@@ -102,7 +121,7 @@ export function JudgeTour() {
                   disabled={busy}
                   className="min-h-11 rounded-lg bg-brand px-4 font-semibold text-white disabled:opacity-60"
                 >
-                  পরের ধাপ
+                  {t("পরের ধাপ", "Next step")}
                 </button>
               </>
             ) : null}
@@ -113,25 +132,25 @@ export function JudgeTour() {
               style={{ width: `${(cards.length / TOTAL) * 100}%` }}
             />
           </div>
-          {current ? <Card card={current} /> : null}
+          {current ? <Card card={current} scenarioName={scenarioName} /> : null}
           {done ? (
             <p className="rounded-xl bg-brand-soft p-4 font-semibold" data-testid="judge-done">
-              এক জমি, এক সত্য। ধন্যবাদ!{" "}
+              {t("এক জমি, এক সত্য। ধন্যবাদ!", "One plot, one truth. Thank you!")}{" "}
               <Link href="/" className="underline">
-                হোমে ফিরুন
+                {t("হোমে ফিরুন", "Back to home")}
               </Link>
             </p>
           ) : null}
           {cards.length > 1 ? (
             <details>
-              <summary className="cursor-pointer">আগের ধাপগুলো</summary>
+              <summary className="cursor-pointer">{t("আগের ধাপগুলো", "Earlier steps")}</summary>
               <ol className="mt-2 space-y-1 text-sm">
                 {cards.slice(0, -1).map((c, i) =>
                   "error" in c ? (
-                    <li key={i}>✗ {c.error}</li>
+                    <li key={i}>✗ {t(c.error.bn, c.error.en)}</li>
                   ) : (
                     <li key={i}>
-                      {SCENARIO_BN[c.scenario]}: {c.title_bn}
+                      {scenarioName(c.scenario)}: {t(c.title_bn, c.title_en)}
                     </li>
                   ),
                 )}
@@ -144,14 +163,23 @@ export function JudgeTour() {
   );
 }
 
-function Card({ card }: { card: JudgeCard | { error: string } }) {
+function Card({
+  card,
+  scenarioName,
+}: {
+  card: JudgeCard | Failed;
+  scenarioName: (s: string) => string;
+}) {
+  const { t, lang } = useLang();
+  const en = lang === "en";
   if ("error" in card) {
     return (
       <p role="alert" className="rounded-xl border border-verdict-amber/40 bg-amber-50 p-4">
-        {card.error}
+        {t(card.error.bn, card.error.en)}
       </p>
     );
   }
+  const lines = en ? card.lines_en : card.lines;
   return (
     <article
       className="space-y-3 rounded-xl border border-line bg-card p-4"
@@ -160,21 +188,25 @@ function Card({ card }: { card: JudgeCard | { error: string } }) {
       data-verdict={card.verdict ?? ""}
     >
       <p className="text-sm font-semibold text-brand">
-        {card.scenario === "শুরু" ? "শুরু" : `${card.scenario} · ${SCENARIO_BN[card.scenario]}`}
+        {card.scenario === "শুরু"
+          ? scenarioName("শুরু")
+          : `${card.scenario} · ${scenarioName(card.scenario)}`}
       </p>
       <h2 className="flex items-center gap-2 text-xl font-bold">
         {card.verdict ? <VerdictIcon verdict={card.verdict} className="h-7 w-7 shrink-0" /> : null}
-        {card.title_bn}
+        {en ? card.title_en : card.title_bn}
       </h2>
       <p className="text-lg" data-testid="judge-caption">
-        {card.caption_bn}
+        {en ? card.caption_en : card.caption_bn}
       </p>
-      <p lang="en" className="text-sm text-ink-soft">
-        {card.caption_en}
-      </p>
-      {card.lines.length ? (
+      {en ? null : (
+        <p lang="en" className="text-sm text-ink-soft">
+          {card.caption_en}
+        </p>
+      )}
+      {lines.length ? (
         <ul className="list-disc space-y-1 pl-5 text-sm">
-          {card.lines.map((l, i) => (
+          {lines.map((l, i) => (
             <li key={i} className="break-words">
               {l}
             </li>
@@ -185,7 +217,7 @@ function Card({ card }: { card: JudgeCard | { error: string } }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(card.qr_svg)}`}
-          alt="সিলযুক্ত রিপোর্টের QR কোড"
+          alt={t("সিলযুক্ত রিপোর্টের QR কোড", "QR code of the sealed report")}
           width={160}
           height={160}
           className="w-40 rounded border border-line bg-white"
@@ -196,7 +228,7 @@ function Card({ card }: { card: JudgeCard | { error: string } }) {
           href={card.link.href}
           className="inline-flex min-h-11 items-center rounded-lg border border-brand px-3 text-brand"
         >
-          {card.link.label_bn}
+          {en ? card.link.label_en : card.link.label_bn}
         </Link>
       ) : null}
     </article>

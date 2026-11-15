@@ -30,6 +30,7 @@ export interface DeedCheck {
   verdict: Verdict;
   findings: Reason[];
   summary_bn: string;
+  summary_en: string;
   dag: { mouza_bn: string; mouza_en: string; dag_no: number } | null;
 }
 
@@ -40,6 +41,15 @@ const TYPE_BN: Record<DeedExtract["deed_type"], string> = {
   mortgage: "বন্ধক",
   partition: "বণ্টননামা",
   other: "অন্য ধরনের",
+};
+
+const TYPE_EN: Record<DeedExtract["deed_type"], string> = {
+  sale: "sale (saf kabla)",
+  heba: "gift (heba)",
+  baina: "baina (sale agreement)",
+  mortgage: "mortgage",
+  partition: "partition (bontonnama)",
+  other: "other",
 };
 
 const money = (n: number) => bn(n.toLocaleString("en-IN"));
@@ -60,18 +70,32 @@ export function deedSummary(d: DeedExtract): string {
   return s.replace(/\s+/g, " ").trim();
 }
 
+/** The same plain summary in English, from the same fields. */
+export function deedSummaryEn(d: DeedExtract): string {
+  if (!d.is_deed) return "The image does not look like a land deed.";
+  let s = `This is a ${TYPE_EN[d.deed_type]} deed${d.deed_no ? ` (no. ${d.deed_no})` : ""}.`;
+  if (d.registered_on) s += ` Registered on ${d.registered_on.split("-").reverse().join("/")}.`;
+  if (d.seller_name && d.buyer_name) {
+    s += ` ${d.seller_name} transferred${d.area_dec ? ` ${d.area_dec} decimals of` : ""} land${d.dag_no ? ` in dag ${d.dag_no}` : ""}${d.mouza ? `, ${d.mouza} mouza,` : ""} to ${d.buyer_name}${d.price_tk ? ` for Tk ${d.price_tk.toLocaleString("en-IN")}` : ""}.`; // prettier-ignore
+  }
+  if (d.khatian_no) s += ` The deed mentions ${d.khatian_survey ?? ""} khatian ${d.khatian_no}.`;
+  if (d.unreadable_fields.length) s += ` Some parts could not be read: ${d.unreadable_fields.join(", ")}.`; // prettier-ignore
+  return s.replace(/\s+/g, " ").trim();
+}
+
 export async function checkDeed(d: DeedExtract): Promise<DeedCheck> {
   const findings: Reason[] = [];
   const add = (r: Reason) => findings.push(r);
   const summary_bn = deedSummary(d);
+  const summary_en = deedSummaryEn(d);
 
   if (!d.is_deed) {
     add({ code: "NOT_A_DEED", severity: "red", bn: "ছবিটি দলিল নয় বা পড়া যায়নি।", en: "The image is not a readable deed." }); // prettier-ignore
-    return { verdict: "red", findings, summary_bn, dag: null };
+    return { verdict: "red", findings, summary_bn, summary_en, dag: null };
   }
   if (!d.mouza || !d.dag_no) {
     add({ code: "NO_DAG", severity: "red", bn: "দলিলে মৌজা বা দাগ নম্বর পড়া যায়নি; রেকর্ডের সাথে মেলানো সম্ভব নয়।", en: "Mouza or dag number could not be read." }); // prettier-ignore
-    return { verdict: "red", findings, summary_bn, dag: null };
+    return { verdict: "red", findings, summary_bn, summary_en, dag: null };
   }
 
   // 1. Does the dag exist in the records?
@@ -85,7 +109,7 @@ export async function checkDeed(d: DeedExtract): Promise<DeedCheck> {
       await resolveDag(mouzaKey, d.dag_no);
     } catch {
       add({ code: "DAG_NOT_FOUND", severity: "red", bn: `রেকর্ডে ${d.mouza} মৌজার ${bn(d.dag_no)} নম্বর দাগ পাওয়া যায়নি।`, en: `Dag ${d.dag_no} of ${d.mouza} is not in the records.` }); // prettier-ignore
-      return { verdict: "red", findings, summary_bn, dag: null };
+      return { verdict: "red", findings, summary_bn, summary_en, dag: null };
     }
   }
   const facts = await loadDagFacts(mouzaKey, d.dag_no);
@@ -160,5 +184,5 @@ export async function checkDeed(d: DeedExtract): Promise<DeedCheck> {
   if (verdict === "green") {
     findings.unshift({ code: "DEED_MATCHES", severity: "info", bn: "দলিলের তথ্য রেকর্ডের সাথে মিলেছে; দাগে কোনো ঝুঁকি পাওয়া যায়নি।", en: "The deed matches the records; no risk found on the dag." }); // prettier-ignore
   }
-  return { verdict, findings, summary_bn, dag };
+  return { verdict, findings, summary_bn, summary_en, dag };
 }

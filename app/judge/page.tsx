@@ -11,6 +11,7 @@ export default function JudgePage() {
         titleBn="জাজ মোড — ৩ মিনিটে ভূমিসাথী"
         titleEn="Judge mode: BhumiSathi in about 3 minutes"
         subtitleBn="ডেমো রিসেট হয়ে পাঁচটি গল্প পরপর চলবে: দুইবার বিক্রি আটকানো, দলিল পড়া, সাথী এআই, ওয়ারিশ, সিলযুক্ত রিপোর্ট।"
+        subtitleEn="The demo resets and five stories play in a row: double sale blocked, deed reading, Sathi AI, inheritance, sealed report."
       />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <JudgeTour />

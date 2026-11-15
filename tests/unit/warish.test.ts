@@ -171,3 +171,25 @@ describe("input safety", () => {
     expect(checked).toBeGreaterThan(800);
   });
 });
+
+describe("English explanations (for the English screen)", () => {
+  const families = [
+    { wives: 1, sons: 2, daughters: 1 },
+    { husband: true, father: true, mother: true },
+    { wives: 1, father: true, mother: true, daughters: 2 },
+    { mother: true, daughters: 1 },
+    { wives: 1 },
+    { fullBrothers: 1, fullSisters: 2 },
+    { sons: 1, predeceasedDaughters: [{ sons: 1, daughters: 1 }] },
+  ];
+  it("every step and every basis has an English line with no Bangla in it", () => {
+    for (const f of families) {
+      const r = computeWarish(f);
+      expect(r.steps_en).toHaveLength(r.steps_bn.length);
+      for (const line of [...r.steps_en, ...r.shares.map((s) => s.basis_en)]) {
+        expect(line).not.toMatch(/[ঀ-৿]/);
+        expect(line.length).toBeGreaterThan(3);
+      }
+    }
+  });
+});

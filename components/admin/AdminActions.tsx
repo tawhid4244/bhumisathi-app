@@ -3,12 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { AccountRow } from "@/lib/engines/office";
+import { useLang } from "../i18n/LangProvider";
 
-const ROLE_BN: Record<string, string> = { citizen: "নাগরিক", officer: "কর্মকর্তা", admin: "প্রশাসক" };
+const ROLE: Record<string, { bn: string; en: string }> = {
+  citizen: { bn: "নাগরিক", en: "Citizen" },
+  officer: { bn: "কর্মকর্তা", en: "Officer" },
+  admin: { bn: "প্রশাসক", en: "Admin" },
+};
 
 export function AccountsTable({ accounts }: { accounts: AccountRow[] }) {
   const router = useRouter();
-  const [msg, setMsg] = useState<string | null>(null);
+  const { t } = useLang();
+  const [msg, setMsg] = useState<{ bn: string; en: string } | null>(null);
 
   async function unlock(email: string) {
     const res = await fetch("/api/admin/unlock", {
@@ -16,29 +22,33 @@ export function AccountsTable({ accounts }: { accounts: AccountRow[] }) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email }),
     });
-    setMsg(res.ok ? "অ্যাকাউন্ট খুলে দেওয়া হয়েছে।" : "খোলা যায়নি।");
+    setMsg(
+      res.ok
+        ? { bn: "অ্যাকাউন্ট খুলে দেওয়া হয়েছে।", en: "The account is unlocked." }
+        : { bn: "খোলা যায়নি।", en: "Could not unlock." },
+    );
     router.refresh();
   }
 
   return (
     <div className="space-y-2">
-      <h3 className="font-semibold">অ্যাকাউন্ট</h3>
+      <h3 className="font-semibold">{t("অ্যাকাউন্ট", "Accounts")}</h3>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[32rem] text-left text-sm" data-testid="accounts">
-          <caption className="sr-only">অ্যাকাউন্টের তালিকা</caption>
+          <caption className="sr-only">{t("অ্যাকাউন্টের তালিকা", "List of accounts")}</caption>
           <thead>
             <tr className="border-b border-line">
               <th scope="col" className="py-2 pr-2">
-                নাম
+                {t("নাম", "Name")}
               </th>
               <th scope="col" className="py-2 pr-2">
-                ইমেইল
+                {t("ইমেইল", "Email")}
               </th>
               <th scope="col" className="py-2 pr-2">
-                ভূমিকা
+                {t("ভূমিকা", "Role")}
               </th>
               <th scope="col" className="py-2 pr-2">
-                অবস্থা
+                {t("অবস্থা", "Status")}
               </th>
             </tr>
           </thead>
@@ -49,7 +59,9 @@ export function AccountsTable({ accounts }: { accounts: AccountRow[] }) {
                 <td lang="en" className="break-all py-2 pr-2 font-mono text-xs">
                   {a.email}
                 </td>
-                <td className="py-2 pr-2">{ROLE_BN[a.role] ?? a.role}</td>
+                <td className="py-2 pr-2">
+                  {ROLE[a.role] ? t(ROLE[a.role]!.bn, ROLE[a.role]!.en) : a.role}
+                </td>
                 <td className="py-2 pr-2">
                   {a.locked ? (
                     <button
@@ -57,10 +69,10 @@ export function AccountsTable({ accounts }: { accounts: AccountRow[] }) {
                       onClick={() => void unlock(a.email)}
                       className="min-h-11 rounded-lg border border-verdict-red px-2 text-verdict-red"
                     >
-                      লক — খুলে দিন
+                      {t("লক — খুলে দিন", "Locked — unlock")}
                     </button>
                   ) : (
-                    "সক্রিয়"
+                    t("সক্রিয়", "Active")
                   )}
                 </td>
               </tr>
@@ -68,14 +80,20 @@ export function AccountsTable({ accounts }: { accounts: AccountRow[] }) {
           </tbody>
         </table>
       </div>
-      {msg ? <p role="status">{msg}</p> : null}
-      <p className="text-xs text-ink-soft">পাসওয়ার্ড কখনও দেখানো হয় না; শুধু তার হ্যাশ সংরক্ষিত থাকে।</p>
+      {msg ? <p role="status">{t(msg.bn, msg.en)}</p> : null}
+      <p className="text-xs text-ink-soft">
+        {t(
+          "পাসওয়ার্ড কখনও দেখানো হয় না; শুধু তার হ্যাশ সংরক্ষিত থাকে।",
+          "Passwords are never shown; only their hash is stored.",
+        )}
+      </p>
     </div>
   );
 }
 
 export function ResetDemoButton() {
   const router = useRouter();
+  const { t } = useLang();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   return (
@@ -92,9 +110,9 @@ export function ResetDemoButton() {
         }}
         className="min-h-11 rounded-lg border border-line bg-paper px-3 font-medium disabled:opacity-60"
       >
-        {busy ? "রিসেট হচ্ছে…" : "ডেমো রিসেট"}
+        {busy ? t("রিসেট হচ্ছে…", "Resetting…") : t("ডেমো রিসেট", "Reset demo")}
       </button>
-      {done ? <p role="status">ডেমো নতুন করে শুরু হয়েছে।</p> : null}
+      {done ? <p role="status">{t("ডেমো নতুন করে শুরু হয়েছে।", "The demo has restarted.")}</p> : null}
     </div>
   );
 }

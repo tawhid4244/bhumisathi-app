@@ -1,7 +1,7 @@
 import { withUser } from "../auth/db";
 import type { SessionUser } from "../auth/roles";
 import { getSql } from "../sql";
-import { ACTION_BN, ROLE_LABEL_BN } from "./audit";
+import { ACTION_BN, ACTION_EN, ROLE_LABEL_BN, ROLE_LABEL_EN } from "./audit";
 
 // Data for the office view (/admin): officers see the day's work and the audit trail;
 // admins also see accounts. Identities in the audit log stay hidden (RLS column grants).
@@ -30,9 +30,12 @@ export interface AuditListEntry {
   id: number;
   at: string;
   role_bn: string;
+  role_en: string;
   action: string;
   action_bn: string;
+  action_en: string;
   place_bn: string | null;
+  place_en: string | null;
 }
 
 /** Latest audit entries, read AS the officer (RLS: officers see all rows, never who). */
@@ -46,11 +49,12 @@ export async function recentAudit(user: SessionUser, limit = 20): Promise<AuditL
         role: string;
         action: string;
         mouza_bn: string | null;
+        mouza_en: string | null;
         dag_no: number | null;
       }[]
     >`
       select a.id::int, to_char(a.at at time zone 'Asia/Dhaka', 'YYYY-MM-DD HH24:MI') as at,
-             a.role, a.action, mz.name_bn as mouza_bn, d.dag_no
+             a.role, a.action, mz.name_bn as mouza_bn, mz.name_en as mouza_en, d.dag_no
       from audit_log a
       left join dags d on d.id = a.dag_id
       left join mouzas mz on mz.id = d.mouza_id
@@ -60,9 +64,12 @@ export async function recentAudit(user: SessionUser, limit = 20): Promise<AuditL
     id: r.id,
     at: r.at,
     role_bn: ROLE_LABEL_BN[r.role] ?? r.role,
+    role_en: ROLE_LABEL_EN[r.role] ?? r.role,
     action: r.action,
     action_bn: ACTION_BN[r.action] ?? (r.action === "denied" ? "অনুমতি ছাড়া নিবন্ধনের চেষ্টা (আটকানো)" : r.action), // prettier-ignore
+    action_en: ACTION_EN[r.action] ?? r.action,
     place_bn: r.mouza_bn ? `${r.mouza_bn}, দাগ ${r.dag_no}` : null,
+    place_en: r.mouza_en ? `${r.mouza_en}, dag ${r.dag_no}` : null,
   }));
 }
 

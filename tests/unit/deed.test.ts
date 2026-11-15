@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readUpload, sniffImage, UploadError } from "@/lib/adapters/storage";
 import { SYSTEM } from "@/lib/tools/types";
 import { MOCK_DEED_4512 } from "@/lib/ai/vision";
-import { deedSummary, normalizeName, sameName } from "@/lib/engines/deed-check";
+import { deedSummary, deedSummaryEn, normalizeName, sameName } from "@/lib/engines/deed-check";
 
 describe("deed reader helpers", () => {
   it("compares names regardless of title spelling", () => {
@@ -32,5 +32,21 @@ describe("deed reader helpers", () => {
   it("refuses upload ids that could reach other files", async () => {
     await expect(readUpload("../.env.local", SYSTEM)).rejects.toThrow(UploadError);
     await expect(readUpload("ZZZZZZZZZZZZZZZZZZZZZZZZ", SYSTEM)).rejects.toThrow(UploadError);
+  });
+});
+
+describe("English deed summary", () => {
+  it("says the same facts in English", () => {
+    const en = deedSummaryEn(MOCK_DEED_4512);
+    expect(en).toMatch(/^This is a sale \(saf kabla\) deed \(no\. 4512\/2024\)\./);
+    expect(en).toContain("dag 143");
+    expect(en).toContain("8 decimals");
+    // Names stay as written on the deed; everything else is English.
+    expect(en).toMatch(/Registered on \d{2}\/\d{2}\/\d{4}\./);
+  });
+  it("says when the image is not a deed", () => {
+    expect(deedSummaryEn({ ...MOCK_DEED_4512, is_deed: false })).toBe(
+      "The image does not look like a land deed.",
+    );
   });
 });

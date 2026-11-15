@@ -34,6 +34,7 @@ export const deedReadTool = defineTool({
     model: z.string(),
     deed: deedExtractSchema,
     summary_bn: z.string(),
+    summary_en: z.string(),
     verdict: z.enum(["red", "amber", "green"]),
     findings: z.array(reason),
     dag: z.object({ mouza_bn: z.string(), mouza_en: z.string(), dag_no: z.number() }).nullable(),

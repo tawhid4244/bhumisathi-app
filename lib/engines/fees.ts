@@ -8,6 +8,7 @@ export interface FeeItem {
   en: string;
   tk: number;
   when_bn: string;
+  when_en: string;
 }
 
 export interface FeeService {
@@ -17,7 +18,9 @@ export interface FeeService {
   items: FeeItem[];
   total_tk: number | null;
   components_bn?: string[];
+  components_en?: string[];
   time_bn: string;
+  time_en: string;
   law_id?: string;
   source: string;
   verified: string;

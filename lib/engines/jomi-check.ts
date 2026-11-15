@@ -18,6 +18,7 @@ export interface JomiReport {
   verdict_bn: string;
   verdict_en: string;
   advice_bn: string;
+  advice_en: string;
   dag: DagInfo;
   reasons: Reason[];
   chain: ChainEntry[];
@@ -78,6 +79,7 @@ export async function jomiCheck(args: {
     verdict_bn: label.bn,
     verdict_en: label.en,
     advice_bn: label.advice_bn,
+    advice_en: label.advice_en,
     dag: facts.dag,
     reasons,
     chain: facts.chain,

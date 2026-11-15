@@ -13,6 +13,7 @@ export default function DeedPage() {
         titleBn="দলিল পড়ুন"
         titleEn="Deed reader: photo → plain Bangla → checked against the records"
         subtitleBn="দলিলের ছবি দিন — সাথী সহজ বাংলায় বুঝিয়ে দেবে এবং খতিয়ান ও মৌজা ম্যাপের সাথে মিলিয়ে দেখবে।"
+        subtitleEn="Give a photo of the deed — Sathi explains it in plain words and matches it with the khatian and the mouza map."
       />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <Suspense fallback={<p className="text-ink-soft">লোড হচ্ছে… Loading…</p>}>

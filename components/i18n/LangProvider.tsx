@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 // Bangla / English switch for the whole site. The choice is kept in the browser (localStorage +
 // a cookie for later server use). The server always renders Bangla first; after loading, the page
@@ -27,34 +27,36 @@ function subscribe(cb: () => void) {
   };
 }
 
-interface LangValue {
-  lang: Lang;
-  setLang: (l: Lang) => void;
-  /** Pick the text for the current language. */
-  t: (bn: string, en: string) => string;
+/** Remember the choice and tell every component on the page. */
+function setLang(l: Lang) {
+  try {
+    localStorage.setItem(KEY, l);
+  } catch {
+    /* storage blocked: the switch still works for this page */
+  }
+  document.cookie = `${KEY}=${l}; path=/; max-age=31536000; samesite=lax`;
+  window.dispatchEvent(new Event(EVENT));
 }
 
-const LangContext = createContext<LangValue>({ lang: "bn", setLang: () => {}, t: (bn) => bn });
-
-export function LangProvider({ children }: { children: React.ReactNode }) {
+/**
+ * The visitor's language. Every component reads the store itself (not through a context): while a
+ * part of the page is being hydrated — including parts that stream in later, like the account
+ * menu — React uses the server value ("bn") for it, so the HTML always matches, and then switches.
+ */
+export function useLang() {
   const lang = useSyncExternalStore(subscribe, read, () => "bn" as Lang);
-  const setLang = useCallback((l: Lang) => {
-    try {
-      localStorage.setItem(KEY, l);
-    } catch {
-      /* storage blocked: the switch still works for this page */
-    }
-    document.cookie = `${KEY}=${l}; path=/; max-age=31536000; samesite=lax`;
-    window.dispatchEvent(new Event(EVENT));
-  }, []);
+  const t = useCallback((bn: string, en: string) => (lang === "en" ? en : bn), [lang]);
+  return { lang, setLang, t };
+}
+
+/** Keeps <html lang> in step with the choice (screen readers, fonts, spell-checking). */
+export function LangProvider({ children }: { children: React.ReactNode }) {
+  const { lang } = useLang();
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
-  const t = useCallback((bn: string, en: string) => (lang === "en" ? en : bn), [lang]);
-  return <LangContext.Provider value={{ lang, setLang, t }}>{children}</LangContext.Provider>;
+  return <>{children}</>;
 }
-
-export const useLang = () => useContext(LangContext);
 
 /** Text in the visitor's language. Usable from server components too. */
 export function T({ bn, en }: { bn: string; en: string }) {
@@ -99,6 +101,49 @@ export function LangToggle({ tone = "light" }: { tone?: "light" | "dark" }) {
           </button>
         ))}
       </div>
+    </>
+  );
+}
+
+const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
+export const toBnDigits = (s: string | number) =>
+  String(s).replace(/\d/g, (d) => BN_DIGITS[Number(d)]!);
+
+/** Numbers (and dates) in the visitor's digits: ১৪৫ in Bangla, 145 in English. */
+export function useNum() {
+  const { lang } = useLang();
+  return useCallback((v: string | number) => (lang === "bn" ? toBnDigits(v) : String(v)), [lang]);
+}
+
+/** Digits for server components. */
+export function N({ v }: { v: string | number }) {
+  return <>{useNum()(v)}</>;
+}
+
+/**
+ * Bangla with a small English line under/after it (Bangla mode), or just the English (English
+ * mode). For headings and labels that were written as "বাংলা <small>English</small>".
+ */
+export function Bi({
+  bn,
+  en,
+  sub = "text-sm font-normal text-ink-soft",
+  block = false,
+}: {
+  bn: string;
+  en: string;
+  sub?: string;
+  block?: boolean;
+}) {
+  const { lang } = useLang();
+  if (lang === "en") return <>{en}</>;
+  return (
+    <>
+      {bn}
+      {block ? null : " "}
+      <span lang="en" className={`${sub}${block ? " block" : ""}`}>
+        {en}
+      </span>
     </>
   );
 }

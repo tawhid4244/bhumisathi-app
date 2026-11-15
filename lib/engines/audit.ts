@@ -120,6 +120,28 @@ export const ACTION_BN: Record<string, string> = {
   seal_verify: "সিলযুক্ত রিপোর্ট যাচাই করেছেন",
 };
 
+export const ACTION_EN: Record<string, string> = {
+  view_report: "viewed the land check report",
+  view_ledger: "viewed the share ledger",
+  view_map: "measured it on the mouza map",
+  view_warish: "viewed the inheritance shares",
+  read_deed: "read a deed",
+  register_baina: "tried to register a baina",
+  register_sale: "tried to register a sale deed",
+  register_lien: "tried to register a mortgage",
+  seal_issue: "took a sealed report",
+  seal_verify: "verified a sealed report",
+  denied: "tried to register without permission (blocked)",
+  unlock_account: "unlocked an account",
+};
+
+export const ROLE_LABEL_EN: Record<string, string> = {
+  public: "A visitor (not signed in)",
+  citizen: "A citizen",
+  officer: "A sub-registry officer",
+  admin: "An administrator",
+};
+
 export const ROLE_LABEL_BN: Record<string, string> = {
   public: "লগইন ছাড়া একজন দর্শক",
   citizen: "একজন নাগরিক",
@@ -132,9 +154,12 @@ export interface LandViewEntry {
   at: string;
   role: string;
   role_bn: string;
+  role_en: string;
   action: string;
   action_bn: string;
+  action_en: string;
   mouza_bn: string;
+  mouza_en: string;
   dag_no: number;
   detail: Record<string, unknown>;
 }
@@ -147,9 +172,9 @@ export interface LandViewEntry {
 export async function whoCheckedMyLand(user: SessionUser, limit = 50): Promise<LandViewEntry[]> {
   const rows = await withUser(
     user,
-    (tx) => tx<Omit<LandViewEntry, "role_bn" | "action_bn">[]>`
+    (tx) => tx<Omit<LandViewEntry, "role_bn" | "role_en" | "action_bn" | "action_en">[]>`
       select a.id::int, to_char(a.at at time zone 'Asia/Dhaka', 'YYYY-MM-DD HH24:MI') as at,
-             a.role, a.action, mz.name_bn as mouza_bn, d.dag_no, a.detail
+             a.role, a.action, mz.name_bn as mouza_bn, mz.name_en as mouza_en, d.dag_no, a.detail
       from audit_log a
       join dags d on d.id = a.dag_id
       join mouzas mz on mz.id = d.mouza_id
@@ -159,6 +184,8 @@ export async function whoCheckedMyLand(user: SessionUser, limit = 50): Promise<L
   return rows.map((r) => ({
     ...r,
     role_bn: ROLE_LABEL_BN[r.role] ?? r.role,
+    role_en: ROLE_LABEL_EN[r.role] ?? r.role,
     action_bn: ACTION_BN[r.action] ?? r.action,
+    action_en: ACTION_EN[r.action] ?? r.action,
   }));
 }

@@ -25,6 +25,7 @@ export const jomiReportSchema = z.object({
   verdict_bn: z.string(),
   verdict_en: z.string(),
   advice_bn: z.string(),
+  advice_en: z.string(),
   dag: ledgerStatusOutput.shape.dag,
   reasons: z.array(reason),
   chain: z.array(chainEntry),

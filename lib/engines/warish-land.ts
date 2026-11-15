@@ -51,11 +51,13 @@ export interface WarishLandResult {
     fraction: string;
     percent: number;
     basis_bn: string;
+    basis_en: string;
     per_dag: { mouza_bn: string; dag_no: number; decimals: number }[];
     total_dec: number;
   }[];
   flags: { awl: boolean; radd: boolean; umariyyatayn: boolean; mflo: boolean; spouseRadd: boolean };
   steps_bn: string[];
+  steps_en: string[];
 }
 
 /**
@@ -89,11 +91,13 @@ export async function computeWarishLand(args: {
         fraction: s.share.toString(),
         percent: Math.round(s.share.toNumber() * 1e6) / 1e4,
         basis_bn: s.basis_bn,
+        basis_en: s.basis_en,
         per_dag,
         total_dec: Math.round(per_dag.reduce((a, p) => a + p.decimals, 0) * 1e4) / 1e4,
       };
     }),
     flags: r.flags,
     steps_bn: r.steps_bn,
+    steps_en: r.steps_en,
   };
 }

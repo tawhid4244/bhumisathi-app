@@ -13,6 +13,8 @@ const body = z.object({
     .int()
     .min(0)
     .max(JUDGE_STEPS.length - 1),
+  // The visitor's language: captions come in both, and the Sathi AI step asks and answers in it.
+  lang: z.enum(["bn", "en"]).default("bn"),
 });
 
 export async function POST(request: Request) {
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
     (parsed.data.step === 0 ? await rateLimit(`judge-reset:${ip}`, 6, 60) : null);
   if (limited) return limited;
   try {
-    const card = await runJudgeStep(parsed.data.step);
+    const card = await runJudgeStep(parsed.data.step, parsed.data.lang);
     return Response.json({ step: parsed.data.step, total: JUDGE_STEPS.length, card });
   } catch (err) {
     console.error("judge step failed", err);

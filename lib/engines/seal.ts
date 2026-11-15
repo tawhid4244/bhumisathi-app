@@ -38,7 +38,7 @@ export interface SealPayload {
   dag_no: number;
   area_dec: number;
   verdict: "red" | "amber" | "green";
-  holders: { name_bn: string; recorded_dec: number; sellable_dec: number }[];
+  holders: { name_bn: string; name_en?: string; recorded_dec: number; sellable_dec: number }[];
   ledger_version: number;
 }
 
@@ -91,6 +91,7 @@ export async function issueSeal(
     verdict: r.verdict,
     holders: r.holders.map((h) => ({
       name_bn: h.name_bn,
+      name_en: h.name_en,
       recorded_dec: h.recorded_dec,
       sellable_dec: h.sellable_dec,
     })),
@@ -112,10 +113,10 @@ export interface SealCheck {
   overall_bn: string;
   overall_en: string;
   lights: {
-    genuine: { ok: boolean; bn: string };
-    current: { ok: boolean; bn: string; events_since?: number };
-    untouched: { ok: boolean; bn: string };
-    shares_add_up: { ok: boolean; bn: string };
+    genuine: { ok: boolean; bn: string; en: string };
+    current: { ok: boolean; bn: string; en: string; events_since?: number };
+    untouched: { ok: boolean; bn: string; en: string };
+    shares_add_up: { ok: boolean; bn: string; en: string };
   };
   payload: SealPayload | null;
   /** The seal id and dag, for the audit log entry of this verification. */
@@ -139,11 +140,11 @@ export function parseCode(
   }
 }
 
-const RED_ALL = (bn: string): SealCheck["lights"] => ({
-  genuine: { ok: false, bn },
-  current: { ok: false, bn: "যাচাই করা যায়নি" },
-  untouched: { ok: false, bn: "যাচাই করা যায়নি" },
-  shares_add_up: { ok: false, bn: "যাচাই করা যায়নি" },
+const RED_ALL = (bn: string, en: string): SealCheck["lights"] => ({
+  genuine: { ok: false, bn, en },
+  current: { ok: false, bn: "যাচাই করা যায়নি", en: "Could not be checked" },
+  untouched: { ok: false, bn: "যাচাই করা যায়নি", en: "Could not be checked" },
+  shares_add_up: { ok: false, bn: "যাচাই করা যায়নি", en: "Could not be checked" },
 });
 
 export async function verifySeal(code: string): Promise<SealCheck> {
@@ -153,7 +154,7 @@ export async function verifySeal(code: string): Promise<SealCheck> {
       overall: "red",
       overall_bn: "এটি ভূমিসাথীর সিল নয়",
       overall_en: "NOT A BHUMISEAL",
-      lights: RED_ALL("কোডটি পড়া যায়নি"),
+      lights: RED_ALL("কোডটি পড়া যায়নি", "The code could not be read"),
       payload: null,
       dag_id: null,
     };
@@ -175,7 +176,7 @@ export async function verifySeal(code: string): Promise<SealCheck> {
       overall: "red",
       overall_bn: "আসল নয় — রিপোর্টটি বদলানো হয়েছে বা নকল",
       overall_en: "NOT GENUINE",
-      lights: RED_ALL("স্বাক্ষর মেলেনি: রিপোর্টের কোনো তথ্য বদলানো হয়েছে"),
+      lights: RED_ALL("স্বাক্ষর মেলেনি: রিপোর্টের কোনো তথ্য বদলানো হয়েছে", "The signature does not match: something in the report was changed"), // prettier-ignore
       payload,
       dag_id: dag?.id ?? null,
     };
@@ -219,25 +220,29 @@ export async function verifySeal(code: string): Promise<SealCheck> {
     sums.oversold === 0;
 
   const lights: SealCheck["lights"] = {
-    genuine: { ok: true, bn: "ভূমিসাথীর চাবি দিয়ে স্বাক্ষরিত; কোনো তথ্য বদলানো হয়নি" },
+    genuine: { ok: true, bn: "ভূমিসাথীর চাবি দিয়ে স্বাক্ষরিত; কোনো তথ্য বদলানো হয়নি", en: "Signed with BhumiSathi's key; nothing was changed" }, // prettier-ignore
     current: current
-      ? { ok: true, bn: "রিপোর্টের পরে এই দাগে নতুন কিছু নিবন্ধিত হয়নি", events_since: 0 }
+      ? { ok: true, bn: "রিপোর্টের পরে এই দাগে নতুন কিছু নিবন্ধিত হয়নি", en: "Nothing new has been registered on this dag since the report", events_since: 0 } // prettier-ignore
       : {
           ok: false,
           bn: `রিপোর্টের পরে এই দাগে ${bnDigits(eventsSince)}টি নতুন লেনদেন হয়েছে — নতুন রিপোর্ট নিন`,
+          en: `${eventsSince} new transaction(s) on this dag since the report — get a new report`,
           events_since: eventsSince,
         },
     untouched: untouched
-      ? { ok: true, bn: "রিপোর্ট দেওয়ার ঘটনা অডিট লগে আছে, লগের শৃঙ্খল অক্ষত" }
+      ? { ok: true, bn: "রিপোর্ট দেওয়ার ঘটনা অডিট লগে আছে, লগের শৃঙ্খল অক্ষত", en: "The issue of this report is in the audit log, and the log's chain is intact" } // prettier-ignore
       : {
           ok: false,
           bn: chain.ok
             ? "এই রিপোর্ট দেওয়ার রেকর্ড অডিট লগে পাওয়া যায়নি"
             : "অডিট লগের শৃঙ্খল ভাঙা — কর্মকর্তাকে জানান",
+          en: chain.ok
+            ? "No record of issuing this report was found in the audit log"
+            : "The audit log's chain is broken — tell an officer",
         },
     shares_add_up: sharesOk
-      ? { ok: true, bn: "সব মালিকের অংশ যোগ করলে দাগের মোট জমির সমান" }
-      : { ok: false, bn: "অংশের যোগফল দাগের জমির সাথে মেলে না, বা কেউ অংশের বেশি বিক্রি করেছেন" },
+      ? { ok: true, bn: "সব মালিকের অংশ যোগ করলে দাগের মোট জমির সমান", en: "All holders' shares add up to the dag's area" } // prettier-ignore
+      : { ok: false, bn: "অংশের যোগফল দাগের জমির সাথে মেলে না, বা কেউ অংশের বেশি বিক্রি করেছেন", en: "The shares do not add up to the dag's area, or someone sold more than their share" }, // prettier-ignore
   };
 
   const allOk = current && untouched && sharesOk;

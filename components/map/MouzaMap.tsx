@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { MapAreaResult, MouzaMapData } from "@/lib/engines/map";
-import { bn } from "@/lib/engines/rules";
+import { useLang, useNum } from "../i18n/LangProvider";
 
 // Interactive mouza map: tap a dag (or type its number) to see its area from the map, compared
 // with the khatian. The numbers come from the map_area tool, the same one Sathi AI uses.
@@ -20,6 +20,10 @@ export function MouzaMap({
   const [typed, setTyped] = useState("");
   const [info, setInfo] = useState<MapAreaResult | null>(initial ?? null);
   const [error, setError] = useState<string | null>(null);
+  const { t, lang } = useLang();
+  const en = lang === "en";
+  const bn = useNum();
+  const dec = (n: number | string) => t(`${bn(n)} শতক`, `${bn(n)} dec`);
 
   // Fit the drawing: view box around all dags with a margin.
   const box = useMemo(() => {
@@ -42,7 +46,10 @@ export function MouzaMap({
     const json = await res.json();
     if (!res.ok) {
       setInfo(null);
-      setError(json?.error?.bn ?? "এই দাগ ম্যাপে নেই।");
+      setError(
+        (en ? json?.error?.en : json?.error?.bn) ??
+          t("এই দাগ ম্যাপে নেই।", "This dag is not on the map."),
+      );
       return;
     }
     setInfo(json as MapAreaResult);
@@ -58,21 +65,21 @@ export function MouzaMap({
     <div className="space-y-4">
       <form onSubmit={onSearch} className="flex gap-2">
         <label className="sr-only" htmlFor="dag-search">
-          দাগ নম্বর
+          {t("দাগ নম্বর", "Dag number")}
         </label>
         <input
           id="dag-search"
           value={typed}
           onChange={(e) => setTyped(e.target.value)}
           inputMode="numeric"
-          placeholder={`দাগ নম্বর (${bn(map.dags[0]!.dag_no)}–${bn(map.dags.at(-1)!.dag_no)})`}
+          placeholder={`${t("দাগ নম্বর", "Dag number")} (${bn(map.dags[0]!.dag_no)}–${bn(map.dags.at(-1)!.dag_no)})`}
           className="min-h-11 min-w-0 flex-1 rounded-lg border border-line bg-white px-3 text-base"
         />
         <button
           type="submit"
           className="min-h-11 rounded-lg bg-brand px-4 font-semibold text-white"
         >
-          দেখুন
+          {t("দেখুন", "Show")}
         </button>
       </form>
 
@@ -81,7 +88,7 @@ export function MouzaMap({
           viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`}
           className="h-auto w-full"
           role="group"
-          aria-label={`${map.mouza_bn} মৌজার ম্যাপ`}
+          aria-label={t(`${map.mouza_bn} মৌজার ম্যাপ`, `Map of ${map.mouza_en} mouza`)}
         >
           <defs>
             <pattern
@@ -105,7 +112,7 @@ export function MouzaMap({
                 role="button"
                 tabIndex={0}
                 aria-pressed={isSel}
-                aria-label={`দাগ ${bn(d.dag_no)}${d.is_khas ? ", খাস জমি" : ""}${d.mismatch ? ", খতিয়ানের সাথে মাপে অমিল" : ""}`}
+                aria-label={`${t("দাগ", "Dag")} ${bn(d.dag_no)}${d.is_khas ? t(", খাস জমি", ", khas land") : ""}${d.mismatch ? t(", খতিয়ানের সাথে মাপে অমিল", ", area differs from the khatian") : ""}`}
                 data-dag={d.dag_no}
                 onClick={() => select(d.dag_no)}
                 onKeyDown={(e) => {
@@ -141,15 +148,18 @@ export function MouzaMap({
         </svg>
         <figcaption className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-soft">
           <span>
-            {map.mouza_bn} মৌজা, জেএল {bn(map.jl_no)} · স্কেল ১৬ ইঞ্চি = ১ মাইল
+            {t(
+              `${map.mouza_bn} মৌজা, জেএল ${bn(map.jl_no)} · স্কেল ১৬ ইঞ্চি = ১ মাইল`,
+              `${map.mouza_en} mouza, JL ${map.jl_no} · scale 16 inches = 1 mile`,
+            )}
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="inline-block h-3 w-4 bg-[repeating-linear-gradient(45deg,#fde8e6_0,#fde8e6_3px,#e8a39b_3px,#e8a39b_6px)]" />{" "}
-            খাস জমি
+            {t("খাস জমি", "Khas land")}
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="inline-block h-3 w-4 border-2 border-dashed border-verdict-amber" />{" "}
-            খতিয়ানের সাথে মাপে অমিল
+            {t("খতিয়ানের সাথে মাপে অমিল", "Area differs from the khatian")}
           </span>
         </figcaption>
       </figure>
@@ -167,25 +177,34 @@ export function MouzaMap({
           data-testid="map-info"
         >
           <h2 className="text-lg font-semibold">
-            {info.mouza_bn} দাগ {bn(info.dag_no)}
+            {en ? `${info.mouza_en} dag ${info.dag_no}` : `${info.mouza_bn} দাগ ${bn(info.dag_no)}`}
           </h2>
           {info.is_khas ? (
             <p
               className="rounded-lg bg-verdict-red p-2 font-semibold text-white"
               data-testid="khas-flag"
             >
-              খাস (সরকারি) জমি — কেনা-বেচা করা যায় না
+              {t(
+                "খাস (সরকারি) জমি — কেনা-বেচা করা যায় না",
+                "Khas (government) land — cannot be bought or sold",
+              )}
             </p>
           ) : null}
           <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
             {(
               [
-                ["শতক", info.units.decimals],
-                ["কাঠা", info.units.katha],
-                [`বিঘা (${bn(info.units.bigha_dec)} শতক)`, info.units.bigha],
-                ["একর", info.units.acre],
-                ["বর্গফুট", info.units.sqft.toLocaleString("en-IN")],
-                ["বর্গমিটার", info.units.sqm],
+                [t("শতক", "Decimals"), info.units.decimals],
+                [t("কাঠা", "Katha"), info.units.katha],
+                [
+                  t(
+                    `বিঘা (${bn(info.units.bigha_dec)} শতক)`,
+                    `Bigha (${info.units.bigha_dec} dec)`,
+                  ),
+                  info.units.bigha,
+                ],
+                [t("একর", "Acres"), info.units.acre],
+                [t("বর্গফুট", "Square feet"), info.units.sqft.toLocaleString("en-IN")],
+                [t("বর্গমিটার", "Square metres"), info.units.sqm],
               ] as const
             ).map(([label, v]) => (
               <div key={label} className="rounded-lg bg-paper p-2">
@@ -200,22 +219,30 @@ export function MouzaMap({
             className={`rounded-lg p-2 text-sm ${info.matches_khatian ? "bg-brand-soft" : "bg-amber-50"}`}
             data-testid="khatian-compare"
           >
-            ম্যাপে <strong>{bn(info.map_area_dec)} শতক</strong>, খতিয়ানে{" "}
-            <strong>{bn(info.recorded_area_dec)} শতক</strong> —{" "}
+            {t("ম্যাপে", "On the map")} <strong>{dec(info.map_area_dec)}</strong>,{" "}
+            {t("খতিয়ানে", "on the khatian")} <strong>{dec(info.recorded_area_dec)}</strong> —{" "}
             {info.matches_khatian
-              ? "প্রায় মিলেছে।"
-              : `পার্থক্য ${bn(Math.abs(info.difference_dec))} শতক; আমিন দিয়ে সীমানা যাচাই করুন।`}
+              ? t("প্রায় মিলেছে।", "about the same.")
+              : t(
+                  `পার্থক্য ${bn(Math.abs(info.difference_dec))} শতক; আমিন দিয়ে সীমানা যাচাই করুন।`,
+                  `a difference of ${Math.abs(info.difference_dec)} dec; have an amin (surveyor) check the boundary.`,
+                )}
           </p>
           <p className="text-xs text-ink-soft">{info.note_bn}</p>
           <Link
             href={`/check?mouza=${info.mouza_en.toLowerCase()}&by=dag&no=${info.dag_no}`}
             className="inline-flex min-h-11 items-center rounded-lg bg-ink px-4 font-semibold text-white"
           >
-            এই দাগের জমি যাচাই →
+            {t("এই দাগের জমি যাচাই →", "Check this dag →")}
           </Link>
         </section>
       ) : (
-        <p className="text-sm text-ink-soft">ম্যাপে একটি দাগে চাপ দিন বা দাগ নম্বর লিখুন।</p>
+        <p className="text-sm text-ink-soft">
+          {t(
+            "ম্যাপে একটি দাগে চাপ দিন বা দাগ নম্বর লিখুন।",
+            "Tap a dag on the map or type its number.",
+          )}
+        </p>
       )}
     </div>
   );

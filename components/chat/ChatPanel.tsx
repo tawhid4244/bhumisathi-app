@@ -1,5 +1,6 @@
 "use client";
 
+import { useLang } from "../i18n/LangProvider";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { PendingAction, SourceRef } from "@/lib/ai/agent";
@@ -14,7 +15,7 @@ import {
   type Recognizer,
 } from "@/lib/voice";
 import { RichText } from "./RichText";
-import { sectionLabel, STR, SUGGESTIONS, TOOL_LABEL, type Lang } from "./strings";
+import { sectionLabel, STR, SUGGESTIONS, TOOL_LABEL } from "./strings";
 
 // The Sathi chat. The browser keeps the conversation history (sent back each turn) and reads
 // the streamed events from /api/agent/stream: answer text, tool badges, a pending action that
@@ -46,7 +47,8 @@ let seq = 0;
 const newId = () => `t${Date.now().toString(36)}${seq++}`;
 
 export function ChatPanel({ initialInput = "" }: { initialInput?: string }) {
-  const [lang, setLang] = useState<Lang>("bn");
+  // The chat follows the site-wide language switch (header), and its own toggle changes both.
+  const { lang, setLang } = useLang();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [history, setHistory] = useState<AgentMessage[]>([]);
   const [input, setInput] = useState(initialInput);
