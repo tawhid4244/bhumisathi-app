@@ -32,3 +32,15 @@ describe("env validation", () => {
     expect(readServerEnv(env).NEXT_PUBLIC_SUPABASE_URL).toBe("https://example.supabase.co");
   });
 });
+
+describe("database address", () => {
+  it("always uses Supabase's session pooler (port 5432), never the transaction pooler", async () => {
+    const { sessionPoolerUrl } = await import("@/lib/sql");
+    expect(
+      sessionPoolerUrl("postgresql://u:p@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres"),
+    ).toBe("postgresql://u:p@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres");
+    expect(sessionPoolerUrl("postgres://u:p@127.0.0.1:54329/bhumi")).toBe(
+      "postgres://u:p@127.0.0.1:54329/bhumi",
+    );
+  });
+});

@@ -8,7 +8,9 @@ Secrets are typed into hidden prompts or imported as a file — never pasted int
 
 1. supabase.com → sign in → **New project**: name `bhumisathi`, region **Southeast Asia (Singapore)**,
    click *Generate a password* and keep it in your password manager.
-2. When the project is ready: **Connect** (top bar) → **Transaction pooler** → copy the URI.
+2. When the project is ready: **Connect** (top bar) → **Session pooler** (or Transaction pooler) → copy the URI.
+   The app always uses the session pooler (port 5432): the transaction pooler (6543) mixes up
+   results when postgres.js sends several queries on one connection (seen as hanging pages).
    Replace `[YOUR-PASSWORD]` in it with the password from step 1.
 3. In the `bhumisathi-app` folder: `npm.cmd run set-db` → paste the URI (hidden) → Enter.
 4. `npm.cmd run cloud:setup` → migrations, synthetic world, demo accounts, law embeddings.

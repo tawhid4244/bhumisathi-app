@@ -16,7 +16,7 @@ async function main() {
   }
   const p = hiddenPrompt();
   const url = await p.ask(
-    "Paste the Supabase 'Transaction pooler' connection string, with your password in it (hidden): ",
+    "Paste the Supabase pooler connection string (Session or Transaction), with your password in it (hidden): ",
   );
   p.close();
   let parsed: URL;
@@ -40,8 +40,10 @@ async function main() {
   }
   writeFileSync(envPath, upsertEnv(readFileSync(envPath, "utf8"), { CLOUD_DATABASE_URL: url }), "utf8"); // prettier-ignore
   console.log(`✓ Saved CLOUD_DATABASE_URL (host ${parsed.hostname}, port ${parsed.port || "5432"}) to .env.local`); // prettier-ignore
-  if (parsed.port !== "6543") {
-    console.log("  Note: for Vercel, the 'Transaction pooler' string (port 6543) works best.");
+  if (parsed.hostname.endsWith(".pooler.supabase.com")) {
+    console.log(
+      "  Note: the app always talks to Supabase's session pooler (port 5432) on this host.",
+    );
   }
   console.log('Next: tell Claude "saved".');
 }
