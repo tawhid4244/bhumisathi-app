@@ -80,7 +80,7 @@ test("no source → Sathi says it is not sure", async ({ page }) => {
 
 test("English toggle switches the screen language", async ({ page }) => {
   await page.goto("/chat");
-  await page.getByRole("button", { name: "English" }).click();
+  await page.getByRole("button", { name: "English", exact: true }).click();
   await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
   await page.getByRole("button", { name: "Is it safe to buy dag 145 in Nayapara?" }).click();
   await expect(lastAnswer(page).locator('[data-tool="jomi_check"]')).toHaveText(/Land checked/);

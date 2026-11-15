@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { AccountsTable, ResetDemoButton } from "@/components/admin/AdminActions";
 import { NotAllowed } from "@/components/auth/NotAllowed";
 import { requirePageRole } from "@/lib/auth/guard";
@@ -27,7 +26,6 @@ export default function AdminPage() {
           <Content />
         </Suspense>
       </main>
-      <SiteFooter />
     </>
   );
 }

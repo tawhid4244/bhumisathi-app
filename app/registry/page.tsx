@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { NotAllowed } from "@/components/auth/NotAllowed";
 import { RegistryDesk } from "@/components/registry/RegistryDesk";
 import { requirePageRole } from "@/lib/auth/guard";
@@ -24,7 +23,6 @@ export default function RegistryPage() {
           <Desk />
         </Suspense>
       </main>
-      <SiteFooter />
     </>
   );
 }

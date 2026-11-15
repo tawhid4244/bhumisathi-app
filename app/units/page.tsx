@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { UnitConverter } from "@/components/units/UnitConverter";
 
 export const metadata: Metadata = { title: "জমির একক রূপান্তর" };
@@ -16,7 +15,6 @@ export default function UnitsPage() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <UnitConverter />
       </main>
-      <SiteFooter />
     </>
   );
 }

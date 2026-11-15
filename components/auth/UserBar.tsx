@@ -1,46 +1,74 @@
 import Link from "next/link";
 import { currentUser } from "@/lib/auth/current";
-import { ROLE_BN } from "@/lib/auth/roles";
+import { T } from "../i18n/LangProvider";
 import { LogoutButton } from "./LogoutButton";
 
-// Top-right of every page: who is signed in (name + role) and a way out, or a sign-in link.
+const ROLE = {
+  citizen: { bn: "নাগরিক", en: "Citizen" },
+  officer: { bn: "কর্মকর্তা", en: "Officer" },
+  admin: { bn: "প্রশাসক", en: "Admin" },
+} as const;
+
+// Sign-in pill, or the signed-in person's menu (name, role, their pages, sign out).
 export async function UserBar() {
   const user = await currentUser();
   if (!user) {
     return (
       <Link
         href="/login"
-        className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm text-white underline-offset-4 hover:underline"
+        className="inline-flex min-h-9 items-center rounded-full bg-brand px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-deep"
       >
-        লগইন{" "}
-        <span lang="en" className="ml-1 text-white/70">
-          Sign in
-        </span>
+        <T bn="লগইন" en="Sign in" />
       </Link>
     );
   }
+  const initial = [...user.name_bn.trim()][0] ?? "•";
   return (
-    <div className="flex min-w-0 items-center gap-2 text-sm" data-testid="user-bar">
-      <span className="min-w-0 truncate text-white/90" title={user.email}>
-        {user.name_bn}
-        <span className="ml-1 rounded bg-white/15 px-1.5 py-0.5 text-xs">{ROLE_BN[user.role]}</span>
-      </span>
-      {user.role !== "citizen" ? (
-        <Link
-          href="/admin"
-          className="inline-flex min-h-11 shrink-0 items-center px-1 text-white underline-offset-4 hover:underline"
+    <details className="group relative" data-testid="user-bar">
+      <summary
+        aria-label={`${user.name_bn} — অ্যাকাউন্ট / Account`}
+        className="flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-full border border-line bg-card p-1 sm:pr-3 text-sm hover:border-brand [&::-webkit-details-marker]:hidden"
+      >
+        <span
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand text-sm font-bold text-white"
+          aria-hidden="true"
         >
-          অফিস
-        </Link>
-      ) : user.owner_id ? (
-        <Link
-          href="/my-land"
-          className="inline-flex min-h-11 shrink-0 items-center px-1 text-white underline-offset-4 hover:underline"
-        >
-          আমার জমি
-        </Link>
-      ) : null}
-      <LogoutButton />
-    </div>
+          {initial}
+        </span>
+        <span className="hidden max-w-36 truncate sm:inline">{user.name_bn}</span>
+        <span className="hidden rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-deep sm:inline">
+          <T bn={ROLE[user.role].bn} en={ROLE[user.role].en} />
+        </span>
+      </summary>
+      <div className="animate-fade-up absolute right-0 z-50 mt-2 w-64 rounded-xl border border-line bg-card p-2 shadow-xl">
+        <p className="px-3 py-2 text-sm">
+          <span className="block font-semibold">{user.name_bn}</span>
+          <span className="block text-xs font-semibold text-brand-deep">
+            <T bn={ROLE[user.role].bn} en={ROLE[user.role].en} />
+          </span>
+          <span lang="en" className="block truncate text-xs text-ink-soft">
+            {user.email}
+          </span>
+        </p>
+        <div className="my-1 border-t border-line" />
+        {user.role !== "citizen" ? (
+          <Link
+            href="/admin"
+            className="flex min-h-11 items-center rounded-lg px-3 hover:bg-brand-soft"
+          >
+            <T bn="অফিস" en="Office" />
+          </Link>
+        ) : null}
+        {user.owner_id ? (
+          <Link
+            href="/my-land"
+            className="flex min-h-11 items-center rounded-lg px-3 hover:bg-brand-soft"
+          >
+            <T bn="আমার জমি" en="My land" />
+          </Link>
+        ) : null}
+        <LogoutButton />
+      </div>
+    </details>
   );
 }

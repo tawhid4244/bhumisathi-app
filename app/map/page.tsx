@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { MapTabs } from "@/components/map/MapTabs";
 import { MouzaMap } from "@/components/map/MouzaMap";
 import { UploadMeasure } from "@/components/map/UploadMeasure";
@@ -25,7 +24,6 @@ export default function MapPage(props: PageProps<"/map">) {
           <Content searchParams={props.searchParams} />
         </Suspense>
       </main>
-      <SiteFooter />
     </>
   );
 }

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 64 64"
+    >
+      <defs>
+        <linearGradient id="bs-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0B7A55" />
+          <stop offset="1" stop-color="#005A3F" />
+        </linearGradient>
+        <clipPath id="bs-tile">
+          <rect width="64" height="64" rx="16" />
+        </clipPath>
+      </defs>
+      <g clip-path="url(#bs-tile)">
+        <rect width="64" height="64" fill="url(#bs-sky)" />
+        
+        <circle cx="40" cy="31" r="11" fill="#F42A41" />
+        
+        <path d="M0 37 C 18 31, 38 31, 64 36 L64 64 L0 64 Z" fill="#14915F" />
+        <path d="M0 47 C 20 41, 40 42, 64 46 L64 64 L0 64 Z" fill="#2FA86E" />
+        <path d="M0 56 C 22 51, 42 52, 64 55 L64 64 L0 64 Z" fill="#6CC27F" />
+        
+        <path
+          d="M8 45 L30 36.5 L56 43 L33 53.5 Z"
+          fill="#FFFFFF"
+          fill-opacity="0.2"
+          stroke="#FFFFFF"
+          stroke-width="2.4"
+          stroke-linejoin="round"
+        />
+        <path d="M19 40.8 L44.5 48.3" stroke="#FFFFFF" stroke-width="1.8" stroke-dasharray="2.4 2" />
+        
+        <circle cx="50.5" cy="46" r="7" fill="#FFFFFF" />
+        <path
+          d="M47.2 46.2 L49.8 48.8 L54.2 43.8"
+          fill="none"
+          stroke="#006A4E"
+          stroke-width="2.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+    </svg>

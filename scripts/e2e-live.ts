@@ -31,7 +31,7 @@ const r = spawnSync(
     "--project=setup",
     "--project=mobile",
     "--grep-invert",
-    "walks G1",
+    "walks G1|G8 chat",
     ...specs,
   ],
   { stdio: "inherit", shell: true, env: { ...process.env, E2E_BASE_URL: url.replace(/\/$/, "") } },

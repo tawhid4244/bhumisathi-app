@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { DeedReader } from "@/components/deed/DeedReader";
 import { requirePageRole } from "@/lib/auth/guard";
 
@@ -20,7 +19,6 @@ export default function DeedPage() {
           <SignedInReader />
         </Suspense>
       </main>
-      <SiteFooter />
     </>
   );
 }

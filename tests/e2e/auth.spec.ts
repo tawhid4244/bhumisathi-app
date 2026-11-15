@@ -54,7 +54,7 @@ test.describe("as a citizen", () => {
     request,
   }) => {
     await page.goto("/registry");
-    await expect(page.getByRole("alert")).toContainText("শুধু কর্মকর্তাদের জন্য");
+    await expect(page.getByTestId("not-allowed")).toContainText("শুধু কর্মকর্তাদের জন্য");
     const sale = { mouza: "Nayapara", dag_no: 145, seller_id: 1, buyer_id: 4, area_dec: 1 };
     expect((await request.post("/api/tools/register_sale", { data: sale })).status()).toBe(403);
     expect((await request.post("/api/demo/reset")).status()).toBe(403);

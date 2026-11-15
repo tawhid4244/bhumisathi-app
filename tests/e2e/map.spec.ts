@@ -47,9 +47,13 @@ test("measure on your own map: calibrate 200 ft, mark a square → ≈91.8 decim
     .setInputFiles({ name: "map.png", mimeType: "image/png", buffer: png });
   const surface = page.getByTestId("measure-surface");
   await expect(surface).toBeVisible();
+  // Wait until the picture has loaded and the surface has its final size before clicking on it.
+  await expect.poll(async () => (await surface.boundingBox())?.height ?? 0).toBeGreaterThan(300);
+  await page.waitForLoadState("networkidle");
   // Re-measure before every click: typing the distance can scroll the page.
   const at = async (fx: number, fy: number) => {
-    await surface.scrollIntoViewIfNeeded();
+    // Centre it: the sticky site header must not cover the top of the picture.
+    await surface.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
     const box = (await surface.boundingBox())!;
     await page.mouse.click(box.x + box.width * fx, box.y + box.height * fy);
   };

@@ -9,7 +9,10 @@ test.describe("judge mode", () => {
   test("home → Judge mode walks G1 → G3 → G8 → G2 → G7 with Bangla captions", async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto("/");
-    await page.getByRole("link", { name: /জাজ মোড/ }).click();
+    await page
+      .getByRole("main")
+      .getByRole("link", { name: /জাজ মোড/ })
+      .click();
     await expect(page).toHaveURL(/\/judge$/);
     await page.getByRole("button", { name: "জাজ মোড শুরু করুন" }).click();
 
@@ -63,6 +66,6 @@ test.describe("citizen", () => {
   test.use({ storageState: AUTH.citizen });
   test("cannot open the office view", async ({ page }) => {
     await page.goto("/admin");
-    await expect(page.getByRole("alert")).toContainText("শুধু কর্মকর্তাদের জন্য");
+    await expect(page.getByTestId("not-allowed")).toContainText("শুধু কর্মকর্তাদের জন্য");
   });
 });

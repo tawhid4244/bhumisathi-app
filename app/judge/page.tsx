@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { JudgeTour } from "@/components/judge/JudgeTour";
 
 export const metadata: Metadata = { title: "জাজ মোড" };
@@ -16,7 +15,6 @@ export default function JudgePage() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
         <JudgeTour />
       </main>
-      <SiteFooter />
     </>
   );
 }

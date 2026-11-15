@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { Verifier } from "@/components/seal/Verifier";
 
 export const metadata: Metadata = { title: "রিপোর্ট যাচাই" };
@@ -26,7 +25,6 @@ export default function VerifyPage() {
           </span>
         </p>
       </main>
-      <SiteFooter />
     </>
   );
 }

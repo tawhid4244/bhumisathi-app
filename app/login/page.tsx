@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { safeNext } from "@/lib/auth/guard";
 import { DEMO_USERS } from "@/lib/auth/demo-accounts";
@@ -14,7 +13,7 @@ export default function LoginPage(props: PageProps<"/login">) {
     <>
       <PageHeader titleBn="লগইন" titleEn="Sign in" />
       <main className="mx-auto w-full max-w-md flex-1 px-4 py-6">
-        <Suspense fallback={<LoginForm next="/" />}>
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-card" />}>
           <Form searchParams={props.searchParams} />
         </Suspense>
         <section className="mt-8 rounded-xl border border-line bg-card p-4 text-sm">
@@ -34,7 +33,6 @@ export default function LoginPage(props: PageProps<"/login">) {
           </ul>
         </section>
       </main>
-      <SiteFooter />
     </>
   );
 }

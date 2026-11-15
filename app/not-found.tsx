@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 
 export default function NotFound() {
   return (
@@ -18,7 +17,6 @@ export default function NotFound() {
           হোমে যান
         </Link>
       </main>
-      <SiteFooter />
     </>
   );
 }

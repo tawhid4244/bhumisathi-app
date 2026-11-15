@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { ReportView } from "@/components/check/ReportView";
 import { SearchForm } from "@/components/check/SearchForm";
 import { KhatianNotFoundError, type JomiReport } from "@/lib/engines/jomi-check";
@@ -25,7 +24,6 @@ export default function CheckPage(props: PageProps<"/check">) {
           <CheckContent searchParams={props.searchParams} />
         </Suspense>
       </main>
-      <SiteFooter />
     </>
   );
 }

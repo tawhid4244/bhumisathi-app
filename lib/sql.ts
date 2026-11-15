@@ -25,7 +25,13 @@ export function getSql(): Sql {
     const url = databaseUrl();
     const local = /@(localhost|127\.0\.0\.1)[:/]/.test(url);
     globalForSql.__bhumiSql = postgres(url, {
-      max: 10,
+      max: local ? 10 : 5,
+      // Serverless: an instance can sleep for minutes, and the cloud pooler drops idle
+      // connections. Close idle ones ourselves and cap their lifetime, so a request never waits
+      // on a dead socket; give up on a connect that does not answer in 10 s.
+      idle_timeout: local ? undefined : 20,
+      max_lifetime: local ? undefined : 60 * 5,
+      connect_timeout: 10,
       // numeric columns come back as strings by default; areas are converted explicitly.
       onnotice: () => {},
       prepare: false, // required by Supabase's transaction pooler; harmless locally

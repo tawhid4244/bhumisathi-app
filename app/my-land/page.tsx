@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { requirePageRole } from "@/lib/auth/guard";
 import type { ChainReport, LandViewEntry } from "@/lib/engines/audit";
 import { allowed } from "@/lib/auth/roles";
@@ -25,7 +24,6 @@ export default function MyLandPage() {
           <Content />
         </Suspense>
       </main>
-      <SiteFooter />
     </>
   );
 }

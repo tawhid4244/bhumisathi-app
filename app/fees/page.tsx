@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { FEE_NOTE, listFees } from "@/lib/engines/fees";
 import { bn } from "@/lib/engines/rules";
 
@@ -85,7 +84,6 @@ export default function FeesPage() {
           </section>
         ))}
       </main>
-      <SiteFooter />
     </>
   );
 }

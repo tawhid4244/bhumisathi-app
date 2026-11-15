@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { WarishCalculator } from "@/components/warish/WarishCalculator";
 import { listDeceasedWithLand } from "@/lib/engines/warish-land";
 
@@ -21,7 +20,6 @@ export default function WarishPage(props: PageProps<"/warish">) {
           <Calculator searchParams={props.searchParams} />
         </Suspense>
       </main>
-      <SiteFooter />
     </>
   );
 }

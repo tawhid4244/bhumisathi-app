@@ -96,12 +96,14 @@ export function UploadMeasure() {
       <p className="text-xs text-ink-soft">ছবি আপনার ফোনেই থাকে, কোথাও পাঠানো হয় না।</p>
 
       {src ? (
-        <div className="relative rounded-xl border border-line bg-white">
+        // Sized by the picture, and never taller than the screen below the sticky header, so
+        // every corner of the map can be tapped without scrolling it under the header.
+        <div className="relative mx-auto w-fit max-w-full rounded-xl border border-line bg-white">
           {/* eslint-disable-next-line @next/next/no-img-element -- local preview of the user's own file */}
           <img
             src={src}
             alt="আপলোড করা ম্যাপ"
-            className="block h-auto w-full rounded-xl"
+            className="block h-auto max-h-[calc(100svh-8rem)] w-auto max-w-full rounded-xl"
             onLoad={(e) =>
               setSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
             }

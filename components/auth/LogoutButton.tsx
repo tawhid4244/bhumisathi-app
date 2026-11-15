@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { T } from "../i18n/LangProvider";
 
 export function LogoutButton() {
   const router = useRouter();
@@ -12,9 +13,9 @@ export function LogoutButton() {
         router.replace("/");
         router.refresh();
       }}
-      className="min-h-11 shrink-0 rounded-lg px-2 text-white underline-offset-4 hover:underline"
+      className="flex min-h-11 w-full items-center rounded-lg px-3 text-left text-verdict-red hover:bg-red-50"
     >
-      লগআউট
+      <T bn="লগআউট" en="Sign out" />
     </button>
   );
 }
