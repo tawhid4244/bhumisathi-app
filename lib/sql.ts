@@ -17,10 +17,26 @@ export function databaseUrl(): string {
 type Sql = ReturnType<typeof postgres>;
 
 // Reuse one pool per process (Next.js dev hot-reload would otherwise open new pools).
-const globalForSql = globalThis as unknown as { __bhumiSql?: Sql };
+const globalForSql = globalThis as unknown as { __bhumiSql?: Sql; __bhumiSqlUsed?: number };
+
+/**
+ * On Vercel a function instance is frozen between requests; while frozen, the cloud pooler drops
+ * its idle connections, and timers (idle_timeout) do not run. A query sent on such a dead socket
+ * waits forever. So we look at the wall clock: if the pool has not been used for a while, it is
+ * replaced by a fresh one before anything is sent (the old one is closed in the background).
+ */
+const STALE_AFTER_MS = 15_000;
 
 export function getSql(): Sql {
   if (typeof window !== "undefined") throw new Error("getSql() is server-only.");
+  const now = Date.now();
+  const last = globalForSql.__bhumiSqlUsed ?? now;
+  if (globalForSql.__bhumiSql && process.env.VERCEL && now - last > STALE_AFTER_MS) {
+    const old = globalForSql.__bhumiSql;
+    globalForSql.__bhumiSql = undefined;
+    void old.end({ timeout: 5 }).catch(() => {});
+  }
+  globalForSql.__bhumiSqlUsed = now;
   if (!globalForSql.__bhumiSql) {
     const url = databaseUrl();
     const local = /@(localhost|127\.0\.0\.1)[:/]/.test(url);
