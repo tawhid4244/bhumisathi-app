@@ -35,6 +35,7 @@ export function getSql(): Sql {
     const old = globalForSql.__bhumiSql;
     globalForSql.__bhumiSql = undefined;
     void old.end({ timeout: 5 }).catch(() => {});
+    if (process.env.VERCEL) console.log(`[dbg-sql] pool replaced after ${now - last} ms idle`); // TEMP
   }
   globalForSql.__bhumiSqlUsed = now;
   if (!globalForSql.__bhumiSql) {
@@ -50,6 +51,11 @@ export function getSql(): Sql {
       connect_timeout: 10,
       // numeric columns come back as strings by default; areas are converted explicitly.
       onnotice: () => {},
+      // TEMP diagnostics on Vercel: which connection sends which query (no parameters logged).
+      debug: process.env.VERCEL
+        ? (conn: number, query: string) =>
+            console.log(`[dbg-sql] conn=${conn} t=${Date.now() % 100000} ${query.replace(/\s+/g, " ").slice(0, 60)}`)
+        : undefined,
       prepare: false, // required by Supabase's transaction pooler; harmless locally
       ssl: local ? false : "require", // the cloud database is only ever reached over TLS
     });
