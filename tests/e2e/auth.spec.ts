@@ -90,3 +90,34 @@ test("an officer sees the desk but not the admin's reset button", async ({ page 
   await expect(page.getByRole("button", { name: "লেজার দেখুন" })).toBeVisible();
   await expect(page.getByRole("button", { name: "ডেমো রিসেট" })).toHaveCount(0);
 });
+
+test.describe("before the page's JavaScript has loaded (slow phone)", () => {
+  test.use({ storageState: SIGNED_OUT });
+  // Block the app's script bundles: the form is on screen but React has not attached its handlers,
+  // so pressing the button does a plain browser form submit.
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/_next/static/chunks/**", (route) => route.abort());
+  });
+
+  test("the login form still works and the password never appears in the address", async ({
+    page,
+  }) => {
+    const urls: string[] = [];
+    page.on("request", (r) => urls.push(r.url()));
+    await page.goto("/login?next=%2Fverify");
+    await page.getByLabel(/ইমেইল/).fill("citizen@demo.bhumisathi.test");
+    await page.getByLabel(/পাসওয়ার্ড/).fill(process.env.DEMO_USER_PASSWORD!);
+    await page.getByRole("button", { name: "লগইন করুন" }).click();
+    await expect(page).toHaveURL(/\/verify$/);
+    expect(urls.some((u) => u.includes(encodeURIComponent(process.env.DEMO_USER_PASSWORD!)) || u.includes("password="))).toBe(false); // prettier-ignore
+  });
+
+  test("a wrong password comes back with a message, not a blank page", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel(/ইমেইল/).fill("nobody@demo.bhumisathi.test");
+    await page.getByLabel(/পাসওয়ার্ড/).fill("not-the-password-123");
+    await page.getByRole("button", { name: "লগইন করুন" }).click();
+    await expect(page).toHaveURL(/\/login\?next=%2F&error=invalid/);
+    await expect(page.locator("#login-error")).toHaveText("ইমেইল বা পাসওয়ার্ড সঠিক নয়।");
+  });
+});

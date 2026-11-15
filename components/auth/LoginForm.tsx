@@ -5,9 +5,18 @@ import { useState } from "react";
 
 // Email + password. The password goes only to our own /api/auth/login over HTTPS; the session
 // cookie it sets is httpOnly, so no script on the page can read it.
-export function LoginForm({ next }: { next: string }) {
+const MESSAGES: Record<string, string> = {
+  invalid: "ইমেইল বা পাসওয়ার্ড সঠিক নয়।",
+  locked: "অনেকবার ভুল পাসওয়ার্ড। ১৫ মিনিট পরে আবার চেষ্টা করুন।",
+  limited: "অনেক বেশি চেষ্টা হয়েছে। এক মিনিট পরে আবার চেষ্টা করুন।",
+  missing: "ইমেইল ও পাসওয়ার্ড দিন।",
+};
+
+export function LoginForm({ next, initialError }: { next: string; initialError?: string }) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    initialError ? (MESSAGES[initialError] ?? null) : null,
+  );
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -34,11 +43,16 @@ export function LoginForm({ next }: { next: string }) {
   }
 
   return (
+    // method/action: if the button is pressed before JavaScript has loaded, the browser still
+    // POSTs to the login API (never a GET, which would put the password in the address).
     <form
+      method="post"
+      action="/api/auth/login"
       onSubmit={submit}
       className="space-y-4"
       aria-describedby={error ? "login-error" : undefined}
     >
+      <input type="hidden" name="next" value={next} />
       <label className="block">
         <span className="font-medium">
           ইমেইল{" "}

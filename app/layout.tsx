@@ -36,7 +36,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="bn" data-scroll-behavior="smooth" className={`${hind.variable} ${plex.variable} h-full antialiased`}>
+    <html
+      lang="bn"
+      data-scroll-behavior="smooth"
+      className={`${hind.variable} ${plex.variable} h-full antialiased`}
+    >
       <body className="flex min-h-full flex-col">
         <LangProvider>
           <a

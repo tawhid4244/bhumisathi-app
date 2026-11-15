@@ -38,6 +38,8 @@ export default function LoginPage(props: PageProps<"/login">) {
 }
 
 async function Form({ searchParams }: Pick<PageProps<"/login">, "searchParams">) {
-  const next = safeNext((await searchParams).next);
-  return <LoginForm next={next} />;
+  const params = await searchParams;
+  const next = safeNext(params.next);
+  const error = typeof params.error === "string" ? params.error.slice(0, 20) : undefined;
+  return <LoginForm next={next} initialError={error} />;
 }
