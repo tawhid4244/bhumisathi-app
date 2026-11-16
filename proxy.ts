@@ -11,7 +11,8 @@ import { SESSION_COOKIE } from "./lib/auth/session-cookie";
 //    This is only a shortcut: the page itself still checks the session and the role.
 
 const SAFE = new Set(["GET", "HEAD", "OPTIONS"]);
-const SIGNED_IN_PAGES = ["/chat", "/deed", "/registry", "/my-land", "/admin"];
+const SIGNED_IN_PAGES = ["/chat", "/deed", "/registry", "/my-land", "/admin", "/my", "/inbox"];
+const SIGNED_IN_PREFIXES = ["/my/", "/services/apply/"];
 
 export function proxy(request: NextRequest) {
   const { pathname, search, origin } = request.nextUrl;
@@ -29,7 +30,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (SIGNED_IN_PAGES.includes(pathname) && !request.cookies.has(SESSION_COOKIE)) {
+  const signedInPage =
+    SIGNED_IN_PAGES.includes(pathname) || SIGNED_IN_PREFIXES.some((p) => pathname.startsWith(p));
+  if (signedInPage && !request.cookies.has(SESSION_COOKIE)) {
     const login = new URL("/login", origin);
     login.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(login);
@@ -38,5 +41,16 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/:path*", "/chat", "/deed", "/registry", "/my-land", "/admin"],
+  matcher: [
+    "/api/:path*",
+    "/chat",
+    "/deed",
+    "/registry",
+    "/my-land",
+    "/admin",
+    "/my",
+    "/my/:path*",
+    "/inbox",
+    "/services/apply/:path*",
+  ],
 };

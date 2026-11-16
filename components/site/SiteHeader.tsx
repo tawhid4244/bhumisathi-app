@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Logo } from "../brand/Logo";
 import { UserBar } from "../auth/UserBar";
 import { LangToggle, T } from "../i18n/LangProvider";
-import { DesktopNav, MobileMenu } from "./NavLinks";
+import { DesktopNav, DesktopNavList, MobileMenu } from "./NavLinks";
 
 // Top of every page: a thin flag-green strip, a notice that this is a prototype, then the
 // white header with logo, menu, language switch and sign-in (government-portal layout).
@@ -29,12 +29,16 @@ export function SiteHeader() {
           <Link href="/" className="mr-auto rounded-lg" aria-label="ভূমিসাথী — হোম / Home">
             <Logo />
           </Link>
-          <DesktopNav />
+          <Suspense fallback={<DesktopNavList path={null} />}>
+            <DesktopNav />
+          </Suspense>
           <LangToggle />
           <Suspense fallback={<span className="inline-block h-9 w-20" />}>
             <UserBar />
           </Suspense>
-          <MobileMenu />
+          <Suspense fallback={<span className="inline-block h-11 w-11 lg:hidden" />}>
+            <MobileMenu />
+          </Suspense>
         </div>
       </header>
     </>

@@ -14,6 +14,8 @@ Secrets are typed into hidden prompts or imported as a file — never pasted int
    Replace `[YOUR-PASSWORD]` in it with the password from step 1.
 3. In the `bhumisathi-app` folder: `npm.cmd run set-db` → paste the URI (hidden) → Enter.
 4. `npm.cmd run cloud:setup` → migrations, synthetic world, demo accounts, law embeddings.
+   Later releases that add a migration: `npm.cmd run cloud:migrate` (migrations only, no reseed)
+   BEFORE pushing the code.
 
 Security notes: migration `0006_cloud_ready.sql` removes every privilege from Supabase's public API
 roles (`anon`, `authenticated`), so the Supabase anon key gives no access to tables, views or

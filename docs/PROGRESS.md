@@ -11,6 +11,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | 3 | 11–15 | done (2026-11-15) |
 | 4 | 16–20 | done (2026-11-16), v0.1.0 tagged |
 | 5 | Phase A of LAND_SERVICES_PLAN (AI speed + voice accuracy) | done (2026-11-17) |
+| 5 | Phase B (application framework, My services, sandbox payment, signed copies) | built and tested locally (2026-11-17); cloud migration pending |
 
 ## Golden scenarios
 
@@ -19,6 +20,36 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-17 — Session 5, Phase B: shared application framework
+- Done (plan: docs/LAND_SERVICES_PLAN.md Part 2 "shared foundation"):
+  - Migration `0007_applications.sql`: applications (numbers like `CPY-2026-0001`), application_events
+    (timeline), payments (SANDBOX only, `SBX-…` receipts), issued_documents, notifications; RLS: a citizen
+    reads only their own rows, officers/admins all; the engine is the only writer.
+  - `lib/services/catalog.ts`: the 11 services of "Bhumi shathi.docx" with what is open now and the
+    phase for the rest; application type `certified_copy` (fee from content/fees.json: 100 + 40 post).
+  - `lib/engines/applications.ts`: state machine payment_due → in_review → completed / rejected
+    (+ cancelled); every step in the timeline, the hash-chained audit log and the bell.
+  - `lib/engines/documents.ts`: signed documents `BD1.…` (same Ed25519 key as BhumiSeal); four lights:
+    genuine, on record, untouched, current. `lib/adapters/payment.ts`: sandbox gateway (no money).
+  - Tools: application_submit / status / track / pay / cancel / inbox / decide, document_verify,
+    document_qr, notifications. Only application_status is offered to Sathi AI ("where is my application?");
+    every other write is the citizen's or officer's own click.
+  - Pages: `/services` (catalogue), `/services/apply/certified_copy` (3-step wizard), `/my` (My services:
+    applications with progress steppers, notifications), `/my/applications/[no]` (tracker, sandbox payment,
+    printable signed copy with QR), `/track` (public, status only), `/inbox` (officer, SLA badges),
+    `/verify/doc`. Header: "Services" in the menu; account menu has My services (unread count) and Inbox.
+  - Fix: header menu and help button now sit inside Suspense (dynamic pages read the URL later).
+  - `npm run cloud:migrate`: applies new migrations to the cloud without reseeding.
+- Tests: npm run check green (287: + services unit, applications integration incl. RLS and forgery).
+  npm run e2e 226/226 (+ services.spec: apply → pay → officer approves → copy verifies green; other
+  citizen blocked; unknown dag; sign-in redirects; citizen kept out of the inbox). One run logged a single
+  hydration warning that did not repeat on the next full run.
+- Known issues: **cloud migration not applied yet** — the first `cloud:migrate` run failed with a
+  unique-key error inside the migration (rolled back, cloud unchanged); code not pushed so the live site
+  is unaffected. Needs a look at the full error with the user.
+- Next step: fix and apply the cloud migration, push, live check; then Phase C (mutation, land tax,
+  complaints) on this framework.
 
 ### 2026-11-17 — Session 5, Phase A: Sathi AI speed and voice accuracy
 - Done (plan: docs/LAND_SERVICES_PLAN.md Part 1):

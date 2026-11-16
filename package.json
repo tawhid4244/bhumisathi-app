@@ -25,6 +25,7 @@
     "set-key": "tsx scripts/set-key.ts",
     "set-db": "tsx scripts/set-db.ts",
     "cloud:setup": "tsx --env-file-if-exists=.env.local scripts/cloud-setup.ts",
+    "cloud:migrate": "tsx --env-file-if-exists=.env.local scripts/cloud-migrate.ts",
     "e2e:live": "tsx scripts/e2e-live.ts",
     "vercel:push-env": "tsx scripts/vercel-push-env.ts",
     "vercel:env": "tsx --env-file-if-exists=.env.local scripts/vercel-env.ts",

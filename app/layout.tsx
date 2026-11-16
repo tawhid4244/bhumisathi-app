@@ -3,6 +3,7 @@ import { Hind_Siliguri, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { SiteFooter } from "@/components/SiteFooter";
 import { LangProvider } from "@/components/i18n/LangProvider";
+import { Suspense } from "react";
 import { HelpFab } from "@/components/site/HelpFab";
 import { SiteHeader } from "@/components/site/SiteHeader";
 
@@ -54,7 +55,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </div>
           <SiteFooter />
-          <HelpFab />
+          <Suspense fallback={null}>
+            <HelpFab />
+          </Suspense>
         </LangProvider>
       </body>
     </html>

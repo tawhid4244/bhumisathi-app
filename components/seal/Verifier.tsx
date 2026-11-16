@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bi, useLang, useNum } from "../i18n/LangProvider";
 import { VerdictIcon } from "../VerdictIcon";
@@ -47,6 +48,7 @@ export function Verifier() {
   const en = lang === "en";
   const bn = useNum();
   // The check callback is created once; it reads the current language through this ref.
+  const router = useRouter();
   const enRef = useRef(en);
   useEffect(() => {
     enRef.current = en;
@@ -56,26 +58,35 @@ export function Verifier() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const check = useCallback(async (value: string) => {
-    if (!value.trim()) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/tools/seal_verify", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ code: value.trim() }),
-      });
-      const json = await res.json().catch(() => null);
-      if (!res.ok) throw new Error((enRef.current ? json?.error?.en : json?.error?.bn) ?? (enRef.current ? "Could not verify." : "যাচাই করা যায়নি।")); // prettier-ignore
-      setResult(json as Check);
-    } catch (err) {
-      setError((err as Error).message);
-      setResult(null);
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+  const check = useCallback(
+    async (value: string) => {
+      if (!value.trim()) return;
+      // A signed copy (BD1…) has its own checker.
+      const bare = value.trim().replace(/^.*[#?]/, "");
+      if (bare.startsWith("BD1.")) {
+        router.push(`/verify/doc#${bare}`);
+        return;
+      }
+      setBusy(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/tools/seal_verify", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ code: value.trim() }),
+        });
+        const json = await res.json().catch(() => null);
+        if (!res.ok) throw new Error((enRef.current ? json?.error?.en : json?.error?.bn) ?? (enRef.current ? "Could not verify." : "যাচাই করা যায়নি।")); // prettier-ignore
+        setResult(json as Check);
+      } catch (err) {
+        setError((err as Error).message);
+        setResult(null);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [router],
+  );
 
   // Opened from a QR code: the code is in the link after "#".
   useEffect(() => {

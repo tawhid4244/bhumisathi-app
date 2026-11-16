@@ -9,7 +9,14 @@ import { SERVICES } from "./services";
 
 /** Desktop menu: the main services, with the current page highlighted. */
 export function DesktopNav() {
-  const path = usePathname();
+  return <DesktopNavList path={usePathname()} />;
+}
+
+/**
+ * The menu itself. Also rendered without a current page while the address is not known yet
+ * (pages with a dynamic part, like /my/applications/CPY-…, read it later, inside Suspense).
+ */
+export function DesktopNavList({ path }: { path: string | null }) {
   return (
     <nav aria-label="প্রধান মেনু / Main menu" className="hidden lg:block">
       <ul className="flex items-center gap-1">

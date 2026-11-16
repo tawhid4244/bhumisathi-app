@@ -70,7 +70,16 @@ describe("role-based access (Task 16)", () => {
 
   it("only officers and admins may write to the ledger; citizens keep checks and answers", () => {
     const names = (u: typeof citizen | typeof officer | null) => toolsFor(u).map((t) => t.name);
-    for (const t of tools.filter((t) => t.kind === "write")) expect(t.access).toBe("officer");
+    // Ledger writes are for officers only.
+    for (const t of tools.filter((t) => t.kind === "write" && t.name.startsWith("register_"))) {
+      expect(t.access).toBe("officer");
+    }
+    // Other writes (a citizen's own application, a sandbox payment) are done by the person in
+    // the app with their own click: never offered to the AI.
+    for (const t of tools.filter((t) => t.kind === "write" && !t.name.startsWith("register_"))) {
+      expect(t.hiddenFromAgent).toBe(true);
+      expect(t.access).not.toBe("public");
+    }
     expect(names(null)).not.toContain("deed_read");
     expect(names(null)).toContain("jomi_check");
     expect(names(citizen)).toEqual(

@@ -7,6 +7,7 @@ import { VisionNotConfiguredError } from "@/lib/ai/vision";
 import { DeceasedNotFoundError } from "@/lib/engines/warish-land";
 import { NoMapError } from "@/lib/engines/map";
 import { SealKeyMissingError } from "@/lib/engines/seal";
+import { ApplicationError } from "@/lib/engines/applications";
 import { currentUser } from "@/lib/auth/current";
 import { FORBIDDEN, UNAUTHORIZED } from "@/lib/auth/guard";
 import { AccessDeniedError, runTool, UnknownToolError } from "@/lib/tools/registry";
@@ -46,6 +47,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/tools/[name
         },
         { status: 400 },
       );
+    }
+    if (err instanceof ApplicationError) {
+      return Response.json({ error: { bn: err.bn, en: err.message } }, { status: err.status });
     }
     if (err instanceof UploadError) {
       return Response.json({ error: { bn: "দলিলের ছবি পাওয়া যায়নি। আবার আপলোড করুন।", en: err.message } }, { status: 404 }); // prettier-ignore

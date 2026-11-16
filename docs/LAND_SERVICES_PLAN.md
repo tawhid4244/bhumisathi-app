@@ -79,6 +79,9 @@ Also: each attempt may wait up to 45 s before a fallback is tried (`GEMINI_TIMEO
 
 ### The shared foundation (build once, used by most services) — M
 
+> **Status 2026-11-17: Phase B built** (first service on it: certified khatian copy). Details in
+> docs/PROGRESS.md (Session 5, Phase B).
+
 Most services are the same shape: **apply → check → (hearing) → decision → document**. Instead of
 11 separate workflows, add one framework:
 

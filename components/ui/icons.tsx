@@ -58,6 +58,18 @@ export const IconTaka = ({ className }: P) => (
     <path d="M8.5 7.5c1.5 0 2 1 2 2.5v4.5c0 1.5 1 2.5 2.5 2.5s3-1.5 3-3.5M8 11h7" />
   </svg>
 );
+export const IconForm = ({ className }: P) => (
+  <svg {...base(className)}>
+    <rect x="5" y="4" width="14" height="17" rx="2" />
+    <path d="M9 4V3h6v1M8.5 10h7M8.5 14h7M8.5 18h4" />
+  </svg>
+);
+export const IconInbox = ({ className }: P) => (
+  <svg {...base(className)}>
+    <path d="M4 13l2.5-8h11L20 13v6H4z" />
+    <path d="M4 13h4.5l1 2h5l1-2H20" />
+  </svg>
+);
 export const IconRegistry = ({ className }: P) => (
   <svg {...base(className)}>
     <path d="M3 9l9-5 9 5M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 20h18" />

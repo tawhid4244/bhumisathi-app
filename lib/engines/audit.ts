@@ -118,6 +118,11 @@ export const ACTION_BN: Record<string, string> = {
   register_lien: "বন্ধক নিবন্ধনের চেষ্টা",
   seal_issue: "সিলযুক্ত রিপোর্ট নিয়েছেন",
   seal_verify: "সিলযুক্ত রিপোর্ট যাচাই করেছেন",
+  app_submit: "সেবার আবেদন করেছেন",
+  app_pay: "আবেদনের ফি দিয়েছেন",
+  app_decide: "আবেদনে সিদ্ধান্ত দিয়েছেন",
+  doc_issue: "স্বাক্ষরিত ডকুমেন্ট ইস্যু করেছেন",
+  doc_verify: "স্বাক্ষরিত ডকুমেন্ট যাচাই করেছেন",
 };
 
 export const ACTION_EN: Record<string, string> = {
@@ -131,6 +136,11 @@ export const ACTION_EN: Record<string, string> = {
   register_lien: "tried to register a mortgage",
   seal_issue: "took a sealed report",
   seal_verify: "verified a sealed report",
+  app_submit: "applied for a service",
+  app_pay: "paid an application fee",
+  app_decide: "decided an application",
+  doc_issue: "issued a signed document",
+  doc_verify: "verified a signed document",
   denied: "tried to register without permission (blocked)",
   unlock_account: "unlocked an account",
 };

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { currentUser } from "@/lib/auth/current";
+import { unreadCount } from "@/lib/engines/applications";
 import { T } from "../i18n/LangProvider";
 import { LogoutButton } from "./LogoutButton";
 
@@ -23,6 +24,7 @@ export async function UserBar() {
     );
   }
   const initial = [...user.name_bn.trim()][0] ?? "•";
+  const unread = await unreadCount(user).catch(() => 0);
   return (
     <details className="group relative" data-testid="user-bar">
       <summary
@@ -30,10 +32,16 @@ export async function UserBar() {
         className="flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-full border border-line bg-card p-1 sm:pr-3 text-sm hover:border-brand [&::-webkit-details-marker]:hidden"
       >
         <span
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand text-sm font-bold text-white"
+          className="relative inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand text-sm font-bold text-white"
           aria-hidden="true"
         >
           {initial}
+          {unread > 0 ? (
+            <span
+              className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-white bg-verdict-red"
+              data-testid="bell-dot"
+            />
+          ) : null}
         </span>
         <span className="hidden max-w-36 truncate sm:inline">{user.name_bn}</span>
         <span className="hidden rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-deep sm:inline">
@@ -51,6 +59,25 @@ export async function UserBar() {
           </span>
         </p>
         <div className="my-1 border-t border-line" />
+        <Link
+          href="/my"
+          className="flex min-h-11 items-center justify-between rounded-lg px-3 hover:bg-brand-soft"
+        >
+          <T bn="আমার সেবা" en="My services" />
+          {unread > 0 ? (
+            <span className="rounded-full bg-verdict-red px-2 py-0.5 text-xs font-semibold text-white">
+              {unread}
+            </span>
+          ) : null}
+        </Link>
+        {user.role !== "citizen" ? (
+          <Link
+            href="/inbox"
+            className="flex min-h-11 items-center rounded-lg px-3 hover:bg-brand-soft"
+          >
+            <T bn="ইনবক্স" en="Inbox" />
+          </Link>
+        ) : null}
         {user.role !== "citizen" ? (
           <Link
             href="/admin"
