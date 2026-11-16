@@ -77,7 +77,8 @@ export function createMasker(knownNames: (string | string[])[] = []): Masker {
       return out;
     },
     unmask(text) {
-      return text.replace(/\[(?:NID|ফোন|ব্যক্তি)-[০-৯]+\]/g, (p) => toValue.get(p) ?? p);
+      // Small models sometimes drop the brackets ("ব্যক্তি-১"); accept that too.
+      return text.replace(/\[?((?:NID|ফোন|ব্যক্তি)-[০-৯]+)\]?/g, (p, core: string) => toValue.get(`[${core}]`) ?? p); // prettier-ignore
     },
     get size() {
       return toValue.size;

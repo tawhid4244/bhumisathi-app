@@ -21,6 +21,7 @@
     "db:reset": "tsx --env-file-if-exists=.env.local scripts/reset-db.ts",
     "ai:spike": "tsx --env-file-if-exists=.env.local scripts/ai-spike.ts",
     "ai:g8": "tsx --env-file-if-exists=.env.local scripts/ai-g8.ts",
+    "ai:latency": "tsx --env-file-if-exists=.env.local scripts/ai-latency.ts",
     "set-key": "tsx scripts/set-key.ts",
     "set-db": "tsx scripts/set-db.ts",
     "cloud:setup": "tsx --env-file-if-exists=.env.local scripts/cloud-setup.ts",

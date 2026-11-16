@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { mapArea } from "../engines/map";
-import { dagRef } from "./ledger-tools";
+import { dagRefOptionalMouza, mouzaFor } from "./ledger-tools";
 import { defineTool } from "./types";
 
 export const mapAreaTool = defineTool({
@@ -10,7 +10,7 @@ export const mapAreaTool = defineTool({
     bn: "মৌজা ম্যাপ থেকে দাগের মাপ (শতক, কাঠা, বিঘা, একর, বর্গফুট) এবং খতিয়ানের আয়তনের সাথে তুলনা; খাস জমি চিহ্নিত করে।",
     en: "A dag's area measured on the mouza map (decimals, katha, bigha, acre, sq ft), compared with the khatian; flags khas land.",
   },
-  input: dagRef,
+  input: dagRefOptionalMouza,
   output: z.object({
     mouza_bn: z.string(),
     mouza_en: z.string(),
@@ -31,6 +31,6 @@ export const mapAreaTool = defineTool({
     }),
     note_bn: z.string(),
   }),
-  handler: async ({ mouza, dag_no }) => mapArea(mouza, dag_no),
-  audit: (i) => ({ action: "view_map", mouza: i.mouza, dag_no: i.dag_no }),
+  handler: async ({ mouza, dag_no }) => mapArea(await mouzaFor(mouza, dag_no), dag_no),
+  audit: (i, o) => ({ action: "view_map", mouza: o.mouza_en ?? i.mouza, dag_no: i.dag_no }),
 });

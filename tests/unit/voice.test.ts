@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { extractNumbers, readBackQuestion, speakable, toBnDigits } from "@/lib/voice";
+import {
+  bestTranscript,
+  extractNumbers,
+  readBackQuestion,
+  speakable,
+  toBnDigits,
+} from "@/lib/voice";
 
 describe("voice: numbers heard", () => {
   it("reads Bangla and English digits, keeps decimals", () => {
@@ -50,5 +56,32 @@ describe("voice: speakable text", () => {
 
   it("Bangla digits", () => {
     expect(toBnDigits("145")).toBe("১৪৫");
+  });
+});
+
+describe("best of several speech guesses", () => {
+  it("turns spoken number words into digits", () => {
+    expect(bestTranscript([{ transcript: "একশো পঁয়তাল্লিশ নম্বর দাগ" }], "bn")).toBe("১৪৫ নম্বর দাগ");
+    expect(bestTranscript([{ transcript: "dag 145" }], "en")).toBe("dag 145");
+  });
+
+  it("prefers a guess with a dag number over a mis-heard top guess", () => {
+    const alts = [
+      { transcript: "১৪৫ নম্বর ডাক কেনা নিরাপদ", confidence: 0.7 },
+      { transcript: "১৪৫ নম্বর দাগ কেনা নিরাপদ", confidence: 0.6 },
+    ];
+    expect(bestTranscript(alts, "bn")).toBe("১৪৫ নম্বর দাগ কেনা নিরাপদ");
+  });
+
+  it("keeps the top guess when it has no numbers", () => {
+    expect(bestTranscript([{ transcript: "নামজারির ফি কত" }, { transcript: "১ দাগ" }], "bn")).toBe(
+      "নামজারির ফি কত",
+    );
+  });
+
+  it("reads back numbers that were spoken as words", () => {
+    expect(readBackQuestion("একশো পঁয়তাল্লিশ নম্বর দাগ", "bn")).toBe(
+      "আপনি কি ১৪৫ নম্বর দাগ বলেছেন? ঠিক আছে?",
+    );
   });
 });

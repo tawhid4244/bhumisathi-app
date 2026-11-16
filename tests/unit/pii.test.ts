@@ -35,6 +35,7 @@ describe("PII masker", () => {
     );
     // Unmask gives the main (record) spelling.
     expect(m.unmask("[ব্যক্তি-১]")).toBe("মোঃ রহিম উদ্দিন");
+    expect(m.unmask("ব্যক্তি-১")).toBe("মোঃ রহিম উদ্দিন"); // brackets dropped by the model
   });
 
   it("unmask restores the original values", () => {

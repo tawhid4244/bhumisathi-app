@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { DEFAULT_GEMINI_MODEL, GeminiProvider } from "./gemini";
+import { DEFAULT_GEMINI_MODEL, DEFAULT_ROUTER_MODEL, GeminiProvider } from "./gemini";
 import { MockProvider } from "./mock-provider";
 
 // One adapter between BhumiSathi and the AI model. Model name and key come only from the
@@ -13,6 +13,11 @@ export interface ChatRequest {
   system: string;
   tools: AgentTool[];
   messages: AgentMessage[];
+  /**
+   * The request needs care more than speed (recording a sale, baina or mortgage): providers
+   * with a quick model skip it and use the main model.
+   */
+  careful?: boolean;
 }
 
 export interface ModelProvider {
@@ -85,7 +90,13 @@ export function getProvider(): ModelProvider {
     const key = process.env.AI_API_KEY || process.env.GEMINI_API_KEY;
     if (!key) throw new AiNotConfiguredError();
     const fallbacks = process.env.AI_FALLBACK_MODELS?.split(",").map((m) => m.trim()).filter(Boolean); // prettier-ignore
-    cached = new GeminiProvider(key, model || DEFAULT_GEMINI_MODEL, { fallbacks });
+    cached = new GeminiProvider(key, model || DEFAULT_GEMINI_MODEL, {
+      fallbacks,
+      // AI_ROUTER_MODEL="" turns the quick tool-choosing model off.
+      routerModel: process.env.AI_ROUTER_MODEL ?? DEFAULT_ROUTER_MODEL,
+      routerSteps: process.env.AI_ROUTER_STEPS === "tools" ? "tools" : "all",
+      thinking: process.env.AI_THINKING,
+    });
     return cached;
   }
   if (provider === "anthropic") {

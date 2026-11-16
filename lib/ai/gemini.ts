@@ -155,8 +155,80 @@ export function fromGeminiResponse(res: GenerateContentResponse, model: string):
 /** Backup models tried in order when the main one is busy (503) or rate-limited (429). */
 export const DEFAULT_GEMINI_FALLBACKS = ["gemini-3.8-flash", "gemini-3.1-flash-lite"];
 
-/** Longest we wait for one request before moving on to the next model. */
-export const GEMINI_TIMEOUT_MS = 45_000;
+/** Longest we wait for one whole request before moving on to the next model. */
+export const GEMINI_TIMEOUT_MS = 30_000;
+
+/**
+ * Longest we wait for the FIRST streamed piece of an answer from the quick model. It starts
+ * within 1–3 s when healthy; a busy one is skipped for the next model instead of keeping the
+ * citizen waiting. The larger fallback models think first, so they get GEMINI_SLOW_FIRST_CHUNK_MS.
+ */
+export const GEMINI_FIRST_CHUNK_MS = 8_000;
+export const GEMINI_SLOW_FIRST_CHUNK_MS = 25_000;
+
+/**
+ * Small, quick model tried first. Measured 2026-11-17 (scripts/ai-latency.ts): ~1–2 s per step
+ * with minimal thinking, while gemini-3.5-flash / 3.8-flash took 14–25 s (more than 8 s before
+ * the first word). The main model stays as the fallback when the quick one is busy.
+ */
+export const DEFAULT_ROUTER_MODEL = "gemini-3.1-flash-lite";
+
+/** A tool-choosing step: the last message is the citizen's own question (not tool results). */
+export function isRoutingStep(messages: AgentMessage[]): boolean {
+  const last = messages.at(-1);
+  if (!last || last.role !== "user") return false;
+  if (typeof last.content === "string") return true;
+  return (last.content as { type: string }[]).every((b) => b.type === "text");
+}
+
+const THINKING: Record<string, ThinkingLevel> = {
+  minimal: ThinkingLevel.MINIMAL,
+  low: ThinkingLevel.LOW,
+  medium: ThinkingLevel.MEDIUM,
+  high: ThinkingLevel.HIGH,
+};
+
+/**
+ * Join streamed chunks into one response: parts in order, neighbouring text pieces merged
+ * (keeping the last thought signature), finish reason and usage from the last chunk that has them.
+ */
+export function joinChunks(chunks: GenerateContentResponse[]): GenerateContentResponse {
+  const parts: Part[] = [];
+  let finishReason: FinishReason | undefined;
+  let usage: GenerateContentResponse["usageMetadata"];
+  let feedback: GenerateContentResponse["promptFeedback"];
+  let id: string | undefined;
+  for (const c of chunks) {
+    id ??= c.responseId;
+    if (c.usageMetadata) usage = c.usageMetadata;
+    if (c.promptFeedback) feedback = c.promptFeedback;
+    const cand = c.candidates?.[0];
+    if (cand?.finishReason) finishReason = cand.finishReason;
+    for (const p of cand?.content?.parts ?? []) {
+      const prev = parts.at(-1);
+      const isText = typeof p.text === "string" && !p.functionCall;
+      if (
+        isText &&
+        prev &&
+        typeof prev.text === "string" &&
+        !prev.functionCall &&
+        !!prev.thought === !!p.thought
+      ) {
+        // prettier-ignore
+        prev.text += p.text!;
+        if (p.thoughtSignature) prev.thoughtSignature = p.thoughtSignature;
+      } else {
+        parts.push({ ...p });
+      }
+    }
+  }
+  return {
+    responseId: id,
+    candidates: [{ content: { role: "model", parts }, finishReason }],
+    usageMetadata: usage,
+    promptFeedback: feedback,
+  } as GenerateContentResponse;
+}
 
 /** "Busy, try again" errors: worth a retry. Anything else (bad key, bad request) is not. */
 function statusOf(err: unknown): number | undefined {
@@ -174,8 +246,25 @@ type Generate = (args: {
   config: Record<string, unknown>;
 }) => Promise<GenerateContentResponse>;
 
+type GenerateStream = (args: {
+  model: string;
+  contents: Content[];
+  config: Record<string, unknown>;
+}) => Promise<AsyncGenerator<GenerateContentResponse>>;
+
 export interface GeminiOptions {
   fallbacks?: string[];
+  /** Quick model tried first ("" turns it off: the main model does every step). */
+  routerModel?: string;
+  /** "all" (default): the quick model also writes the answers; "tools": only picks tools. */
+  routerSteps?: "all" | "tools";
+  /** minimal | low | medium | high (default minimal: the engines do the hard work). */
+  thinking?: string;
+  /** Streams answers as they are written (default on unless `generate` is injected). */
+  generateStream?: GenerateStream;
+  firstChunkMs?: number;
+  /** First-chunk wait for the other (larger) models in the chain. */
+  slowFirstChunkMs?: number;
   retriesPerModel?: number;
   /** Injected in tests so they do not call Google or wait. */
   generate?: Generate;
@@ -185,36 +274,75 @@ export interface GeminiOptions {
 export class GeminiProvider implements ModelProvider {
   readonly model: string;
   private generate: Generate;
+  private generateStream: GenerateStream | null;
   private chain: string[];
+  private router: string;
+  private routerSteps: "all" | "tools";
+  private thinking: ThinkingLevel;
   private retries: number;
+  private firstChunkMs: number;
+  private slowFirstChunkMs: number;
   private sleep: (ms: number) => Promise<void>;
 
   constructor(apiKey: string, model: string, opts: GeminiOptions = {}) {
-    const ai = opts.generate ? null : new GoogleGenAI({ apiKey });
+    const ai = opts.generate && !opts.generateStream ? null : new GoogleGenAI({ apiKey });
     this.generate = opts.generate ?? ((args) => ai!.models.generateContent(args));
+    this.generateStream =
+      opts.generateStream ??
+      (opts.generate ? null : (args) => ai!.models.generateContentStream(args));
     this.model = model;
     this.chain = [model, ...(opts.fallbacks ?? DEFAULT_GEMINI_FALLBACKS)].filter(
       (m, i, all) => m && all.indexOf(m) === i,
     );
+    this.router = opts.routerModel ?? "";
+    this.routerSteps = opts.routerSteps ?? "all";
+    this.thinking = THINKING[(opts.thinking ?? "minimal").toLowerCase()] ?? ThinkingLevel.MINIMAL;
     this.retries = opts.retriesPerModel ?? 1;
+    this.firstChunkMs = opts.firstChunkMs ?? GEMINI_FIRST_CHUNK_MS;
+    this.slowFirstChunkMs = opts.slowFirstChunkMs ?? GEMINI_SLOW_FIRST_CHUNK_MS;
     this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
   }
 
+  /** Models to try for this request, in order. */
+  chainFor(req: ChatRequest): string[] {
+    if (!this.router || req.careful) return this.chain;
+    if (this.routerSteps === "tools" && !isRoutingStep(req.messages)) return this.chain;
+    return [this.router, ...this.chain.filter((m) => m !== this.router)];
+  }
+
+  /** Models that refused the chosen thinking level; they get LOW instead (learned once). */
+  private needsLow = new Set<string>();
+
   async send(req: ChatRequest, onText?: (delta: string) => void): Promise<AgentResponse> {
     const contents = toGeminiContents(req.messages);
-    const config = {
+    const base = {
       systemInstruction: req.system,
       tools: req.tools.length ? [{ functionDeclarations: toGeminiTools(req.tools) }] : undefined,
       maxOutputTokens: 8192,
-      // Low thinking keeps chat replies quick; the engines do the hard work, not the model.
-      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
       httpOptions: { timeout: GEMINI_TIMEOUT_MS },
     };
+    // Minimal thinking keeps chat replies quick; the engines do the hard work, not the model.
+    // Some models do not offer every level, so those fall back to LOW.
+    const configFor = (model: string) => ({
+      ...base,
+      thinkingConfig: { thinkingLevel: this.needsLow.has(model) ? ThinkingLevel.LOW : this.thinking }, // prettier-ignore
+    });
     let lastError: unknown;
-    // Try the main model, then each backup; retry each once after a short wait.
-    for (const model of this.chain) {
+    let streamed = false;
+    // Try the router (for tool-choosing steps), the main model, then each backup; retry each
+    // once after a short wait. Once text has reached the citizen we never switch models
+    // (they would see two answers), so a failure after that is final.
+    for (const model of this.chainFor(req)) {
       for (let attempt = 0; attempt <= this.retries; attempt++) {
+        const config = configFor(model);
         try {
+          if (this.generateStream) {
+            const res = await this.stream(model, contents, config, (t) => {
+              streamed = true;
+              onText?.(t);
+            });
+            return fromGeminiResponse(res, model);
+          }
           const res = await this.generate({ model, contents, config });
           const out = fromGeminiResponse(res, model);
           if (onText) {
@@ -223,6 +351,18 @@ export class GeminiProvider implements ModelProvider {
           return out;
         } catch (err) {
           lastError = err;
+          if (process.env.AI_DEBUG) console.warn(`[gemini] ${model} try ${attempt + 1}: ${statusOf(err) ?? ""} ${String((err as Error).message).slice(0, 160)}`); // prettier-ignore
+          if (streamed) throw err;
+          if (
+            statusOf(err) === 400 &&
+            /thinking level/i.test(String((err as Error).message)) &&
+            !this.needsLow.has(model)
+          ) {
+            // prettier-ignore
+            this.needsLow.add(model);
+            attempt--; // same model again, with LOW thinking; not counted as a retry
+            continue;
+          }
           if (!isRetryable(err)) throw err;
           if (statusOf(err) === 504) break; // timed out: waiting again would only add delay
           if (attempt < this.retries) await this.sleep(1500 * (attempt + 1));
@@ -230,5 +370,47 @@ export class GeminiProvider implements ModelProvider {
       }
     }
     throw lastError;
+  }
+
+  /** One streamed request. Gives up (as a 504) if the first piece takes too long. */
+  private async stream(
+    model: string,
+    contents: Content[],
+    config: Record<string, unknown>,
+    onText: (t: string) => void,
+  ): Promise<GenerateContentResponse> {
+    const abort = new AbortController();
+    // The quick model must start fast; with no quick model, or for the larger fallbacks,
+    // allow the longer wait.
+    const wait = this.router && model === this.router ? this.firstChunkMs : this.slowFirstChunkMs;
+    let timer: ReturnType<typeof setTimeout> | undefined = setTimeout(() => abort.abort(), wait);
+    const chunks: GenerateContentResponse[] = [];
+    try {
+      const it = await this.generateStream!({
+        model,
+        contents,
+        config: { ...config, abortSignal: abort.signal },
+      });
+      for await (const chunk of it) {
+        if (timer) {
+          clearTimeout(timer);
+          timer = undefined;
+        }
+        chunks.push(chunk);
+        for (const p of chunk.candidates?.[0]?.content?.parts ?? []) {
+          if (!p.thought && !p.functionCall && typeof p.text === "string" && p.text) onText(p.text);
+        }
+      }
+    } catch (err) {
+      if (abort.signal.aborted && chunks.length === 0) {
+        throw Object.assign(new Error(`${model}: no answer within ${wait} ms`), {
+          status: 504,
+        });
+      }
+      throw err;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+    return joinChunks(chunks);
   }
 }

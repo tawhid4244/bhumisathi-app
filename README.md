@@ -91,7 +91,7 @@ Your demo password: `DEMO_USER_PASSWORD` in `.env.local`.
 ### Tests
 
 ```bash
-npm run check      # typecheck + lint + unit + integration (231 tests, needs the local DB)
+npm run check      # typecheck + lint + unit + integration (279 tests, needs the local DB)
 npm run e2e        # Playwright: every golden scenario + accessibility, at 375 px and desktop
 npm run eval:ai    # 20 held-out questions on the real model (uses AI quota)
 ```
@@ -105,15 +105,16 @@ anywhere: [docs/DEPLOY.md](docs/DEPLOY.md). Health check: `/api/health` (yes/no 
 
 **Inside the product**
 
-| Model / tool                                       | Used for                                                                                                   | Where                                   |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| **Google Gemini `gemini-3.5-flash`** (default)     | Sathi AI agent: picks tools, explains results in Bangla/English, cites laws                                | `lib/ai/gemini.ts`, `lib/ai/agent.ts`   |
-| Gemini `gemini-3.8-flash`, `gemini-3.1-flash-lite` | Automatic fallbacks when the main model is busy or out of free quota                                       | `lib/ai/gemini.ts`                      |
-| Gemini (vision, same models)                       | Reads a deed photo into structured fields (JSON schema); the verdict is computed in code, not by the model | `lib/ai/vision.ts`                      |
-| **Google `gemini-embedding-2`** (768-d)            | Embeddings for semantic search over the cited law summaries and Q&A (hybrid with keyword search)           | `lib/ai/embeddings.ts`, `lib/ai/rag.ts` |
-| **Anthropic Claude `claude-opus-5-5`** (optional)  | Alternative agent provider (`AI_PROVIDER=anthropic`)                                                       | `lib/ai/provider.ts`                    |
-| Scripted mock provider                             | Deterministic answers for tests and offline demos                                                          | `lib/ai/mock-provider.ts`               |
-| Browser Web Speech API (`bn-BD`)                   | Push-to-talk speech-to-text and spoken replies, on the user's device                                       | `components/chat`                       |
+| Model / tool                                      | Used for                                                                                                   | Where                                        |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| **Google Gemini `gemini-3.1-flash-lite`** (quick) | Sathi AI agent, tried first on every step: picks tools, explains results, cites laws (~1–2 s a step)       | `lib/ai/gemini.ts`, `lib/ai/agent.ts`        |
+| Gemini `gemini-3.5-flash`, `gemini-3.8-flash`     | Main model for officer write requests; automatic fallbacks when the quick one is busy                      | `lib/ai/gemini.ts`                           |
+| Fast path (no model)                              | "Check dag N", "area of dag N", unit conversion: answered from the tools in code in ~0.02 s                | `lib/ai/intent.ts`, `lib/ai/fast-answers.ts` |
+| Gemini (vision, same models)                      | Reads a deed photo into structured fields (JSON schema); the verdict is computed in code, not by the model | `lib/ai/vision.ts`                           |
+| **Google `gemini-embedding-2`** (768-d)           | Embeddings for semantic search over the cited law summaries and Q&A (hybrid with keyword search)           | `lib/ai/embeddings.ts`, `lib/ai/rag.ts`      |
+| **Anthropic Claude `claude-opus-5-5`** (optional) | Alternative agent provider (`AI_PROVIDER=anthropic`)                                                       | `lib/ai/provider.ts`                         |
+| Scripted mock provider                            | Deterministic answers for tests and offline demos                                                          | `lib/ai/mock-provider.ts`                    |
+| Browser Web Speech API (`bn-BD`)                  | Push-to-talk speech-to-text and spoken replies, on the user's device                                       | `components/chat`                            |
 
 The AI **never decides ownership, never writes to the ledger on its own** (writes need the
 citizen's “Yes” and an officer role), and only sees masked NIDs, phones and names.

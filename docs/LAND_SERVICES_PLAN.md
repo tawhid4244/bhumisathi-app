@@ -11,6 +11,9 @@ app (they stay mocked behind `lib/adapters/`), every capability = one engine + o
 
 ## Part 1 — Sathi AI: speed and accuracy (do this first)
 
+> **Status 2026-11-17: Phase A done.** 70.2 s → 3.7 s on the model path, 0.02 s on the fast path;
+> AI eval 100% on every measure. Details in docs/PROGRESS.md (Session 5).
+
 ### What we measured (real Gemini, 2026-11-17)
 
 Question (as spoken): “১৪৫ নম্বর দাগের জমি কেনা নিরাপদ কিনা দেখাও”

@@ -8,6 +8,7 @@ import type { ToolBadge } from "@/lib/ai/agent-request";
 import type { AgentMessage } from "@/lib/ai/provider";
 import {
   canSpeak,
+  bestTranscript,
   readBackQuestion,
   recognizerCtor,
   speak,
@@ -185,9 +186,10 @@ export function ChatPanel({ initialInput = "" }: { initialInput?: string }) {
     rec.lang = lang === "bn" ? "bn-BD" : "en-US";
     rec.interimResults = false;
     rec.continuous = false;
-    rec.maxAlternatives = 1;
+    // Ask for several guesses: the best one with a dag number is picked (lib/voice.ts).
+    rec.maxAlternatives = 5;
     rec.onresult = (e) => {
-      const transcript = e.results[0]?.[0]?.transcript?.trim();
+      const transcript = bestTranscript(Array.from(e.results[0] ?? []), lang);
       if (transcript) onHeard(transcript);
     };
     rec.onerror = (e) => {

@@ -7,6 +7,8 @@ import { wrapDocument } from "./documents";
 import { createMasker, maskDeep } from "./pii";
 import { REFUSAL_REPLY, SATHI_SYSTEM_PROMPT, TOO_MANY_STEPS_REPLY } from "./prompts";
 import type { AgentMessage, ModelProvider } from "./provider";
+import { fastReply, type FastAnswer } from "./fast-answers";
+import { detectIntent, type Intent } from "./intent";
 import { toAgentTools } from "./tools";
 
 // The Sathi agent loop: the model chooses tools, engines compute, the model explains.
@@ -84,6 +86,13 @@ export interface RunAgentOptions {
   replyLanguage?: "bn" | "en";
   /** Builds the read-back text for a write action (owner names etc.). */
   describe?: (name: string, input: Record<string, unknown>) => Promise<string>;
+  /**
+   * Answer the commonest questions (check a dag, a dag's area, unit conversion) straight from the
+   * tools with a fixed template, without calling the model: well under a second instead of
+   * 20–70 s. Off by default (tests and scripts exercise the model); the chat API turns it on.
+   * Gives the known mouza names, used to spot a mouza in the question.
+   */
+  fastPath?: { mouzas: () => Promise<{ name_bn: string; name_en: string }[]> };
 }
 
 const ACTION_BN: Record<string, string> = {
@@ -164,6 +173,87 @@ async function execute(
   }
 }
 
+/** The text of the conversation's last message if it is a plain user message, else null. */
+function lastUserText(messages: AgentMessage[]): string | null {
+  const last = messages.at(-1);
+  if (!last || last.role !== "user") return null;
+  if (typeof last.content === "string") return last.content;
+  const blocks = last.content as { type: string; text?: string }[];
+  if (blocks.some((b) => b.type !== "text")) return null; // tool results → not a new question
+  return blocks.map((b) => b.text ?? "").join(" ");
+}
+
+/** The citizen's latest own words (skipping tool results), or "". */
+function latestQuestion(messages: AgentMessage[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i]!;
+    if (m.role !== "user") continue;
+    if (typeof m.content === "string") return m.content;
+    const blocks = m.content as { type: string; text?: string }[];
+    if (blocks.every((b) => b.type === "text")) return blocks.map((b) => b.text ?? "").join(" ");
+  }
+  return "";
+}
+
+/** Asking to RECORD something in the ledger: worth the slower, more careful model. */
+const WRITE_REQUEST = new RegExp(
+  "বায়না|বিক্রি|বিক্রয়|নিবন্ধন|রেজিস্ট্রি|বন্ধক|register|record|sale|mortgage|baina".normalize("NFC"),
+  "i",
+);
+
+let fastIds = 0;
+const fastUse = (name: string, input: Record<string, unknown>): ToolUse =>
+  ({
+    type: "tool_use",
+    id: `fast_${Date.now().toString(36)}_${++fastIds}`,
+    name,
+    input,
+  }) as ToolUse;
+
+/**
+ * The fast path: intent → the same tools (through execute(), so role checks and the audit log
+ * still apply) → a fixed bilingual template. Returns null when it cannot answer for sure, and
+ * the model takes over. The model never sees these turns as tool calls; the history only gets
+ * the plain answer, which keeps later model turns valid.
+ */
+async function tryFastPath(
+  intent: Intent,
+  registry: ToolDefinition[],
+  ctx: ToolContext,
+  english: boolean,
+  record: (c: ToolCallRecord) => void,
+): Promise<FastAnswer | null> {
+  const has = (name: string) => registry.some((t) => t.name === name);
+  const run = async (name: string, input: Record<string, unknown>) => {
+    if (!has(name)) return null;
+    const { record: rec } = await execute(fastUse(name, input), registry, ctx);
+    record(rec);
+    return rec;
+  };
+
+  if (intent.kind === "units") {
+    const rec = await run("unit_convert", { amounts: intent.amounts });
+    return rec?.ok ? fastReply({ kind: "units", output: rec.output, english }) : null;
+  }
+
+  // check / area: find the mouza first when only a dag number was given.
+  let mouza = intent.mouza;
+  if (!mouza) {
+    if (!has("find_dag")) return null;
+    const found = await run("find_dag", { dag_no: intent.dag_no });
+    if (!found?.ok || !Array.isArray(found.output)) return null;
+    const matches = found.output as { mouza_bn: string; mouza_en: string }[];
+    if (matches.length !== 1) {
+      return fastReply({ kind: "which_mouza", dag_no: intent.dag_no, matches, english });
+    }
+    mouza = matches[0]!.mouza_en;
+  }
+  const tool = intent.kind === "area" ? "map_area" : "jomi_check";
+  const rec = await run(tool, { mouza, dag_no: intent.dag_no });
+  if (!rec?.ok) return null;
+  return fastReply({ kind: intent.kind, output: rec.output, english });
+}
+
 export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
   const ctx = opts.context ?? SYSTEM;
   // A citizen's model never even sees officer-only tools (register_*), so it cannot ask for them;
@@ -222,7 +312,34 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
     messages.push({ role: "user", content: results });
   }
 
-  // 2. The loop: ask the model, run read tools, repeat until it answers.
+  // 2. Fast path for the commonest questions (no model call).
+  const question = !opts.resolvePending && opts.fastPath ? lastUserText(messages) : null;
+  if (question && opts.fastPath) {
+    const mouzas = await opts.fastPath.mouzas().catch(() => []);
+    const intent = detectIntent(question, mouzas);
+    if (intent) {
+      const english =
+        opts.replyLanguage === "en" || (/[a-z]{3}/i.test(question) && !/[ঀ-৿]/.test(question)); // prettier-ignore
+      const answer = await tryFastPath(intent, registry, ctx, english, (c) => {
+        toolCalls.push(c);
+        emit({ type: "tool", call: c });
+      }).catch(() => null);
+      if (answer) {
+        emit({ type: "text", delta: answer.text });
+        messages.push({ role: "assistant", content: answer.text });
+        return {
+          messages,
+          reply: answer.text,
+          toolCalls,
+          sources: [],
+          pending: null,
+          stopReason: "fast_path",
+        };
+      }
+    }
+  }
+
+  // 3. The loop: ask the model, run read tools, repeat until it answers.
   const maxSteps = opts.maxSteps ?? 8;
   const system =
     opts.replyLanguage === "en"
@@ -230,11 +347,14 @@ export async function runAgent(opts: RunAgentOptions): Promise<AgentResult> {
 
 The person chose English in the app: reply in English.`
       : SATHI_SYSTEM_PROMPT;
+  // Only an officer can record anything, so only their write requests need the careful model.
+  const careful =
+    registry.some((t) => t.kind === "write") && WRITE_REQUEST.test(latestQuestion(messages).normalize("NFC")); // prettier-ignore
   for (let step = 0; step < maxSteps; step++) {
     // Privacy: the model only ever receives a masked COPY of the conversation.
     const masker = createMasker(opts.knownNames ?? []);
     const masked = maskDeep(messages, masker);
-    const raw = await opts.provider.send({ system, tools, messages: masked }, (delta) =>
+    const raw = await opts.provider.send({ system, tools, messages: masked, careful }, (delta) =>
       emit({ type: "text", delta: masker.unmask(delta) }),
     );
     // Put real values back into the answer (and any tool input) before anything else sees it.

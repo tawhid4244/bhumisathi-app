@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { jomiCheck } from "../engines/jomi-check";
-import { dagRef, ledgerStatusOutput } from "./ledger-tools";
+import { dagRef, dagRefOptionalMouza, ledgerStatusOutput, mouzaFor } from "./ledger-tools";
 import { defineTool } from "./types";
 
 const reason = z.object({
@@ -49,7 +49,7 @@ export const jomiCheckTool = defineTool({
   },
   input: z
     .object({
-      mouza: dagRef.shape.mouza,
+      mouza: dagRefOptionalMouza.shape.mouza,
       dag_no: dagRef.shape.dag_no.optional(),
       khatian_no: z.number().int().positive().max(99999).optional().describe("BS khatian number"),
       seller_id: z.number().int().positive().optional().describe("Check a specific seller"),
@@ -62,6 +62,9 @@ export const jomiCheckTool = defineTool({
     })
     .refine((v) => v.dag_no != null || v.khatian_no != null, {
       message: "dag_no or khatian_no is required",
+    })
+    .refine((v) => v.mouza != null || v.dag_no != null, {
+      message: "mouza is required with a khatian number",
     }),
   output: jomiReportSchema,
   audit: (_i, o) => ({
@@ -72,7 +75,7 @@ export const jomiCheckTool = defineTool({
   }),
   handler: async (i) =>
     jomiCheck({
-      mouza: i.mouza,
+      mouza: await mouzaFor(i.mouza, i.dag_no!),
       dag_no: i.dag_no,
       khatian_no: i.khatian_no,
       context: { seller_id: i.seller_id, area_dec: i.area_dec },

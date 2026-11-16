@@ -4,6 +4,7 @@ import { finalPayload, parseAgentRequest, toBadge } from "@/lib/ai/agent-request
 import { describeWithNames } from "@/lib/ai/describe";
 import { knownNames } from "@/lib/ai/pii";
 import { AiNotConfiguredError, getProvider } from "@/lib/ai/provider";
+import { cachedMouzas } from "@/lib/engines/mouzas";
 
 // POST /api/agent/stream → one agent turn as a stream of JSON lines (NDJSON):
 //   {"type":"text","delta":"…"}        answer text as it is written
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
           resolvePending: parsed.body.confirm,
           replyLanguage: parsed.body.lang,
           describe: describeWithNames,
+          fastPath: { mouzas: cachedMouzas },
           knownNames: await knownNames(),
           context: { user: gate.user },
           onEvent: (e) => {

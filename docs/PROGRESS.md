@@ -10,6 +10,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | 2 | 6–10 | done (2026-11-15), verified on real Gemini |
 | 3 | 11–15 | done (2026-11-15) |
 | 4 | 16–20 | done (2026-11-16), v0.1.0 tagged |
+| 5 | Phase A of LAND_SERVICES_PLAN (AI speed + voice accuracy) | done (2026-11-17) |
 
 ## Golden scenarios
 
@@ -18,6 +19,42 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
 
 ## Entries
+
+### 2026-11-17 — Session 5, Phase A: Sathi AI speed and voice accuracy
+- Done (plan: docs/LAND_SERVICES_PLAN.md Part 1):
+  - **Fast path** (`lib/ai/intent.ts`, `lib/ai/fast-answers.ts`, `runAgent({ fastPath })`): "check dag N",
+    "area of dag N" and "X kani Y gonda = ? decimals" are detected in code and answered from the same tools
+    (through `execute()`, so role checks and the audit log still apply) with a fixed Bangla/English
+    template. No model call. Legal, fee, write, inheritance and "why" questions still go to the model.
+    Several mouzas with that dag → asks which; unknown dag → says so. Only the chat API turns it on.
+  - **Bangla number words** (`lib/ai/bn-numbers.ts`): "একশো পঁয়তাল্লিশ নম্বর দাগ" → 145; সাড়ে/দেড়/আড়াই;
+    a lone word ("নয়" = not) is converted only next to a land word. Unicode য়/ড়/ঢ় spellings normalised.
+  - **Mouza close-spelling match** ("নয়াপারা", "Nayapaara" → Nayapara), edit distance 1–2 for long names.
+  - **jomi_check and map_area work without a mouza** (`mouzaFor`): the tool finds the only mouza with that
+    dag, or its error lists them; saves the model a find_dag round trip.
+  - **Gemini**: quick model `gemini-3.1-flash-lite` tried first on every step (`AI_ROUTER_MODEL`,
+    "" = off; `AI_ROUTER_STEPS=tools` = only tool-choosing steps), main model kept as fallback and for
+    officer write requests (`ChatRequest.careful`). Minimal thinking (`AI_THINKING`; models that refuse
+    MINIMAL step up to LOW automatically). Answers **stream** (`generateContentStream`), text reaches the
+    citizen as it is written; no model switch after text has been shown. Quick model must start within
+    8 s, larger fallbacks within 25 s.
+  - **PII fix**: small models sometimes drop the brackets of `[ব্যক্তি-১]`; unmask now accepts both, so
+    find_person gets the real name (this broke the officer sale flow on flash-lite).
+  - **Voice**: 5 speech alternatives, the one with a dag number wins over a mis-heard top guess; number
+    words become digits before the read-back. The read-back before any action stays (hard rule).
+  - Prompt: fees → law_search + fee_guide together; partition (বণ্টন) is a law question; one-line refusal
+    for bribes/forgery and for non-land questions.
+- Measured (`npm run ai:latency`, real Gemini, local DB) for "১৪৫ নম্বর দাগের জমি কেনা নিরাপদ কিনা দেখাও":
+  before **70.2 s** (3 calls of 20–27 s) → model path **3.7 s** (first text 3.2 s) → fast path **0.02 s**.
+  Fee question 4.8 s, baina law question 4.5 s.
+- AI eval (`npm run eval:ai`, 20 held-out questions): tool 100%, verdict 100%, citation 100%, refusal 100%,
+  write held 100%, false "not sure" 0%, errors 0 (before: 95 / 83 / 100 / 100 / 100 / 0).
+- Tests: npm run check green (279 tests: + bn-numbers, intent, gemini-stream, voice, pii, fast-path
+  integration). npm run e2e green 216/216 (375 px + desktop).
+- Known issues: free-tier quota — `gemini-3.5-flash` returned 429 after several eval runs today; the quick
+  model carries the load and the chain falls back as before. Real microphone test still pending.
+- Next step: Phase B (shared application framework + My services + mock payment + signed documents).
+
 
 ### 2026-11-16 — Session 4 summary (tasks 16–20 done) · release v0.1.0
 - Done:

@@ -7,6 +7,7 @@ import path from "node:path";
 import { runAgent, type AgentResult } from "../lib/ai/agent";
 import { describeWithNames } from "../lib/ai/describe";
 import { knownNames } from "../lib/ai/pii";
+import { DEFAULT_ROUTER_MODEL } from "../lib/ai/gemini";
 import { getProvider } from "../lib/ai/provider";
 import { closeSql, getSql } from "../lib/sql";
 import { ensureLocalDb } from "./local-db";
@@ -125,10 +126,14 @@ async function main() {
   };
 
   const now = new Date().toISOString().slice(0, 16).replace("T", " ");
+  const quick = process.env.AI_PROVIDER === "gemini" ? (process.env.AI_ROUTER_MODEL ?? DEFAULT_ROUTER_MODEL) : ""; // prettier-ignore
+  const modelLine = quick
+    ? `\`${quick}\` first on every step (quick), \`${provider.model}\` for officer write requests and as fallback`
+    : `\`${provider.model}\``;
   const md = [
     "# Sathi AI evaluation",
     "",
-    `Run: ${now} UTC · model: \`${provider.model}\` · 20 held-out Bangla/English questions from`,
+    `Run: ${now} UTC · model: ${modelLine} · 20 held-out Bangla/English questions from`,
     "`content/eval-questions.json` (not in `qa.json` or the tests) · regenerate with `npm run eval:ai`.",
     "",
     "## Scores",
@@ -169,8 +174,12 @@ async function main() {
     "them (and `content/qa.json`) before any real use.",
     "",
   ].join("\n");
-  writeFileSync(path.join(process.cwd(), "docs/AI_EVAL.md"), md, "utf8");
-  console.log("\nScores:", scores, "\nWrote docs/AI_EVAL.md");
+  if (only.length) {
+    console.log("\nScores:", scores, "\n(partial run: docs/AI_EVAL.md not rewritten)");
+  } else {
+    writeFileSync(path.join(process.cwd(), "docs/AI_EVAL.md"), md, "utf8");
+    console.log("\nScores:", scores, "\nWrote docs/AI_EVAL.md");
+  }
   await closeSql();
 }
 

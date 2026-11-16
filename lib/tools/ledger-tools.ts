@@ -14,6 +14,27 @@ export const dagRef = z.object({
   dag_no: z.number().int().positive().max(99999).describe("Dag (plot) number, e.g. 145"),
 });
 
+/** Same as dagRef, but the mouza may be left out when the citizen gave only a dag number. */
+export const dagRefOptionalMouza = z.object({
+  mouza: dagRef.shape.mouza
+    .optional()
+    .describe("Mouza name, code or JL number. Leave out if the citizen did not say it"),
+  dag_no: dagRef.shape.dag_no,
+});
+
+/**
+ * The mouza to use for a dag: the one given, or the only mouza that has this dag number.
+ * Saves the agent a find_dag round trip; with several matches the error asks which one.
+ */
+export async function mouzaFor(mouza: string | undefined, dagNo: number): Promise<string> {
+  if (mouza) return mouza;
+  const matches = await findDag(dagNo);
+  if (matches.length === 1) return matches[0]!.mouza_en;
+  if (matches.length === 0) throw new Error(`Dag ${dagNo} was not found in any mouza.`);
+  const names = matches.map((m) => `${m.mouza_bn} (${m.mouza_en})`).join(", ");
+  throw new Error(`Dag ${dagNo} is in several mouzas: ${names}. Ask the citizen which mouza.`);
+}
+
 const area = z.number().positive().max(100000).describe("Area in decimals (শতক), e.g. 10");
 const ownerId = z.number().int().positive();
 
