@@ -49,6 +49,10 @@ Update at the end of every task and at the end of every session. Newest entry fi
     officer inbox shows urgent first, hearing dates, type-specific buttons.
 - Tests: npm run check green (291). npm run e2e 234/234 (+ phase-c.spec: G9, G10, G11 by chat,
   anonymous complaint; mobile + desktop). Integration `phase-c.test.ts` covers G9–G11 on the DB.
+- AI eval after Phase C (real Gemini, 2026-11-17): tool 90%, verdict 83%, citation 88%, refusal 100%,
+  write 100%, false "not sure" 0%. The two misses: E03 hit the free-tier quota (429, not a wrong
+  answer); E12 answered without law_search once and passed on re-run. The main Gemini models
+  returned 503 for most of the day; officer write requests now fall back to the quick model.
 - Known issues: non-agricultural tax rates unverified (labelled); inheritance/partition mutation
   not yet (sale only); complaint triage is rule-based on forms (the model picks it in chat).
 - Next step: Phase D (records & maps, revenue cases, acquisition, information bank, map layers).
