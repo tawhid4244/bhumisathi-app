@@ -22,6 +22,7 @@ const specs = [
   "tests/e2e/units-fees.spec.ts",
   "tests/e2e/g2-warish.spec.ts",
   "tests/e2e/map.spec.ts",
+  "tests/e2e/services.spec.ts",
 ];
 const r = spawnSync(
   "npx",
