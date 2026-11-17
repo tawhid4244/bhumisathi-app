@@ -31,7 +31,8 @@ export async function migrate(sql: postgres.Sql, log = false): Promise<string[]>
   return applied;
 }
 
-if (process.argv[1]?.endsWith("migrate.ts")) {
+// Exact file name: "cloud-migrate.ts" also ends in "migrate.ts" and must not start this too.
+if (/[\\/]migrate\.ts$/.test(process.argv[1] ?? "")) {
   (async () => {
     const { ensureLocalDb } = await import("./local-db");
     const { getSql, closeSql } = await import("../lib/sql");

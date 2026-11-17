@@ -11,7 +11,7 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | 3 | 11–15 | done (2026-11-15) |
 | 4 | 16–20 | done (2026-11-16), v0.1.0 tagged |
 | 5 | Phase A of LAND_SERVICES_PLAN (AI speed + voice accuracy) | done (2026-11-17) |
-| 5 | Phase B (application framework, My services, sandbox payment, signed copies) | built and tested locally (2026-11-17); cloud migration pending |
+| 5 | Phase B (application framework, My services, sandbox payment, signed copies) | done (2026-11-17), live |
 
 ## Golden scenarios
 
@@ -45,11 +45,11 @@ Update at the end of every task and at the end of every session. Newest entry fi
   npm run e2e 226/226 (+ services.spec: apply → pay → officer approves → copy verifies green; other
   citizen blocked; unknown dag; sign-in redirects; citizen kept out of the inbox). One run logged a single
   hydration warning that did not repeat on the next full run.
-- Known issues: **cloud migration not applied yet** — the first `cloud:migrate` run failed with a
-  unique-key error inside the migration (rolled back, cloud unchanged); code not pushed so the live site
-  is unaffected. Needs a look at the full error with the user.
-- Next step: fix and apply the cloud migration, push, live check; then Phase C (mutation, land tax,
-  complaints) on this framework.
+- Cloud: migration 0007 applied with `npm run cloud:migrate`. Its first run printed a unique-key error:
+  `scripts/migrate.ts` started its own command-line block too (its check `endsWith("migrate.ts")` also
+  matched "cloud-migrate.ts"), so two migrations ran at once; one applied 0007, the other failed and rolled
+  back. Fixed: the check now matches the exact file name.
+- Next step: Phase C (mutation, land tax, complaints) on this framework.
 
 ### 2026-11-17 — Session 5, Phase A: Sathi AI speed and voice accuracy
 - Done (plan: docs/LAND_SERVICES_PLAN.md Part 1):
