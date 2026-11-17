@@ -70,6 +70,24 @@ describe("Gemini streaming", () => {
     expect(used).toEqual(["lite", "main"]);
   });
 
+  it("careful requests use the main model first but fall back to the quick one", async () => {
+    const used: string[] = [];
+    const p = new GeminiProvider("k", "main", {
+      fallbacks: ["backup"],
+      routerModel: "lite",
+      retriesPerModel: 0,
+      sleep: async () => {},
+      generateStream: async ({ model }) => {
+        used.push(model);
+        if (model !== "lite") throw Object.assign(new Error("busy"), { status: 503 });
+        return streamOf([chunk([{ text: "ok" }], FinishReason.STOP)]);
+      },
+    });
+    const res = await p.send({ ...question, careful: true });
+    expect(used).toEqual(["main", "backup", "lite"]);
+    expect(res.content).toMatchObject([{ type: "text", text: "ok" }]);
+  });
+
   it("by default the quick model is tried first on every step", async () => {
     const used: string[] = [];
     const p = new GeminiProvider("k", "main", {

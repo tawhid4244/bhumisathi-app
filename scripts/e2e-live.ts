@@ -33,7 +33,7 @@ const r = spawnSync(
     "--project=setup",
     "--project=mobile",
     "--grep-invert",
-    JSON.stringify("walks G1|G8 chat"), // quoted: the Windows shell would treat | as a pipe
+    JSON.stringify("walks G1|G8 chat|complaint by chat"), // chat needs the scripted model; quoted: the Windows shell would treat | as a pipe
     ...specs,
   ],
   { stdio: "inherit", shell: true, env: { ...process.env, E2E_BASE_URL: url.replace(/\/$/, "") } },

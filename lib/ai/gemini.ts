@@ -305,8 +305,12 @@ export class GeminiProvider implements ModelProvider {
 
   /** Models to try for this request, in order. */
   chainFor(req: ChatRequest): string[] {
-    if (!this.router || req.careful) return this.chain;
-    if (this.routerSteps === "tools" && !isRoutingStep(req.messages)) return this.chain;
+    if (!this.router) return this.chain;
+    // Careful requests (officer writes) and tool-only routing put the main models first, but
+    // keep the quick model as the last resort: a busy main model must not fail the request.
+    const mainFirst = [...this.chain.filter((m) => m !== this.router), this.router];
+    if (req.careful) return mainFirst;
+    if (this.routerSteps === "tools" && !isRoutingStep(req.messages)) return mainFirst;
     return [this.router, ...this.chain.filter((m) => m !== this.router)];
   }
 
