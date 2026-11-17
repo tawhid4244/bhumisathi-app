@@ -74,10 +74,13 @@ describe("role-based access (Task 16)", () => {
     for (const t of tools.filter((t) => t.kind === "write" && t.name.startsWith("register_"))) {
       expect(t.access).toBe("officer");
     }
-    // Other writes (a citizen's own application, a sandbox payment) are done by the person in
-    // the app with their own click: never offered to the AI.
+    // Other writes (a citizen's own application, a sandbox payment, an officer's decision) are
+    // done by the person in the app with their own click: never offered to the AI. The one
+    // exception is filing a complaint, which the AI may PROPOSE; like every write it stops at the
+    // confirmation card until the citizen presses Yes (tested in agent tests and G11).
+    const AI_MAY_PROPOSE = ["complaint_submit"];
     for (const t of tools.filter((t) => t.kind === "write" && !t.name.startsWith("register_"))) {
-      expect(t.hiddenFromAgent).toBe(true);
+      expect(t.hiddenFromAgent ?? false).toBe(!AI_MAY_PROPOSE.includes(t.name));
       expect(t.access).not.toBe("public");
     }
     expect(names(null)).not.toContain("deed_read");

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { NotAllowed } from "@/components/auth/NotAllowed";
 import { ApplyWizard } from "@/components/services/ApplyWizard";
+import { ComplaintForm, MutationForm } from "@/components/services/Forms";
 import { requirePageRole } from "@/lib/auth/guard";
 import { listMouzas } from "@/lib/engines/mouzas";
-import { APPLICATION_TYPES, type ApplicationTypeId } from "@/lib/services/catalog";
+import { APPLICATION_TYPES, feeFor, type ApplicationTypeId } from "@/lib/services/catalog";
 
 export const metadata: Metadata = { title: "আবেদন" };
 
@@ -24,6 +25,7 @@ async function Content({ params }: { params: Promise<{ type: string }> }) {
   const { type } = await params;
   const def = APPLICATION_TYPES[type as ApplicationTypeId];
   if (!def) notFound();
+  if (def.id === "land_tax") redirect("/land-tax"); // the tax has its own calculator page
   const { ok } = await requirePageRole("citizen", `/services/apply/${type}`);
   return (
     <>
@@ -34,10 +36,14 @@ async function Content({ params }: { params: Promise<{ type: string }> }) {
         subtitleEn={def.hint_en}
       />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
-        {ok ? (
-          <ApplyWizard type={def} mouzas={await listMouzas()} />
-        ) : (
+        {!ok ? (
           <NotAllowed need="citizen" />
+        ) : def.id === "mutation" ? (
+          <MutationForm fees={feeFor("mutation", {})} />
+        ) : def.id === "complaint" ? (
+          <ComplaintForm />
+        ) : (
+          <ApplyWizard type={def} mouzas={await listMouzas()} />
         )}
       </main>
     </>

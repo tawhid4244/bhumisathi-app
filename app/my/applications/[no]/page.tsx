@@ -6,18 +6,19 @@ import { PageHeader } from "@/components/PageHeader";
 import { T } from "@/components/i18n/LangProvider";
 import { DecideButtons, PayPanel, PrintButton } from "@/components/services/Actions";
 import { StatusBadge, Stepper } from "@/components/services/Status";
+import { METHOD_LABEL, type PaymentMethod } from "@/lib/adapters/payment";
 import { requirePageRole } from "@/lib/auth/guard";
 import { allowed } from "@/lib/auth/roles";
 import { getApplication } from "@/lib/engines/applications";
 import { parseDocCode } from "@/lib/engines/documents";
-import { METHOD_LABEL, type PaymentMethod } from "@/lib/adapters/payment";
 import { APPLICATION_TYPES } from "@/lib/services/catalog";
+import { describeDoc } from "@/lib/services/doc-view";
 import { runTool } from "@/lib/tools/registry";
 
 export const metadata: Metadata = { title: "আবেদনের অবস্থা" };
 
 const bn = (n: number | string) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]!);
-const SURVEY_BN = { CS: "সিএস", SA: "এসএ", RS: "আরএস", BS: "বিএস" } as const;
+const when = (at: string) => new Date(at).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" });
 
 export default function ApplicationPage({ params }: PageProps<"/my/applications/[no]">) {
   return (
@@ -52,11 +53,13 @@ async function Content({ params }: { params: Promise<{ no: string }> }) {
   const def = APPLICATION_TYPES[app.type];
   const isOfficer = allowed(user, "officer");
   const qr =
-    app.status === "completed"
+    app.status === "completed" && app.documents.length
       ? ((await runTool("document_qr", { app_no: app.app_no }, { user })) as { code: string; verify_url: string; qr_svg: string; id: string } | null) // prettier-ignore
       : null;
   const doc = qr ? parseDocCode(qr.code)?.payload : null;
+  const view = doc ? describeDoc(doc) : null;
   const d = app.details;
+  const payable = (app.status === "payment_due" || app.status === "final_payment_due") && app.applicant_is_me; // prettier-ignore
 
   return (
     <>
@@ -69,18 +72,23 @@ async function Content({ params }: { params: Promise<{ no: string }> }) {
       <main className="mx-auto w-full max-w-4xl flex-1 space-y-5 px-4 py-6">
         <section className="rounded-2xl border border-line bg-card p-4 shadow-sm print:hidden">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-semibold">
-              <T
-                bn={`${d.mouza_bn ?? d.mouza} মৌজা, দাগ ${bn(d.dag_no)} · ${SURVEY_BN[d.survey]} খতিয়ান · ${d.delivery === "post" ? "ডাকযোগে" : "অনলাইনে"}`}
-                en={`${d.mouza_en ?? d.mouza} mouza, dag ${d.dag_no} · ${d.survey} khatian · ${d.delivery === "post" ? "by post" : "online"}`}
-              />
+            <p className="font-semibold" data-testid="app-summary">
+              <T bn={app.summary_bn} en={app.summary_en} />
             </p>
-            <StatusBadge status={app.status} />
+            <StatusBadge status={app.status} type={app.type} />
           </div>
           <div className="mt-4">
-            <Stepper steps={def.steps} status={app.status} />
+            <Stepper type={app.type} status={app.status} />
           </div>
-          {app.due_on && app.status === "in_review" ? (
+          {app.hearing ? (
+            <p className="mt-3 rounded-lg bg-blue-50 p-3 text-sm" data-testid="hearing">
+              <T
+                bn={`শুনানি: ${bn(app.hearing.on)}, ${app.hearing.place_bn}। দলিল ও পরিচয়পত্র সঙ্গে আনুন।`}
+                en={`Hearing: ${app.hearing.on}, ${app.hearing.place_en}. Bring the deed and your ID.`}
+              />
+            </p>
+          ) : null}
+          {app.due_on && (app.status === "in_review" || app.status === "hearing") ? (
             <p className="mt-3 text-sm">
               <T
                 bn={`অফিসের সিদ্ধান্তের শেষ তারিখ: ${bn(app.due_on)}`}
@@ -88,87 +96,101 @@ async function Content({ params }: { params: Promise<{ no: string }> }) {
               />
             </p>
           ) : null}
-          {app.status === "rejected" && app.decision_note ? (
+          {app.type === "complaint" && d.text ? (
+            <blockquote
+              className="mt-3 rounded-lg border-l-4 border-brand bg-white p-3 text-sm"
+              data-testid="complaint-text"
+            >
+              “{d.text}”
+              {d.anonymous ? (
+                <span className="mt-1 block text-xs text-ink-soft">
+                  <T
+                    bn="বেনামি: অফিস আপনার নাম দেখবে না।"
+                    en="Anonymous: the office does not see your name."
+                  />
+                </span>
+              ) : null}
+            </blockquote>
+          ) : null}
+          {app.decision_note && (app.status === "rejected" || app.status === "completed") ? (
             <p
-              className="mt-3 rounded-lg border border-verdict-red/40 bg-red-50 p-3"
-              data-testid="reject-reason"
+              className={`mt-3 rounded-lg border p-3 ${app.status === "rejected" ? "border-verdict-red/40 bg-red-50" : "border-verdict-green/40 bg-green-50"}`}
+              data-testid="decision-note"
             >
               <T
-                bn={`নামঞ্জুরের কারণ: ${app.decision_note}`}
-                en={`Reason for rejection: ${app.decision_note}`}
+                bn={`${app.status === "rejected" ? "কারণ" : "অফিস যা করেছে"}: ${app.decision_note}`}
+                en={`${app.status === "rejected" ? "Reason" : "What the office did"}: ${app.decision_note}`}
               />
             </p>
           ) : null}
         </section>
 
-        {app.status === "payment_due" && app.applicant_is_me ? (
-          <PayPanel appNo={app.app_no} amount={app.fee_taka} />
+        {payable ? (
+          <PayPanel
+            appNo={app.app_no}
+            amount={app.amount_due}
+            final={app.status === "final_payment_due"}
+          />
         ) : null}
-        {app.status === "in_review" && isOfficer ? (
+        {(app.status === "in_review" || app.status === "hearing") && isOfficer ? (
           <section className="rounded-2xl border border-line bg-card p-4 print:hidden">
             <h2 className="mb-2 font-semibold">
               <T bn="কর্মকর্তার সিদ্ধান্ত" en="Officer decision" />
             </h2>
-            <DecideButtons appNo={app.app_no} />
+            <DecideButtons
+              appNo={app.app_no}
+              type={app.type}
+              canHear={!!def.hearing && app.status === "in_review"}
+            />
           </section>
         ) : null}
 
-        {qr && doc ? (
+        {qr && view ? (
           <section
             className="rounded-2xl border-2 border-verdict-green/50 bg-white p-5 shadow-sm print:border-black print:shadow-none"
             aria-labelledby="doc-h"
             data-testid="issued-document"
+            data-kind={doc?.kind}
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
-                  <T
-                    bn="ভূমিসাথী · স্বাক্ষরিত কপি (প্রোটোটাইপ, কৃত্রিম তথ্য)"
-                    en="BhumiSathi · signed copy (prototype, synthetic data)"
-                  />
+                  <T bn={view.heading_bn} en={view.heading_en} />
                 </p>
                 <h2 id="doc-h" className="mt-1 text-xl font-bold">
-                  <T
-                    bn={`${SURVEY_BN[doc.survey]} খতিয়ান নং ${bn(doc.khatian_no)} (${bn(doc.year)})`}
-                    en={`${doc.survey} khatian no. ${doc.khatian_no} (${doc.year})`}
-                  />
+                  <T bn={view.title_bn} en={view.title_en} />
                 </h2>
-                <p className="mt-1">
-                  <T
-                    bn={`${doc.mouza_bn} মৌজা, জে.এল. ${bn(doc.jl_no)} · দাগ ${bn(doc.dag_no)} · ${bn(doc.area_dec)} শতক`}
-                    en={`${doc.mouza_en} mouza, JL ${doc.jl_no} · dag ${doc.dag_no} · ${doc.area_dec} decimals`}
-                  />
-                </p>
-                <table className="mt-3 w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-line text-left">
-                      <th className="py-1">
-                        <T bn="মালিক" en="Holder" />
-                      </th>
-                      <th className="py-1 text-right">
-                        <T bn="অংশ (শতক)" en="Share (dec)" />
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {doc.owners.map((o) => (
-                      <tr key={o.name_bn} className="border-b border-line/60">
-                        <td className="py-1">
-                          <T bn={o.name_bn} en={o.name_en} />
-                        </td>
-                        <td className="py-1 text-right">
-                          <T bn={bn(o.share_dec)} en={String(o.share_dec)} />
-                        </td>
+                {view.lines.map((l) => (
+                  <p key={l.en} className="mt-1 text-sm">
+                    <T bn={l.bn} en={l.en} />
+                  </p>
+                ))}
+                {view.table.length ? (
+                  <table className="mt-3 w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-line text-left">
+                        <th className="py-1">
+                          <T bn={view.table_head.name_bn} en={view.table_head.name_en} />
+                        </th>
+                        <th className="py-1 text-right">
+                          <T bn={view.table_head.value_bn} en={view.table_head.value_en} />
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="mt-3 text-xs text-ink-soft">
-                  <T
-                    bn={`আবেদন ${app.app_no} · ডকুমেন্ট আইডি ${doc.id} · স্বাক্ষর ${bn(doc.issued_at.slice(0, 10))}`}
-                    en={`Application ${app.app_no} · document id ${doc.id} · signed ${doc.issued_at.slice(0, 10)}`}
-                  />
-                </p>
+                    </thead>
+                    <tbody>
+                      {view.table.map((o) => (
+                        <tr key={o.name_en} className="border-b border-line/60">
+                          <td className="py-1">
+                            <T bn={o.name_bn} en={o.name_en} />
+                          </td>
+                          <td className="py-1 text-right">
+                            <T bn={o.value_bn} en={o.value_en} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : null}
               </div>
               <figure className="w-36 shrink-0 text-center">
                 <div
@@ -188,48 +210,71 @@ async function Content({ params }: { params: Promise<{ no: string }> }) {
               >
                 <T bn="এখনই যাচাই করুন" en="Verify now" />
               </Link>
+              {app.type === "mutation" && d.mouza_en ? (
+                <Link
+                  href={`/check?mouza=${encodeURIComponent(d.mouza_en.toLowerCase())}&by=dag&no=${d.dag_no}`}
+                  className="inline-flex min-h-11 items-center rounded-lg border border-line bg-white px-4 font-semibold"
+                >
+                  <T bn="দাগের নতুন রিপোর্ট দেখুন" en="See the dag's new report" />
+                </Link>
+              ) : null}
             </div>
           </section>
         ) : null}
 
         <div className="grid gap-5 md:grid-cols-2 print:hidden">
-          <section className="rounded-2xl border border-line bg-card p-4" aria-labelledby="fee-h">
-            <h2 id="fee-h" className="font-semibold">
-              <T bn="ফি" en="Fee" />
-            </h2>
-            <dl className="mt-2 divide-y divide-line text-sm">
-              {app.fee_lines.map((l) => (
-                <div key={l.en} className="flex justify-between py-1.5">
+          {app.fee_lines.length || app.payments.length ? (
+            <section className="rounded-2xl border border-line bg-card p-4" aria-labelledby="fee-h">
+              <h2 id="fee-h" className="font-semibold">
+                <T bn="ফি" en="Fee" />
+              </h2>
+              <dl className="mt-2 divide-y divide-line text-sm">
+                {app.fee_lines.map((l) => (
+                  <div key={l.en} className="flex justify-between gap-2 py-1.5">
+                    <dt>
+                      <T bn={l.bn} en={l.en} />
+                      {l.stage === "approval" ? (
+                        <span className="ml-1 text-xs text-ink-soft">
+                          <T bn="(অনুমোদনের পর)" en="(after approval)" />
+                        </span>
+                      ) : null}
+                    </dt>
+                    <dd className="shrink-0">
+                      <T bn={`৳${bn(l.tk)}`} en={`Tk ${l.tk}`} />
+                    </dd>
+                  </div>
+                ))}
+                <div className="flex justify-between py-1.5 font-bold">
                   <dt>
-                    <T bn={l.bn} en={l.en} />
+                    <T bn="মোট" en="Total" />
                   </dt>
                   <dd>
-                    <T bn={`৳${bn(l.tk)}`} en={`Tk ${l.tk}`} />
+                    <T
+                      bn={`৳${bn(app.fee_lines.reduce((t, l) => t + l.tk, 0))}`}
+                      en={`Tk ${app.fee_lines.reduce((t, l) => t + l.tk, 0)}`}
+                    />
                   </dd>
                 </div>
+              </dl>
+              {app.type === "land_tax" && d.basis_bn ? (
+                <p className="mt-2 text-xs text-ink-soft">
+                  <T bn={d.basis_bn} en={d.basis_en ?? d.basis_bn} />
+                </p>
+              ) : null}
+              {app.payments.map((p) => (
+                <p
+                  key={p.txn_ref}
+                  className="mt-2 rounded-lg bg-green-50 p-2 text-sm"
+                  data-testid="receipt"
+                >
+                  <T
+                    bn={`পরিশোধিত (পরীক্ষা) ৳${bn(p.amount_taka)}: রসিদ ${p.txn_ref} · ${METHOD_LABEL[p.method as PaymentMethod]?.bn ?? p.method}`}
+                    en={`Paid (test) Tk ${p.amount_taka}: receipt ${p.txn_ref} · ${METHOD_LABEL[p.method as PaymentMethod]?.en ?? p.method}`}
+                  />
+                </p>
               ))}
-              <div className="flex justify-between py-1.5 font-bold">
-                <dt>
-                  <T bn="মোট" en="Total" />
-                </dt>
-                <dd>
-                  <T bn={`৳${bn(app.fee_taka)}`} en={`Tk ${app.fee_taka}`} />
-                </dd>
-              </div>
-            </dl>
-            {app.payments.map((p) => (
-              <p
-                key={p.txn_ref}
-                className="mt-2 rounded-lg bg-green-50 p-2 text-sm"
-                data-testid="receipt"
-              >
-                <T
-                  bn={`পরিশোধিত (পরীক্ষা): রসিদ ${p.txn_ref} · ${METHOD_LABEL[p.method as PaymentMethod]?.bn ?? p.method}`}
-                  en={`Paid (test): receipt ${p.txn_ref} · ${METHOD_LABEL[p.method as PaymentMethod]?.en ?? p.method}`}
-                />
-              </p>
-            ))}
-          </section>
+            </section>
+          ) : null}
 
           <section className="rounded-2xl border border-line bg-card p-4" aria-labelledby="tl-h">
             <h2 id="tl-h" className="font-semibold">
@@ -246,10 +291,7 @@ async function Content({ params }: { params: Promise<{ no: string }> }) {
                     <T bn={e.note_bn} en={e.note_en} />
                   </p>
                   <p className="text-xs text-ink-soft">
-                    <T
-                      bn={bn(new Date(e.at).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" }))}
-                      en={new Date(e.at).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" })}
-                    />
+                    <T bn={bn(when(e.at))} en={when(e.at)} />
                   </p>
                 </li>
               ))}
@@ -257,8 +299,15 @@ async function Content({ params }: { params: Promise<{ no: string }> }) {
           </section>
         </div>
         <p className="print:hidden">
-          <Link href="/my" className="inline-flex min-h-11 items-center underline">
-            <T bn="← আমার সেবা" en="← My services" />
+          <Link
+            href={isOfficer && !app.applicant_is_me ? "/inbox" : "/my"}
+            className="inline-flex min-h-11 items-center underline"
+          >
+            {isOfficer && !app.applicant_is_me ? (
+              <T bn="← ইনবক্স" en="← Inbox" />
+            ) : (
+              <T bn="← আমার সেবা" en="← My services" />
+            )}
           </Link>
         </p>
       </main>

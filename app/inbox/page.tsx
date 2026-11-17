@@ -88,14 +88,38 @@ async function Content() {
                 />
               </span>
             </div>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {a.urgent ? (
+                <span
+                  className="rounded-full bg-verdict-red px-2 py-0.5 text-xs font-semibold text-white"
+                  data-testid="urgent"
+                >
+                  <T bn="জরুরি" en="Urgent" />
+                </span>
+              ) : null}
+              {a.status === "hearing" ? (
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-900">
+                  <T bn={`শুনানি ${bn(a.hearing_on ?? "")}`} en={`Hearing ${a.hearing_on}`} />
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-1 text-sm">
+              <T bn={a.summary_bn} en={a.summary_en} />
+            </p>
+            {a.text ? (
+              <blockquote className="mt-1 border-l-4 border-line pl-2 text-sm italic">
+                “{a.text}”
+              </blockquote>
+            ) : null}{" "}
+            {/* prettier-ignore */}
             <p className="mt-1 text-sm text-ink-soft">
               <T
-                bn={`আবেদনকারী: ${a.applicant_bn} · ${a.mouza_bn} মৌজা, দাগ ${bn(a.dag_no)}, ${a.survey} খতিয়ান · ফি ৳${bn(a.fee_taka)} (রসিদ ${a.paid_ref ?? "—"})`}
-                en={`Applicant: ${a.applicant_bn} · ${a.mouza_en} mouza, dag ${a.dag_no}, ${a.survey} khatian · fee Tk ${a.fee_taka} (receipt ${a.paid_ref ?? "—"})`}
+                bn={`আবেদনকারী: ${a.applicant_bn}${a.fee_taka ? ` · ফি ৳${bn(a.fee_taka)} (রসিদ ${a.paid_ref ?? "—"})` : ""}`}
+                en={`Applicant: ${a.applicant_bn}${a.fee_taka ? ` · fee Tk ${a.fee_taka} (receipt ${a.paid_ref ?? "—"})` : ""}`}
               />
             </p>
             <div className="mt-3">
-              <DecideButtons appNo={a.app_no} />
+              <DecideButtons appNo={a.app_no} type={a.type} canHear={a.can_hear} />
             </div>
           </li>
         );

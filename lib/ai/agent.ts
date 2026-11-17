@@ -10,6 +10,7 @@ import type { AgentMessage, ModelProvider } from "./provider";
 import { fastReply, type FastAnswer } from "./fast-answers";
 import { detectIntent, type Intent } from "./intent";
 import { toAgentTools } from "./tools";
+import { CATEGORY_LABEL, type ComplaintCategory } from "../services/catalog";
 
 // The Sathi agent loop: the model chooses tools, engines compute, the model explains.
 //
@@ -106,6 +107,12 @@ export async function describeAction(
   name: string,
   input: Record<string, unknown>,
 ): Promise<string> {
+  if (name === "complaint_submit") {
+    // Read the complaint back in the citizen's own words before anything is filed.
+    const cat = CATEGORY_LABEL[input.category as ComplaintCategory]?.bn;
+    const who = input.anonymous ? " (নাম গোপন)" : "";
+    return `অভিযোগ দাখিল${cat ? ` — ${cat}` : ""}${who}: “${String(input.text ?? "")}”। ঠিক আছে?`;
+  }
   const parts = [
     `${input.mouza ?? ""} দাগ ${bn(String(input.dag_no ?? ""))}`,
     input.seller_id != null ? `বিক্রেতা #${bn(String(input.seller_id))}` : "",

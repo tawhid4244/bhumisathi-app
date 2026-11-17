@@ -68,3 +68,31 @@ scenario built so far passes. All data is synthetic.
 - Agent repeats "আপনি কি ১৪৫ নম্বর দাগ বলেছেন?", user confirms, agent calls `jomi_check(dag=145)`,
   answer is read aloud and shown with the same verdict and reasons as the /check page.
 - Mouza question: "১৪৫ নম্বর দাগের মাপ কত?" → `map_area(145)` → about 20.0 decimals, matches khatian. (Map scaled ×1.1 on 2026-11-14 so dag 145 fits Rahim's 20 dec in G1.)
+
+## G9 — Mutation after a sale (dag 145) · Phase C
+
+- Officer registers Rahim → Jamal, 10 dec on dag 145 (deed 5001/2026); a mutation case opens.
+- Citizen applies for mutation with the deed number → fee Tk 70 (court 20 + notice 50, sandbox).
+- AC Land calls a hearing (notice SMS to both parties, mock) → approves → DCR fee Tk 1,100 due.
+- Citizen pays → `approve_mutation()` moves the shares in one locked transaction: Rahim 20 → 10,
+  Jamal gets a new BS khatian with 10 dec; ledger version bumps; signed "mutation khatian" issued.
+- Jomi Check for 145 lists Jamal; a sealed report from before the sale verifies amber (superseded).
+- Tests: `tests/integration/phase-c.test.ts`, `tests/e2e/phase-c.spec.ts`.
+
+## G10 — Land tax and dakhila (dag 147) · Phase C
+
+- Dag 147: Nurul Islam paid through 2021-22 → Jomi Check amber ("tax arrears").
+- `/land-tax` → 5 fiscal years due; farmland under 25 bigha is exempt → Tk 0.
+- "Get the dakhila" → signed dakhila with QR (verifies green) → land_tax updated → the arrears reason
+  is gone from Jomi Check. Homestead land pays an example rate through the sandbox.
+- Rates and the exemption come from `content/land-tax.json` with sources; non-agricultural rates are
+  marked "example, not verified".
+
+## G11 — Complaint by voice/chat · Phase C
+
+- "মিউটেশনে দালাল ৫,০০০ টাকা চেয়েছে" → Sathi AI proposes `complaint_submit` → confirmation card
+  ("অভিযোগ দাখিল — দালালের হয়রানি") → Yes → number CMP-2026-…
+- Triage: category broker, urgent (3-day deadline), amount Tk 5,000, service mutation, dag if named.
+- Officer inbox shows it first (urgent); anonymous complaints never show the name, not even there.
+- Officer resolves with what was done (required) → the citizen sees it; `/complaints` shows monthly
+  counts only (no names, no texts).

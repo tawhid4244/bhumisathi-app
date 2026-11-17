@@ -10,12 +10,15 @@ import {
   myNotifications,
   officeInbox,
   payApplication,
+  scheduleHearing,
   submitApplication,
   trackApplication,
 } from "../engines/applications";
+import { complaintStats } from "../engines/complaints";
 import { verifyDocument } from "../engines/documents";
-import { APPLICATION_TYPES, SURVEYS } from "../services/catalog";
-import { dagRef } from "./ledger-tools";
+import { holdingsOf, landTaxReport } from "../engines/land-tax";
+import { COMPLAINT_CATEGORIES, SURVEYS } from "../services/catalog";
+import { dagRef, mouzaFor } from "./ledger-tools";
 import { siteUrl } from "./seal-tools";
 import { defineTool, type ToolContext } from "./types";
 
@@ -43,7 +46,47 @@ const copyDetails = z.object({
   delivery: z.enum(["online", "post"]).default("online"),
 });
 
-const feeLine = z.object({ bn: z.string(), en: z.string(), tk: z.number() });
+const complaintDetails = z.object({
+  category: z.enum(COMPLAINT_CATEGORIES).optional().describe("Leave out to let triage choose"),
+  text: z.string().trim().min(5).max(1000).describe("The complaint in the citizen's own words"),
+  mouza: dagRef.shape.mouza.optional(),
+  dag_no: dagRef.shape.dag_no.optional(),
+  anonymous: z.boolean().default(false),
+});
+
+/** Each service type has its own details; the type picks which. */
+/** Each service type has its own details; checked against the type's schema in the handler. */
+const DETAILS = {
+  certified_copy: copyDetails,
+  mutation: z.object({ deed_no: z.string().trim().min(6).max(20).describe("e.g. 5001/2026") }),
+  land_tax: z.object({
+    mouza: dagRef.shape.mouza,
+    dag_no: dagRef.shape.dag_no,
+    owner_id: z.number().int().positive(),
+  }),
+  complaint: complaintDetails,
+} as const;
+
+// One object schema (model tool schemas must be objects; a union is not).
+const submitInput = z.object({
+  type: z.enum(["certified_copy", "mutation", "land_tax", "complaint"]),
+  details: z.record(z.string(), z.unknown()),
+});
+
+const feeLine = z.object({
+  bn: z.string(),
+  en: z.string(),
+  tk: z.number(),
+  stage: z.enum(["apply", "approval"]).optional(),
+});
+
+const submitOutput = z.object({
+  app_no: z.string(),
+  status: z.string(),
+  fee_taka: z.number(),
+  fee_lines: z.array(feeLine),
+  document_id: z.string().nullable(),
+});
 
 export const applicationSubmitTool = defineTool({
   name: "application_submit",
@@ -51,20 +94,121 @@ export const applicationSubmitTool = defineTool({
   access: "citizen",
   hiddenFromAgent: true,
   description: {
-    bn: "নতুন আবেদন জমা (এখন: খতিয়ানের সার্টিফাইড কপি)।",
-    en: "Submits a new application (now: certified khatian copy).",
+    bn: "নতুন আবেদন জমা: খতিয়ানের সার্টিফাইড কপি, নামজারি, ভূমি উন্নয়ন কর বা অভিযোগ।",
+    en: "Submits a new application: certified khatian copy, mutation, land tax or complaint.",
+  },
+  input: submitInput,
+  output: submitOutput,
+  handler: async (i, ctx) => submitApplication(who(ctx), i.type, DETAILS[i.type].parse(i.details)), // ZodError → 400
+});
+
+/**
+ * The one write Sathi AI may propose for a citizen: filing a complaint. Like every write it
+ * stops at a confirmation card; nothing is filed until the citizen presses Yes.
+ */
+export const complaintSubmitTool = defineTool({
+  name: "complaint_submit",
+  kind: "write",
+  access: "citizen",
+  description: {
+    bn: "নাগরিকের অভিযোগ দাখিল (দালাল, বাড়তি টাকা/ঘুষ, দেরি, ভুল রেকর্ড, কারিগরি সমস্যা)। নাগরিক স্পষ্টভাবে অভিযোগ করতে চাইলে ব্যবহার করুন।",
+    en: "Files the citizen's complaint (broker, extra money/bribe, delay, wrong record, technical). Use when they clearly want to report something.",
+  },
+  input: complaintDetails,
+  output: submitOutput,
+  handler: async (i, ctx) => submitApplication(who(ctx), "complaint", i),
+  audit: () => null, // submitApplication writes its own audit entry
+});
+
+export const applicationHearingTool = defineTool({
+  name: "application_hearing",
+  kind: "write",
+  access: "officer",
+  hiddenFromAgent: true,
+  description: {
+    bn: "নামজারির শুনানি নির্ধারণ; উভয় পক্ষকে নোটিশ (মক এসএমএস)।",
+    en: "Calls a mutation hearing; both parties get a notice (mock SMS).",
+  },
+  input: z.object({ app_no: appNo, on: z.string().date().optional() }),
+  output: z.object({ app_no: z.string(), status: z.string(), hearing_on: z.string() }),
+  handler: async (i, ctx) => scheduleHearing(who(ctx), i.app_no, i.on),
+});
+
+const taxLine = z.object({
+  owner_id: z.number(),
+  name_bn: z.string(),
+  name_en: z.string(),
+  share_dec: z.number(),
+  agricultural: z.boolean(),
+  family_agri_dec: z.number(),
+  exempt: z.boolean(),
+  rate_tk_per_dec: z.number(),
+  annual_tk: z.number(),
+  paid_through_fy: z.string(),
+  years_due: z.array(z.string()),
+  due_tk: z.number(),
+  basis_bn: z.string(),
+  basis_en: z.string(),
+});
+
+export const landTaxDueTool = defineTool({
+  name: "land_tax_due",
+  kind: "read",
+  description: {
+    bn: "ভূমি উন্নয়ন কর: দাগের প্রতিটি মালিকের কত অর্থবছর বাকি ও কত টাকা (নিয়ম ও সূত্রসহ)। দাগ না দিলে লগইন করা নাগরিকের নিজের জমি। 'আমার খাজনা কত বাকি?'",
+    en: "Land development tax: unpaid fiscal years and amount for each holder of a dag (with rules and sources). Without a dag: the signed-in citizen's own holdings. 'How much land tax do I owe?'",
   },
   input: z.object({
-    type: z.enum(Object.keys(APPLICATION_TYPES) as [keyof typeof APPLICATION_TYPES]),
-    details: copyDetails,
+    mouza: dagRef.shape.mouza.optional(),
+    dag_no: dagRef.shape.dag_no.optional(),
   }),
   output: z.object({
-    app_no: z.string(),
-    status: z.string(),
-    fee_taka: z.number(),
-    fee_lines: z.array(feeLine),
+    reports: z.array(
+      z.object({
+        mouza_bn: z.string(),
+        mouza_en: z.string(),
+        dag_no: z.number(),
+        dag_id: z.number(),
+        land_class_bn: z.string(),
+        land_class_en: z.string(),
+        current_fy: z.string(),
+        holders: z.array(taxLine),
+        note_bn: z.string(),
+        note_en: z.string(),
+        source: z.string(),
+        verified: z.string(),
+      }),
+    ),
+    linked: z.boolean(),
   }),
-  handler: async (i, ctx) => submitApplication(who(ctx), i.type, i.details),
+  handler: async (i, ctx) => {
+    if (i.dag_no) {
+      return { reports: [await landTaxReport(await mouzaFor(i.mouza, i.dag_no), i.dag_no)], linked: true }; // prettier-ignore
+    }
+    const ownerId = ctx.user?.owner_id;
+    if (!ownerId) return { reports: [], linked: false };
+    const holdings = await holdingsOf(ownerId);
+    const reports = await Promise.all(holdings.map((h) => landTaxReport(h.mouza_en, h.dag_no)));
+    // Only this citizen's own line on each dag.
+    return { reports: reports.map((r) => ({ ...r, holders: r.holders.filter((x) => x.owner_id === ownerId) })), linked: true }; // prettier-ignore
+  },
+});
+
+export const complaintStatsTool = defineTool({
+  name: "complaint_stats",
+  kind: "read",
+  hiddenFromAgent: true,
+  description: { bn: "এই মাসের অভিযোগের পরিসংখ্যান (শুধু সংখ্যা)।", en: "This month's complaint statistics (counts only)." }, // prettier-ignore
+  input: z.object({}),
+  output: z.object({
+    month: z.string(),
+    total: z.number(),
+    resolved: z.number(),
+    open: z.number(),
+    by_category: z.array(z.object({ category: z.string(), bn: z.string(), en: z.string(), n: z.number() })), // prettier-ignore
+    on_time_pct: z.number().nullable(),
+  }),
+  handler: async () => complaintStats(),
 });
 
 const event = z.object({
@@ -90,9 +234,8 @@ export const applicationStatusTool = defineTool({
         app_no: z.string(),
         type: z.string(),
         status: z.string(),
-        mouza_bn: z.string(),
-        mouza_en: z.string(),
-        dag_no: z.number(),
+        summary_bn: z.string(),
+        summary_en: z.string(),
         fee_taka: z.number(),
         submitted_at: z.string(),
         updated_at: z.string(),
@@ -134,6 +277,7 @@ export const applicationTrackTool = defineTool({
   output: z
     .object({
       app_no: z.string(),
+      type: z.string(),
       type_bn: z.string(),
       type_en: z.string(),
       status: z.string(),
@@ -162,7 +306,8 @@ export const applicationPayTool = defineTool({
     amount_taka: z.number(),
     method: z.string(),
     sandbox: z.literal(true),
-    due_on: z.string(),
+    due_on: z.string().nullable(),
+    document_id: z.string().nullable(),
   }),
   handler: async (i, ctx) => payApplication(who(ctx), i.app_no, i.method),
 });
@@ -192,16 +337,19 @@ export const applicationInboxTool = defineTool({
     z.object({
       app_no: z.string(),
       type: z.string(),
+      status: z.string(),
       applicant_bn: z.string(),
-      mouza_bn: z.string(),
-      mouza_en: z.string(),
-      dag_no: z.number(),
-      survey: z.string(),
+      summary_bn: z.string(),
+      summary_en: z.string(),
+      text: z.string().nullable(),
+      urgent: z.boolean(),
       fee_taka: z.number(),
       paid_ref: z.string().nullable(),
+      hearing_on: z.string().nullable(),
       due_on: z.string().nullable(),
       sla: z.enum(["green", "amber", "red"]),
       days_left: z.number().nullable(),
+      can_hear: z.boolean(),
     }),
   ),
   handler: async (_i, ctx) => officeInbox(who(ctx)),
@@ -219,7 +367,7 @@ export const applicationDecideTool = defineTool({
   input: z.object({
     app_no: appNo,
     decision: z.enum(["approve", "reject"]),
-    note: z.string().trim().max(300).optional(),
+    note: z.string().trim().max(500).optional(),
   }),
   output: z.object({ app_no: z.string(), status: z.string(), document_id: z.string().nullable() }),
   handler: async (i, ctx) => decideApplication(who(ctx), i.app_no, i.decision, i.note),
@@ -312,4 +460,8 @@ export const APPLICATION_TOOLS = [
   documentVerifyTool,
   documentQrTool,
   notificationsTool,
+  complaintSubmitTool,
+  applicationHearingTool,
+  landTaxDueTool,
+  complaintStatsTool,
 ];

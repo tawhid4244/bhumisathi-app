@@ -98,17 +98,17 @@ async function Content() {
                         <span lang="en">{a.app_no}</span> ·{" "}
                         <T bn={def?.bn ?? a.type} en={def?.en ?? a.type} />
                       </p>
-                      <StatusBadge status={a.status} />
+                      <StatusBadge status={a.status} type={a.type} />
                     </div>
                     <p className="mt-1 text-sm text-ink-soft">
                       <T
-                        bn={`${a.mouza_bn} মৌজা, দাগ ${bn(a.dag_no)}${a.due_on && a.status === "in_review" ? ` · সিদ্ধান্তের শেষ তারিখ ${bn(a.due_on)}` : ""}`}
-                        en={`${a.mouza_en} mouza, dag ${a.dag_no}${a.due_on && a.status === "in_review" ? ` · decision due ${a.due_on}` : ""}`}
+                        bn={`${a.summary_bn}${a.due_on && a.status === "in_review" ? ` · সিদ্ধান্তের শেষ তারিখ ${bn(a.due_on)}` : ""}`}
+                        en={`${a.summary_en}${a.due_on && a.status === "in_review" ? ` · decision due ${a.due_on}` : ""}`}
                       />
                     </p>
                     {def ? (
                       <div className="mt-3">
-                        <Stepper steps={def.steps} status={a.status} />
+                        <Stepper type={a.type} status={a.status} />
                       </div>
                     ) : null}
                   </Link>

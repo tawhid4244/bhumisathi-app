@@ -12,14 +12,46 @@ Update at the end of every task and at the end of every session. Newest entry fi
 | 4 | 16–20 | done (2026-11-16), v0.1.0 tagged |
 | 5 | Phase A of LAND_SERVICES_PLAN (AI speed + voice accuracy) | done (2026-11-17) |
 | 5 | Phase B (application framework, My services, sandbox payment, signed copies) | done (2026-11-17), live |
+| 5 | Phase C (mutation, land tax + dakhila, complaints; G9–G11) | done (2026-11-17) |
 
 ## Golden scenarios
 
-| G1 | G2 | G3 | G4 | G5 | G6 | G7 | G8 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) |
+| G1 | G2 | G3 | G4 | G5 | G6 | G7 | G8 | G9 | G10 | G11 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| pass | pass | pass (real Gemini vision) | pass | pass | pass (real Gemini) | – | pass (typed on real Gemini; voice e2e with fake speech; manual mic test pending) | pass | pass | pass (chat with mock model) |
 
 ## Entries
+
+### 2026-11-17 — Session 5, Phase C: mutation, land tax, complaints (G9–G11)
+- Done (plan: docs/LAND_SERVICES_PLAN.md services #1, #2, #9), all on the Phase B framework:
+  - Migration `0008_phase_c.sql`: states `hearing` and `final_payment_due`; `hearings`; ledger event
+    type `mutation`; `approve_mutation(deed)` — one transaction with the dag row locked: seller's BS
+    share down, a new BS khatian for the buyer, deed no longer "unmutated", mutation case approved,
+    dag version bumps (old seals turn superseded), buyer inherits the tax status, mock SMS to both.
+    Demo reset now also clears service applications (they point at the rebuilt land records).
+  - **Mutation** (MUT): apply with the deed number (seller, buyer, dag, area come from the deed;
+    one open application per deed) → Tk 70 → hearing (notice + SMS) → AC Land order →
+    DCR Tk 1,100 → new khatian document. Fees from content/fees.json, in two stages.
+  - **Land tax** (LDT, `lib/engines/land-tax.ts`, `content/land-tax.json`): years due per holder
+    since the last paid fiscal year; farmland up to 25 bigha exempt (from news reports of the 2023
+    Act); non-agricultural rates are the 1976 schedule's examples, labelled NOT verified (the
+    government's rate pages returned 404 on 2026-11-17). Pay in the sandbox or, when exempt, take
+    the dakhila at once; signed dakhila verifies "current" only while it covers this fiscal year.
+    `/land-tax`: "tax on my land" for linked accounts + lookup for any dag.
+  - **Complaints** (CMP, `lib/engines/complaints.ts`): rule-based triage (category, urgency,
+    amount, service, dag) of the citizen's words; money/broker complaints urgent (3 days);
+    anonymous complaints hide the name even from the office; officer must write what was done;
+    `/complaints` monthly counts only. Link from `/fees` ("someone asked for more?").
+  - Sathi AI: `complaint_submit` (the one citizen write it may propose — stops at the confirmation
+    card), `land_tax_due`, `application_status`; prompt lines; mock model flows for tests.
+  - UI: mutation form, complaint form, land-tax page, complaints page; application page renders
+    every type (hearing, two-stage fees, complaint text, dakhila / mutation khatian with QR);
+    officer inbox shows urgent first, hearing dates, type-specific buttons.
+- Tests: npm run check green (291). npm run e2e 234/234 (+ phase-c.spec: G9, G10, G11 by chat,
+  anonymous complaint; mobile + desktop). Integration `phase-c.test.ts` covers G9–G11 on the DB.
+- Known issues: non-agricultural tax rates unverified (labelled); inheritance/partition mutation
+  not yet (sale only); complaint triage is rule-based on forms (the model picks it in chat).
+- Next step: Phase D (records & maps, revenue cases, acquisition, information bank, map layers).
 
 ### 2026-11-17 — Session 5, Phase B: shared application framework
 - Done (plan: docs/LAND_SERVICES_PLAN.md Part 2 "shared foundation"):

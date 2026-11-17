@@ -89,7 +89,7 @@ const MAIN_PEOPLE: P[] = [
 ];
 
 // Named owners in the Nayapara story (ids 12–30).
-const H = {
+export const H = {
   MANNAN: 12,
   JABBAR: 13,
   KASHEM: 14,

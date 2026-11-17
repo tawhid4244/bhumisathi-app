@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DocCheck } from "@/lib/engines/documents";
-import { Bi, useLang, useNum } from "../i18n/LangProvider";
+import { describeDoc } from "@/lib/services/doc-view";
+import { Bi, useLang } from "../i18n/LangProvider";
 import { VerdictIcon } from "../VerdictIcon";
 
 // /verify/doc#BD1.… — checks a signed document (certified khatian copy …) with four lights.
@@ -21,12 +22,9 @@ const BANNER = {
   red: "bg-verdict-red text-white",
 } as const;
 
-const SURVEY_BN = { CS: "সিএস", SA: "এসএ", RS: "আরএস", BS: "বিএস" } as const;
-
 export function DocVerifier() {
   const { t, lang } = useLang();
   const en = lang === "en";
-  const num = useNum();
   const enRef = useRef(en);
   useEffect(() => {
     enRef.current = en;
@@ -137,20 +135,32 @@ export function DocVerifier() {
               <h2 className="font-semibold">
                 {t("ডকুমেন্টে যা লেখা আছে", "What the document says")}
               </h2>
-              <p className="mt-1">
-                {en
-                  ? `Certified ${p.survey} khatian ${p.khatian_no} (${p.year}) · ${p.mouza_en} mouza (JL ${p.jl_no}), dag ${p.dag_no}, ${p.area_dec} dec · application ${p.app_no}`
-                  : `${SURVEY_BN[p.survey]} খতিয়ান ${num(p.khatian_no)} (${num(p.year)}) · ${p.mouza_bn} মৌজা (জে.এল. ${num(p.jl_no)}), দাগ ${num(p.dag_no)}, ${num(p.area_dec)} শতক · আবেদন ${p.app_no}`}
-              </p>
-              <ul className="mt-1 list-disc pl-5">
-                {p.owners.map((o) => (
-                  <li key={o.name_bn}>
-                    {en
-                      ? `${o.name_en}: ${o.share_dec} dec`
-                      : `${o.name_bn}: ${num(o.share_dec)} শতক`}
-                  </li>
-                ))}
-              </ul>
+              {(() => {
+                const v = describeDoc(p);
+                return (
+                  <>
+                    <p className="mt-1 font-semibold" data-testid="doc-title">
+                      {en ? v.title_en : v.title_bn}
+                    </p>
+                    {v.lines.map((l) => (
+                      <p key={l.en} className="mt-0.5">
+                        {en ? l.en : l.bn}
+                      </p>
+                    ))}
+                    {v.table.length ? (
+                      <ul className="mt-1 list-disc pl-5">
+                        {v.table.map((o) => (
+                          <li key={o.name_en}>
+                            {en
+                              ? `${o.name_en}: ${o.value_en} dec`
+                              : `${o.name_bn}: ${o.value_bn} শতক`}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </>
+                );
+              })()}
               <p className="mt-1 text-ink-soft">
                 {t("স্বাক্ষর:", "Signed:")}{" "}
                 {new Date(p.issued_at).toLocaleString(en ? "en-GB" : "bn-BD")}

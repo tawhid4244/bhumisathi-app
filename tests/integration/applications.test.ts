@@ -82,7 +82,7 @@ describe("application framework", () => {
     const check = await verifyDocument(app.documents[0]!.code);
     expect(check.overall).toBe("green");
     expect(check.payload?.dag_no).toBe(141);
-    expect(check.payload?.survey).toBe("BS");
+    expect(check.payload).toMatchObject({ kind: "khatian_copy", survey: "BS" });
 
     const notes = (await runTool("notifications", {}, as(citizen))) as { unread: number; items: { title_en: string }[] }; // prettier-ignore
     expect(notes.items.map((n) => n.title_en)).toEqual([

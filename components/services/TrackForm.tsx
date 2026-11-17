@@ -10,6 +10,7 @@ interface Tracked {
   app_no: string;
   type_bn: string;
   type_en: string;
+  type: string;
   status: string;
   submitted_on: string;
   updated_on: string;
@@ -87,7 +88,7 @@ export function TrackForm({ initial = "" }: { initial?: string }) {
             <span lang="en">{result.app_no}</span> · <T bn={result.type_bn} en={result.type_en} />
           </p>
           <p className="mt-2">
-            <StatusBadge status={result.status} />
+            <StatusBadge status={result.status} type={result.type} />
           </p>
           <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
             <div>

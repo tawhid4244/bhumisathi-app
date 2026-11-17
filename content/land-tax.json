@@ -1,0 +1,25 @@
+{
+  "note_bn": "ভূমি উন্নয়ন কর আইন, ২০২৩ অনুযায়ী অর্থবছর (জুলাই–জুন) ভিত্তিতে কর আদায় হয়। কৃষিজমির হার ও অকৃষি জমির হার সরকারি গেজেট প্রজ্ঞাপনে নির্ধারিত হয়; এই প্রোটোটাইপের অকৃষি হার পুরনো তফসিলের উদাহরণ, যাচাই করা হয়নি। ইউনিয়ন ভূমি অফিস বা ldtax.gov.bd-তে নিশ্চিত হোন।",
+  "note_en": "Under the Land Development Tax Act 2023 the tax is collected by fiscal year (July–June). Non-agricultural rates are set by gazette notification; the non-agricultural rates in this prototype are examples from the older schedule and are NOT verified. Confirm at the union land office or ldtax.gov.bd.",
+  "agricultural": {
+    "classes_en": ["Nal (agricultural)", "Waterbody"],
+    "exempt_up_to_dec": 825,
+    "exempt_bn": "কৃষিজমি পরিবারপ্রতি ২৫ বিঘা (৮.২৫ একর) পর্যন্ত করমুক্ত।",
+    "exempt_en": "Agricultural land up to 25 bigha (8.25 acres) per family is exempt.",
+    "rate_tk_per_dec_above": 0.5,
+    "rate_note_en": "Above 25 bigha the tax applies to the whole agricultural holding; the per-decimal rate here is an example, not verified.",
+    "source": "Land Development Tax Act 2023 (Act No. 31 of 2023); exemption reported by The Financial Express and UNB (Sept 2023) and TBS",
+    "verified": "Exemption up to 25 bigha: consistent across several news reports of the Act. Rate above it: not verified."
+  },
+  "non_agricultural": {
+    "rates": [
+      { "use": "commercial", "bn": "বাণিজ্যিক / শিল্প", "en": "Commercial / industrial", "tk_per_dec": 100 },
+      { "use": "residential", "bn": "আবাসিক / অন্যান্য", "en": "Residential / other", "tk_per_dec": 20 }
+    ],
+    "class_use": { "Viti (homestead)": "residential" },
+    "source": "Land Development Tax Ordinance 1976, schedule for police-station (upazila) areas — replaced by the 2023 Act; current rates are set by gazette",
+    "verified": "NOT verified for the 2023 Act. Example rates only."
+  },
+  "arrears_note_bn": "বকেয়া করের উপর সুদ বা জরিমানা এখানে হিসাব করা হয়নি।",
+  "arrears_note_en": "Interest or penalties on arrears are not included here."
+}

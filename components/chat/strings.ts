@@ -93,6 +93,9 @@ export const TOOL_LABEL: Record<string, Record<Lang, string>> = {
   register_baina: { bn: "বায়না নিবন্ধন", en: "Baina registration" },
   register_sale: { bn: "বিক্রয় নিবন্ধন", en: "Sale registration" },
   register_lien: { bn: "বন্ধক নিবন্ধন", en: "Mortgage registration" },
+  complaint_submit: { bn: "অভিযোগ দাখিল", en: "Complaint filed" },
+  land_tax_due: { bn: "খাজনা হিসাব হয়েছে", en: "Land tax worked out" },
+  application_status: { bn: "আবেদন দেখা হয়েছে", en: "Applications checked" },
 };
 
 /** "ধারা ১৪৩" for a statute section; nothing for a fee schedule or service note. */

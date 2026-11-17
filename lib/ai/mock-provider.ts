@@ -150,7 +150,56 @@ function respond(req: ChatRequest): { content: Block[]; stop_reason: string } {
     };
   }
 
+  const filed = results.get("complaint_submit");
+  if (filed) {
+    if (typeof filed.data === "string") {
+      return { content: [text(english ? "All right, nothing was filed." : "ঠিক আছে, কোনো অভিযোগ দাখিল করা হয়নি।")], stop_reason: "end_turn" }; // prettier-ignore
+    }
+    const d = filed.data as { app_no: string };
+    return {
+      content: [text(english ? `Your complaint ${d.app_no} has been filed. The office must act within 3 days; follow it under My services.` : `আপনার অভিযোগ ${d.app_no} দাখিল হয়েছে। অফিসকে ৩ দিনের মধ্যে ব্যবস্থা নিতে হবে; ‘আমার সেবা’-তে অবস্থা দেখুন।`)], // prettier-ignore
+      stop_reason: "end_turn",
+    };
+  }
+  const tax = results.get("land_tax_due");
+  if (tax && !tax.error) {
+    const d = tax.data as { linked: boolean; reports: { mouza_bn: string; dag_no: number; holders: { name_bn: string; years_due: string[]; due_tk: number; exempt: boolean }[] }[] }; // prettier-ignore
+    if (!d.linked) return { content: [text("আপনার অ্যাকাউন্টের সাথে কোনো জমি যুক্ত নেই। কোন দাগের খাজনা জানতে চান?")], stop_reason: "end_turn" }; // prettier-ignore
+    const lines = d.reports.flatMap((r) =>
+      r.holders.map((h) =>
+        h.years_due.length === 0
+          ? `${r.mouza_bn} দাগ ${bn(r.dag_no)}: কোনো বকেয়া নেই।`
+          : `${r.mouza_bn} দাগ ${bn(r.dag_no)}: ${bn(h.years_due.length)} অর্থবছর বাকি, ${h.exempt ? "করমুক্ত (৳০)" : `৳${bn(h.due_tk)}`}।`,
+      ),
+    );
+    return { content: [text(`${lines.join("\n")}\n/land-tax পাতায় দাখিলা নিন।`)], stop_reason: "end_turn" }; // prettier-ignore
+  }
+  const status = results.get("application_status");
+  if (status && !status.error) {
+    const d = status.data as { applications: { app_no: string; summary_bn: string; status: string }[] }; // prettier-ignore
+    if (d.applications.length === 0) return { content: [text("আপনার কোনো আবেদন নেই।")], stop_reason: "end_turn" }; // prettier-ignore
+    const a = d.applications[0]!;
+    return { content: [text(`সর্বশেষ আবেদন ${a.app_no} (${a.summary_bn}): অবস্থা ${a.status}।`)], stop_reason: "end_turn" }; // prettier-ignore
+  }
+
   // --- a new question ---
+  // A complaint: "মিউটেশনে দালাল ৫,০০০ টাকা চেয়েছে" → propose filing it (the citizen confirms).
+  if (/দালাল|ঘুষ|বাড়তি টাকা|অতিরিক্ত টাকা|টাকা চেয়েছে|অভিযোগ|broker|bribe|complain/i.test(q)) {
+    return {
+      content: [
+        text(english ? "I can file this complaint for you. Please check it:" : "আমি অভিযোগটি দাখিল করতে পারি। মিলিয়ে দেখুন:"), // prettier-ignore
+        call("complaint_submit", { text: q, category: /দালাল|broker/i.test(q) ? "broker" : "extra_money" }), // prettier-ignore
+      ],
+      stop_reason: "tool_use",
+    };
+  }
+  if (/খাজনা|ভূমি উন্নয়ন কর|land tax/i.test(q)) {
+    const n = firstNumber(q);
+    return { content: [call("land_tax_due", n ? { dag_no: n } : {})], stop_reason: "tool_use" };
+  }
+  if (/আমার আবেদন|আবেদন কোথায়|নামজারি কোথায়|my application/i.test(q)) {
+    return { content: [call("application_status", {})], stop_reason: "tool_use" };
+  }
   // A deed photo attached in the chat: "(upload_id: …)".
   const upload = /upload_id:\s*([a-f0-9]{24})/.exec(q);
   if (upload) {

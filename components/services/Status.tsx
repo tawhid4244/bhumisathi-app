@@ -1,6 +1,6 @@
 "use client";
 
-import { STATUS_LABEL, type Step } from "@/lib/services/catalog";
+import { APPLICATION_TYPES, progressOf, statusLabel, type ApplicationTypeId } from "@/lib/services/catalog"; // prettier-ignore
 import { T, useNum } from "../i18n/LangProvider";
 
 // Status pill and progress stepper for an application (used on /my, the tracker and /track).
@@ -13,8 +13,8 @@ const TONE = {
   grey: "bg-gray-100 text-gray-700 border-gray-300",
 } as const;
 
-export function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_LABEL[status] ?? { bn: status, en: status, tone: "grey" as const };
+export function StatusBadge({ status, type }: { status: string; type?: string }) {
+  const s = statusLabel(status, type);
   return (
     <span
       data-testid="status"
@@ -26,25 +26,11 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-/** How many steps are done for a status (applied → paid → review → decision → document). */
-export function stepsDone(status: string): number {
-  switch (status) {
-    case "payment_due":
-      return 1;
-    case "in_review":
-      return 2;
-    case "completed":
-      return 5;
-    case "rejected":
-      return 4;
-    default:
-      return 1;
-  }
-}
-
-export function Stepper({ steps, status }: { steps: Step[]; status: string }) {
+/** The type's steps, with the ones done in this status ticked and the current one pulsing. */
+export function Stepper({ type, status }: { type: string; status: string }) {
   const num = useNum();
-  const done = stepsDone(status);
+  const steps = APPLICATION_TYPES[type as ApplicationTypeId]?.steps ?? [];
+  const done = progressOf(type, status);
   const failed = status === "rejected";
   const stopped = status === "cancelled";
   return (
