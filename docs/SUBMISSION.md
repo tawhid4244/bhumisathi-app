@@ -102,11 +102,11 @@ _Proposed, not yet validated with customers._
 
 | Member | Congress portal role | Responsibility in BhumiSathi |
 |---|---|---|
-| Tawhid Ahmed | Team Lead | Vision, execution, milestones |
-| Mahmud Ibna Arif Akanda | Product/UX Designer | Bangla-first UX, accessibility, product flows |
-| Milon Kumar Baidya | Domain Expert | Land law, survey records, user problems, KPIs |
-| Arpita Kundu | _to assign: AI/ML Engineer or Full-Stack Developer_ | _to confirm_ |
-| Khadiza Akter Summa | _to assign: AI/ML Engineer or Full-Stack Developer_ | _to confirm_ |
+| Tawhid Ahmed | Team Lead, AI/ML Engineer | Vision, execution, milestones; AI agent and model choice |
+| Mahmud Ibna Arif Akanda | Full-Stack Developer | Next.js app, APIs, database, deployment |
+| Milon Kumar Baidya | AI/ML Engineer | RAG and law citations, deed reader, AI evaluation |
+| Arpita Kundu | Product/UX Designer | Bangla-first UX, accessibility, product flows |
+| Khadiza Akter Summa | Domain Expert | Land law, survey records, user problems, KPIs |
 
 Presentation / communication lead: _to confirm_. NRB member: none yet.
 
