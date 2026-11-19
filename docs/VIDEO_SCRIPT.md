@@ -1,88 +1,88 @@
-# BhumiSathi — 3-minute demo video script
+# BhumiSathi — 3-minute submission video (Idea to Unicorn · CivicSphere AI → Citizen First)
 
-Follows **judge mode** (`/judge`) so every number on screen is real engine output, not a mock-up.
-Record on a phone-sized window (or a real phone) in **Bangla mode**, with English subtitles.
-Total: about **3:00**. Narration in Bangla; the English line is the subtitle.
+Follows the Congress guide §9.2 exactly: Problem 0:30 · Solution 0:30 · Demo 1:00 · AI approach 0:30 ·
+Impact 0:30 = **3:00**. Bangla narration, English subtitles. Every number on screen is real app output
+or a cited source — no mock-ups (guide §15: "no misleading or fabricated demos").
 
-**Before recording:** open https://bhumisathi-app.vercel.app, make sure the AI key has quota left
-(the deed and chat steps use two model calls), sign in as nobody (judge mode needs no account),
-close other tabs, turn on Do Not Disturb.
+## Before you record
 
----
-
-### 0:00–0:15 · Hook (home page)
-
-*Screen:* home page hero, slow scroll to the service cards.
-
-> **Narration:** “বাংলাদেশে অনেক জমির মামলার শুরু একটাই জায়গায় — একই জমি দুইবার বিক্রি। ভূমিসাথী বলে, এক জমি, এক সত্য।”
->
-> **Subtitle:** “Many land disputes in Bangladesh start in one place — the same land sold twice. BhumiSathi says: one plot, one truth.”
-
-### 0:15–0:25 · Start judge mode
-
-*Screen:* press **“▶ জাজ মোড — ৩ মিনিটে দেখুন”**, then **“জাজ মোড শুরু করুন”**. Card 1: the demo resets.
-
-> “সব তথ্য কাল্পনিক। নয়াপাড়া মৌজার দাগ ১৪৫ — রহিম উদ্দিনের ২০ শতক।”
->
-> *“All data is synthetic. Dag 145 in Nayapara — Rahim holds 20 decimals.”*
-
-### 0:25–1:05 · G1 — the double sale is blocked (3 cards, press “পরের ধাপ”)
-
-*Screen:* card “বায়না নিবন্ধন” (green) → card “একই জমি দুইবার বিক্রি — আটকে গেল” (red, reason) →
-card “বৈধ বিক্রি” (green, mutation case number). Optionally cut to `/registry` for 3 seconds to show
-the SMS and mutation list.
-
-> “রহিম ১০ শতক সালমাকে বায়না দিলেন — লেজারে ওই অংশ আটকে গেল। এখন একই জমি জামালের কাছে ১৫ শতক বিক্রির চেষ্টা — সিস্টেম সঙ্গে সঙ্গে আটকে দিল, কারণ বিক্রয়যোগ্য মাত্র ১০ শতক। বাকি ১০ শতকের বৈধ বিক্রি হলো, নামজারি মামলা নিজে থেকেই খুলল।”
->
-> *“Rahim gives a 10-decimal baina to Salma — the ledger locks it. Selling 15 decimals of the same land to Jamal is blocked at once: only 10 are sellable. The honest 10-decimal sale goes through and a mutation case opens by itself.”*
-
-### 1:05–1:30 · G3 — reading a deed
-
-*Screen:* card “দলিল পড়া” (amber): plain summary + “খতিয়ানে ম্যাপের চেয়ে ৩ শতক বেশি”.
-
-> “দলিলের একটা ছবি — সাথী সহজ বাংলায় বুঝিয়ে দিল, আর রেকর্ড ও ম্যাপের সাথে মিলিয়ে দেখল: খতিয়ানে ৩ শতক বেশি লেখা। আমিন দিয়ে সীমানা মাপুন।”
->
-> *“One photo of a deed — Sathi explains it in plain Bangla and checks it against the records and the map: the khatian says 3 decimals more. Have a surveyor check the boundary.”*
-
-### 1:30–1:55 · G8 — Sathi AI
-
-*Screen:* card “সাথী এআই” (red) with the answer. Optional 5-second cut to `/chat`, pressing the
-microphone and saying “১৪৫ নম্বর দাগের জমি কেনা নিরাপদ কিনা দেখাও”, the read-back
-“আপনি কি ১৪৫ বলেছেন?”, and the spoken answer.
-
-> “বাংলায় লিখে বা বলে প্রশ্ন করুন। সাথী নিজে যাচাই টুল চালায়, আইনের ধারা উল্লেখ করে উত্তর দেয় — আর আপনার ‘হ্যাঁ’ ছাড়া কখনও কিছু নিবন্ধন করে না।”
->
-> *“Ask in Bangla, typed or spoken. Sathi runs the same check itself, cites the law — and never records anything without your ‘yes’.”*
-
-### 1:55–2:20 · G2 — inheritance, women's share protected
-
-*Screen:* card “ওয়ারিশ হিসাব”: wife, two sons, daughter — decimals on each dag.
-
-> “আব্দুল করিম মারা গেছেন। ফারায়েজ অনুযায়ী স্ত্রী, দুই ছেলে আর মেয়ে — প্রত্যেকে প্রতিটি দাগে কত শতক পাবেন, তা হিসাব হলো। নারীর অংশ আইনে নির্ধারিত, কেউ বঞ্চিত করতে পারে না।”
->
-> *“Abdul Karim has died. Faraid shares for his wife, two sons and daughter — in decimals on every plot. Women's shares are fixed by law; no one can take them away.”*
-
-### 2:20–2:50 · G7 — the sealed report
-
-*Screen:* card “সিলযুক্ত রিপোর্ট” with the QR and four green lights → final card
-“পুরনো রিপোর্ট ধরা পড়ল” (amber). Optional: scan the QR with a second phone to show `/verify`.
-
-> “জমির রিপোর্টে ডিজিটাল স্বাক্ষর — ব্যাংক বা ক্রেতা QR স্ক্যান করলে চারটি বাতি: আসল, হালনাগাদ, অক্ষত, অংশের যোগফল মেলে। এরপর নতুন বায়না হলে সেই পুরনো রিপোর্ট আর সবুজ নয় — হলুদ।”
->
-> *“A digitally signed land report. A bank or buyer scans the QR: four lights — genuine, current, untouched, shares add up. After a new baina, the same old report is no longer green — it turns amber.”*
-
-### 2:50–3:00 · Close
-
-*Screen:* the “এক জমি, এক সত্য। ধন্যবাদ!” card, then the home page with the logo.
-
-> “ভূমিসাথী — বাংলায়, ফোনে, সবার জন্য। এক জমি, এক সত্য।”
->
-> *“BhumiSathi — in Bangla, on your phone, for everyone. One plot, one truth.”*
+- Site: https://bhumisathi-app.vercel.app · press **Reset demo** (or start Judge mode) first.
+- Browser at phone size: Chrome → F12 → device toolbar → 412 × 915, zoom 100 %. Hide bookmarks bar.
+- Accounts: citizen + officer demo accounts (password: `DEMO_USER_PASSWORD` in `.env.local`).
+- Record each segment as its own clip in **OBS Studio** (1920×1080, 30 fps). Edit in **Clipchamp**.
+- Voice: one person, phone mic 15 cm away, quiet room; record narration separately and lay it over.
+- Lower third, whole video: `Prototype · synthetic data · not a government website`.
+- AI steps (deed, chat law answer) call Gemini — record them twice; keep the better take. The voice
+  dag check (step 3) needs no AI and never fails.
 
 ---
 
-**On-screen note for the whole video (small, bottom):** “Prototype · synthetic data · not a
-government website”.
+## 1 · Problem — 0:00–0:30
 
-**If a step shows a quota message** (free AI limit reached), skip to the next step — the tour
-continues; or record the deed and chat steps separately from `/deed` and `/chat`.
+*Screen:* black title "এক জমি, একাধিক বিক্রি" → three facts appear one by one, source in small text →
+cut to a paper khatian / deed stack (stock photo or your own phone photo).
+
+> **বাংলা:** “বাংলাদেশে আদালতের প্রায় ৮০ শতাংশ মামলা জমি নিয়ে। শুধু ঢাকায় বারো হাজারের বেশি প্লট ও ফ্ল্যাট প্রতারণার মামলা ঝুলে আছে — একই জমি একাধিক জনের কাছে বিক্রি। রেকর্ড ছড়িয়ে আছে চারটি জরিপ আর তিনটি অফিসে; সাধারণ মানুষ দালালের উপর নির্ভর করেন।”
+>
+> **Subtitle:** “Almost 80% of court cases in Bangladesh are about land. Over 12,000 plot and flat fraud cases are pending in Dhaka alone — the same land sold to several buyers. Records are split across four surveys and three offices, so people depend on brokers.”
+
+On-screen sources (small): *Observer — land ministry senior secretary (≈80%) · TBS (12,000 cases, Tk 4,000 crore stuck)*.
+
+## 2 · Solution — 0:30–1:00
+
+*Screen:* home page hero (logo, "এক জমি, এক সত্য") → slow scroll over the service cards → `/services`
+(the 11 land services).
+
+> **বাংলা:** “ভূমিসাথী — এক জমি, এক সত্য। একটি শেয়ার লেজার, যেখানে প্রতিটি দাগের প্রতিটি অংশ একবারই বিক্রি করা যায়। তার উপর সাথী এআই — বাংলায় লিখে বা মুখে বলে প্রশ্ন করুন: জমি কেনা নিরাপদ কি না, দলিলে কী লেখা, আইনে কী বলে, নামজারি কোথায় আটকে আছে।”
+>
+> **Subtitle:** “BhumiSathi — one plot, one truth. A share ledger where each share of a plot can be sold only once. On top, Sathi AI: ask in Bangla, typed or spoken — is this land safe to buy, what does my deed say, what does the law say, where is my mutation stuck.”
+
+## 3 · Demo — 1:00–2:00 (four quick beats, ~15 s each)
+
+**3a · Double sale blocked (1:00–1:15)** — `/judge` → start → press next to the red card
+“একই জমি দুইবার বিক্রি — আটকে গেল”.
+> “রহিমের ২০ শতকের মধ্যে ১০ শতক বায়না হয়ে গেছে। একই জমির ১৫ শতক আরেকজনের কাছে বিক্রির চেষ্টা — সিস্টেম সঙ্গে সঙ্গে আটকে দিল।”
+> *“10 of Rahim's 20 decimals are already promised. Trying to sell 15 to someone else is blocked instantly.”*
+
+**3b · Voice check (1:15–1:30)** — `/chat` (citizen) → mic → say “একশো পঁয়তাল্লিশ নম্বর দাগের জমি কেনা নিরাপদ কিনা দেখাও” → read-back card → ঠিক আছে → answer appears instantly.
+> “মুখে বলুন — সাথী নম্বরটা আবার শুনিয়ে নিশ্চিত হয়, তারপর এক সেকেন্ডের কম সময়ে উত্তর।”
+> *“Just say it — Sathi reads the number back, then answers in under a second.”*
+
+**3c · Signed report (1:30–1:45)** — `/check` dag 141 → “সিলযুক্ত রিপোর্ট নিন” → QR → verify → four green lights.
+> “ব্যাংক বা ক্রেতা QR স্ক্যান করলেই দেখেন — আসল, হালনাগাদ, অক্ষত।”
+> *“A bank or buyer scans the QR: genuine, current, untouched.”*
+
+**3d · Services (1:45–2:00)** — `/chat`: say “মিউটেশনে দালাল ৫,০০০ টাকা চেয়েছে” → confirmation card →
+হ্যাঁ → CMP number → cut to `/land-tax` dakhila with QR (2 s).
+> “দালাল টাকা চাইলে মুখে বললেই অভিযোগ — আপনার ‘হ্যাঁ’ ছাড়া কিছুই জমা হয় না। নামজারি, খাজনা, দাখিলা — সব এক জায়গায়।”
+> *“A broker asks for money? Say it, and it becomes a complaint — nothing is filed without your Yes. Mutation, land tax, receipts — all in one place.”*
+
+## 4 · AI approach — 2:00–2:30
+
+*Screen:* docs/ARCHITECTURE.md on GitHub (its Mermaid diagram renders there) → zoom/highlight boxes as named.
+
+> **বাংলা:** “এআই কখনও মালিকানা ঠিক করে না — হিসাব করে কোড, এআই বোঝায়। জেমিনি এজেন্ট একই যাচাই-টুল চালায়, ১১টি আইনের সারাংশ থেকে ধারা উল্লেখ করে উত্তর দেয়, দলিলের ছবি পড়ে। এনআইডি ও ফোন নম্বর এআই-এর কাছে যাওয়ার আগেই লুকানো হয়; প্রতিটি দেখা ও পরিবর্তন হ্যাশ-চেইনড অডিট লগে থাকে।”
+>
+> **Subtitle:** “AI never decides ownership — code computes, AI explains. A Gemini agent calls the same check tools, cites sections from 11 law summaries, and reads deed photos. NIDs and phone numbers are masked before the model sees anything; every view and change goes into a hash-chained audit log.”
+
+On-screen chips: `Gemini agent + tools` · `RAG with citations` · `Vision deed reader` · `Fast path: 0.02 s` · `PII masking` · `Ed25519 seal` · `Row-level security`.
+
+## 5 · Impact & next step — 2:30–3:00
+
+*Screen:* KPI card (from docs/SUBMISSION.md) → roadmap card → closing logo.
+
+> **বাংলা:** “নাগরিকের জন্য বিনামূল্যে; ব্যাংক ও ক্রেতা সিলযুক্ত রিপোর্টের জন্য, আর ভূমি অফিস সফটওয়্যার হিসেবে। লক্ষ্য: কেনার আগে প্রতিটি জমি যাচাই, দালাল ছাড়া সেবা, আর একই জমি দুইবার বিক্রি শূন্য। পরের ধাপ: সরকারি ভূমি সেবা গেটওয়ের সাথে সংযোগ ও একটি উপজেলায় পাইলট। ভূমিসাথী — এক জমি, এক সত্য।”
+>
+> **Subtitle:** “Free for citizens; banks and buyers pay for sealed reports, land offices license it as software. The goal: every plot checked before purchase, services without brokers, zero double sales. Next: connect to the government land service gateway and pilot in one upazila. BhumiSathi — one plot, one truth.”
+
+End card: team **ByteMates** · live URL · GitHub URL.
+
+---
+
+## Editing checklist (Clipchamp)
+
+1. Import clips 1–5 + narration; trim each to its time box (export must be ≤ 3:00).
+2. Captions: paste the English subtitle lines (or Clipchamp "Auto captions" → English, then correct).
+3. Text: section titles ("সমস্যা · Problem", …) top-left, 1 s fade.
+4. Music: Clipchamp stock, low (−25 dB) under the voice.
+5. Export 1080p → YouTube **Unlisted** → check the link in a private window.
