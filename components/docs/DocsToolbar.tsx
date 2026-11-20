@@ -49,6 +49,13 @@ export function DocsToolbar() {
         >
           Markdown
         </a>
+        <a
+          href="/docs/data.csv"
+          download="bhumisathi-docs.csv"
+          className="inline-flex min-h-11 items-center rounded-lg border border-brand px-3 font-semibold text-brand-deep"
+        >
+          CSV
+        </a>
         <button
           type="button"
           onClick={() => navigator.clipboard?.writeText(location.origin + "/docs")}

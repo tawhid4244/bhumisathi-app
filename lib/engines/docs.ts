@@ -52,6 +52,18 @@ export async function docsLive(): Promise<[string, number][]> {
   ];
 }
 
+/** Khatians per survey (CS → SA → RS → BS): one plot's record is split across all four. */
+export async function khatiansBySurvey(): Promise<{ survey: string; khatians: number }[]> {
+  return getSql()<{ survey: string; khatians: number }[]>`
+    select survey, count(*)::int as khatians from khatians
+    group by survey order by array_position(array['CS','SA','RS','BS'], survey)`;
+}
+
+/** RFC 4180 CSV: quote every field, double inner quotes. */
+export function toCsv(rows: (string | number)[][]): string {
+  return rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n") + "\r\n"; // prettier-ignore
+}
+
 export async function setDocsSettings(s: {
   visible: boolean;
   starts_at: string | null;

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { SessionUser } from "@/lib/auth/roles";
 import { upsertUser } from "@/lib/auth/session";
 import { toMarkdown } from "@/lib/docs/content";
-import { docsLive, docsOpen, getDocsSettings } from "@/lib/engines/docs";
+import { docsLive, docsOpen, getDocsSettings, khatiansBySurvey, toCsv } from "@/lib/engines/docs";
 import { runTool } from "@/lib/tools/registry";
 import { closeSql, getSql } from "@/lib/sql";
 import { seed } from "@/scripts/seed";
@@ -61,5 +61,22 @@ describe("/docs publishing", () => {
     const md = toMarkdown(live);
     expect(md).toContain("## Live system");
     expect(md).toContain("## Team");
+  });
+});
+
+describe("/docs exports", () => {
+  it("khatians per survey come in CS → SA → RS → BS order", async () => {
+    const s = await khatiansBySurvey();
+    expect(s.map((r) => r.survey)).toEqual(["CS", "SA", "RS", "BS"]);
+    expect(s.every((r) => r.khatians > 0)).toBe(true);
+  });
+
+  it("CSV quotes every field and escapes quotes", () => {
+    expect(
+      toCsv([
+        ["a", 1],
+        ['say "hi"', "x,y"],
+      ]),
+    ).toBe('"a","1"\r\n"say ""hi""","x,y"\r\n');
   });
 });

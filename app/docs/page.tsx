@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { DocsToolbar } from "@/components/docs/DocsToolbar";
 import { currentUser } from "@/lib/auth/current";
 import { SECTIONS, TEAM, type DocSection } from "@/lib/docs/content";
-import { docsLive, docsOpen, getDocsSettings } from "@/lib/engines/docs";
+import { SurveyChart } from "@/components/docs/SurveyChart";
+import { docsLive, docsOpen, getDocsSettings, khatiansBySurvey } from "@/lib/engines/docs";
 import { mcpTools } from "@/lib/mcp/tools";
 import { tools } from "@/lib/tools/registry";
 
@@ -48,7 +49,10 @@ async function Content() {
       </section>
     );
   }
-  const live = await docsLive().catch(() => [] as [string, number][]);
+  const [live, surveys] = await Promise.all([
+    docsLive().catch(() => [] as [string, number][]),
+    khatiansBySurvey().catch(() => []),
+  ]);
   const mcp = mcpTools().length;
   const byKind = { read: tools.filter((t) => t.kind === "read").length, write: tools.filter((t) => t.kind === "write").length }; // prettier-ignore
 
@@ -106,6 +110,7 @@ async function Content() {
               </div>,
             )}
           </dl>
+          {surveys.length ? <SurveyChart data={surveys} /> : null}
         </section>
 
         {SECTIONS.map((s) => (
