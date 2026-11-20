@@ -33,11 +33,13 @@
     "ai:models": "tsx --env-file-if-exists=.env.local scripts/ai-models.ts",
     "embed": "tsx --env-file-if-exists=.env.local scripts/embed.ts",
     "ai:g6": "tsx --env-file-if-exists=.env.local scripts/ai-g6.ts",
-    "ai:vision": "tsx --env-file-if-exists=.env.local scripts/vision-spike.ts"
+    "ai:vision": "tsx --env-file-if-exists=.env.local scripts/vision-spike.ts",
+    "mcp": "tsx --env-file-if-exists=.env.local scripts/mcp-server.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
     "@google/genai": "^3.3.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@supabase/supabase-js": "^2.119.0",
     "next": "16.4.6",
     "postgres": "^4.1.1",

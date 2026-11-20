@@ -99,6 +99,12 @@ npm run e2e        # Playwright: every golden scenario + accessibility, at 375 p
 npm run eval:ai    # 20 held-out questions on the real model (uses AI quota)
 ```
 
+### MCP server
+
+`npm run mcp` offers the 10 public read-only land tools (Jomi Check, law search, fees, inheritance…)
+to any AI agent over the Model Context Protocol (stdio). Ledger writes are never exposed.
+Setup for Claude Desktop: [docs/MCP.md](docs/MCP.md).
+
 ### Deploy
 
 Vercel (region Singapore) + Supabase Postgres (Singapore). Step by step, with secrets never pasted

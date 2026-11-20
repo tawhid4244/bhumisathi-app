@@ -22,6 +22,15 @@ Update at the end of every task and at the end of every session. Newest entry fi
 
 ## Entries
 
+### 2026-11-20 — MCP server for other AI agents
+- Done: `lib/mcp/server.ts` + `npm run mcp` (stdio). Offers the 10 public read tools from the same
+  registry; ledger writes, login-only tools and deed uploads are never listed and are refused if
+  called. Every call goes through `runTool` as an anonymous caller (validation, roles, audit log).
+  Docs: `docs/MCP.md` (Claude Desktop setup).
+- Tests: `npm run check` green (296); `tests/integration/mcp.test.ts` uses a real MCP client;
+  stdio smoke test: 10 tools listed, `jomi_check` dag 142 → red.
+- Next step: optional Streamable HTTP transport so remote agents can connect without a local copy.
+
 ### 2026-11-17 — Session 5, Phase C: mutation, land tax, complaints (G9–G11)
 - Done (plan: docs/LAND_SERVICES_PLAN.md services #1, #2, #9), all on the Phase B framework:
   - Migration `0008_phase_c.sql`: states `hearing` and `final_payment_due`; `hearings`; ledger event
