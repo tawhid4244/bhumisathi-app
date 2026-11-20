@@ -123,6 +123,7 @@ export const ACTION_BN: Record<string, string> = {
   app_decide: "আবেদনে সিদ্ধান্ত দিয়েছেন",
   doc_issue: "স্বাক্ষরিত ডকুমেন্ট ইস্যু করেছেন",
   doc_verify: "স্বাক্ষরিত ডকুমেন্ট যাচাই করেছেন",
+  docs_settings: "/docs পাতার প্রকাশ বদলেছেন",
 };
 
 export const ACTION_EN: Record<string, string> = {
@@ -143,6 +144,7 @@ export const ACTION_EN: Record<string, string> = {
   doc_verify: "verified a signed document",
   denied: "tried to register without permission (blocked)",
   unlock_account: "unlocked an account",
+  docs_settings: "changed /docs publishing",
 };
 
 export const ROLE_LABEL_EN: Record<string, string> = {

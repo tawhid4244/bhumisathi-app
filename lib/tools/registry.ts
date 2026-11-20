@@ -14,6 +14,7 @@ import { feeGuideTool, unitConvertTool } from "./units-tools";
 import { auditStatusTool, sealIssueTool, sealVerifyTool, whoCheckedTool } from "./seal-tools";
 import { warishComputeTool } from "./warish-tools";
 import { APPLICATION_TOOLS } from "./application-tools";
+import { docsSettingsUpdateTool } from "./docs-tools";
 import { allowed, type SessionUser } from "../auth/roles";
 import { appendAudit } from "../engines/audit";
 import { resolveDag } from "../engines/ledger";
@@ -44,6 +45,7 @@ export const tools: ToolDefinition[] = [
   whoCheckedTool,
   auditStatusTool,
   ...APPLICATION_TOOLS,
+  docsSettingsUpdateTool,
 ] as ToolDefinition[];
 
 export function getTool(name: string): ToolDefinition | undefined {

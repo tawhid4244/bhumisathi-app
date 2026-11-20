@@ -2,18 +2,16 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { ZodError } from "zod";
 import { toAgentTool } from "../ai/tools";
-import { canUse, runTool, tools, type ToolDefinition } from "../tools/registry";
+import { runTool, tools, type ToolDefinition } from "../tools/registry";
+import { mcpTools } from "./tools";
+
+export { mcpTools };
 
 // BhumiSathi as an MCP server: other AI agents (a bank's assistant, Claude Desktop, a
 // sub-registry system) can call the same verified land tools that Sathi AI and the pages use.
 // Only public READ tools are offered, and every call goes through runTool as an anonymous
 // caller, so input/output validation, role checks and the audit log apply exactly as on the web.
 // Write tools (register_sale, …) are never exposed: they need the citizen's Yes and an officer.
-
-/** Tools an anonymous MCP client may see: read-only, public, and meant for an agent. */
-export function mcpTools(registry: ToolDefinition[] = tools): ToolDefinition[] {
-  return registry.filter((t) => t.kind === "read" && !t.hiddenFromAgent && canUse(t, null));
-}
 
 export function createMcpServer(registry: ToolDefinition[] = tools): Server {
   const offered = mcpTools(registry);

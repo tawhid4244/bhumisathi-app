@@ -9,6 +9,8 @@ import { requirePageRole } from "@/lib/auth/guard";
 import { verifyAuditChain } from "@/lib/engines/audit";
 import { recentActivity } from "@/lib/engines/demo";
 import { listAccounts, officeSummary, recentAudit } from "@/lib/engines/office";
+import { DocsSettingsForm } from "@/components/admin/DocsSettingsForm";
+import { docsOpen, getDocsSettings } from "@/lib/engines/docs";
 
 export const metadata: Metadata = { title: "অফিস ও প্রশাসন" };
 
@@ -37,12 +39,13 @@ async function Content() {
   const { user, ok } = await requirePageRole("officer", "/admin");
   if (!ok) return <NotAllowed need="officer" />;
   const isAdmin = user.role === "admin";
-  const [summary, chain, audit, activity, accounts] = await Promise.all([
+  const [summary, chain, audit, activity, accounts, docs] = await Promise.all([
     officeSummary(),
     verifyAuditChain(),
     recentAudit(user, 20),
     recentActivity(),
     isAdmin ? listAccounts() : Promise.resolve(null),
+    isAdmin ? getDocsSettings() : Promise.resolve(null),
   ]);
 
   const tiles = [
@@ -169,6 +172,7 @@ async function Content() {
           </h2>
           <AccountsTable accounts={accounts} />
           <ResetDemoButton />
+          {docs ? <DocsSettingsForm initial={docs} open={docsOpen(docs)} /> : null}
         </section>
       ) : null}
     </div>
